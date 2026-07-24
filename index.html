@@ -698,7 +698,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v1.9</p>
+        <p class="howto-version">v2.0</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -711,7 +711,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "1.9";
+    const APP_VERSION = "2.0";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -1090,7 +1090,34 @@
       setMnps("N/A");
       save();
       checkRvsmDiff();
-      showToast("Cleared");
+      if (navigator.onLine) {
+        showToast("Cleared — updating…");
+        forceLatestIfOnline();
+      } else {
+        showToast("Cleared");
+      }
+    }
+
+    /** Online Clear: drop SW caches and reload so Safari / Home Screen app get the latest build. */
+    async function forceLatestIfOnline() {
+      try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const reg of regs) {
+            try { await reg.update(); } catch (_) {}
+            if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
+            const worker = reg.active || reg.waiting || reg.installing;
+            if (worker) worker.postMessage("CLEAR_CACHES");
+          }
+        }
+      } catch (_) {}
+      const url = new URL(window.location.href);
+      url.searchParams.set("r", Date.now().toString(36));
+      window.location.replace(url.pathname + url.search + url.hash);
     }
 
     function bindFormatter(id, formatter, { onFocusClear, finalize } = {}) {
