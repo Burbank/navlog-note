@@ -90,6 +90,7 @@
     }
 
     button {
+      -webkit-appearance: none;
       appearance: none;
       border: none;
       border-radius: var(--radius);
@@ -144,12 +145,6 @@
       margin-bottom: 4px;
     }
 
-    .field.indent {
-      grid-template-columns: 10.5rem 1fr;
-      padding-left: 0;
-    }
-
-    .field.full { grid-template-columns: 1fr; gap: 2px; }
     .field.narrow-input input { max-width: 11ch; }
     .field.climb-input input { max-width: 16ch; }
     .field.time-input input,
@@ -224,21 +219,32 @@
     input::placeholder { color: #6b7f96; }
 
     .row-3 {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-
-    .row-3 .field {
-      grid-template-columns: 2.5rem 1fr;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 0;
     }
 
+    .row-3 .field {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 0;
+      grid-template-columns: none;
+    }
+
+    .row-3 .field label {
+      flex: 0 0 auto;
+      min-width: 2.1rem;
+      text-align: right;
+    }
+
     .row-3 .field input {
-      width: 100%;
-      max-width: 7.5rem; /* five digits or FL + three */
-      min-width: 6.5rem;
+      flex: 0 0 auto;
+      width: 7.5rem;
+      max-width: 7.5rem;
+      min-width: 7.5rem;
       box-sizing: border-box;
     }
 
@@ -246,7 +252,7 @@
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
-      gap: 8px 12px;
+      gap: 10px 14px;
       margin-bottom: 2px;
     }
 
@@ -259,9 +265,8 @@
     }
 
     .rvsm-alt-row .row-3 {
-      flex: 0 1 auto;
-      width: min(100%, 28rem);
-      margin-bottom: 0;
+      flex: 0 0 auto;
+      width: auto;
     }
 
     .rvsm-alt-row .mnps-row {
@@ -693,7 +698,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v1.8</p>
+        <p class="howto-version">v1.9</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -706,7 +711,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "1.8";
+    const APP_VERSION = "1.9";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -724,10 +729,6 @@
     const $ = (id) => document.getElementById(id);
     const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
     const onlyDigits = (n, v) => digitsOnly(v).slice(0, n);
-
-    function formatHHMM(raw) {
-      return formatClockDigits(acceptClockDigits(raw, 4).digits);
-    }
 
     function formatHHMMSS(raw) {
       return formatClockDigits(acceptClockDigits(raw, 6).digits);
@@ -1021,10 +1022,7 @@
 
     function buildOutput() {
       const v = getValues();
-      const mnpsLine = v.mnps === "PERFORMED"
-        ? "MNPS RTE CHECKS.   PERFORMED."
-        : "MNPS RTE CHECKS.   N/A.";
-      return [
+      const lines = [
         "___________________________________", "",
         "PREFLIGHT", "",
         `Security check: ${outValue(v.security)}`, "",
@@ -1045,9 +1043,12 @@
         `* RWY.                    : ${outValue(v.rwy)}`, "",
         `* INTERSECTION :    ${outValue(v.intersection)}`, "",
         "___________________________________", "",
-        `Before RVSM entry   L: ${outValue(v.rvsmL)}                    R: ${outValue(v.rvsmR)}                    SBY: ${outValue(v.rvsmSby)}`, "",
-        mnpsLine, ""
-      ].join("\n");
+        `Before RVSM entry   L: ${outValue(v.rvsmL)}                    R: ${outValue(v.rvsmR)}                    SBY: ${outValue(v.rvsmSby)}`, ""
+      ];
+      if (v.mnps === "PERFORMED") {
+        lines.push("MNPS RTE CHECKS.   PERFORMED.", "");
+      }
+      return lines.join("\n");
     }
 
     function showToast(msg) {
