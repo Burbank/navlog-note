@@ -502,7 +502,7 @@
           </div>
           <div class="field indent climb-input">
             <label for="climbTo">* Climb to:</label>
-            <input id="climbTo" name="climbTo" type="text" autocapitalize="characters" maxlength="6" placeholder="0000 or FL000" />
+            <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000 or FL000" />
           </div>
           <div class="field indent narrow-input">
             <label for="transponder">* Transponder:</label>
@@ -596,7 +596,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v1.3</p>
+        <p class="howto-version">v1.4</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -609,8 +609,10 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "1.3";
+    const APP_VERSION = "1.4";
     const RVSM_MAX_DIFF_FT = 200;
+    const FUEL_MAX_MT = 200;
+    const TOM_MAX_MT = 600;
     const FIELD_IDS = [
       "security", "rvsmCheck", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
       "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps"
@@ -714,16 +716,68 @@
       return digitsOnly(raw).slice(0, 4);
     }
 
-    function formatMt(value, { finalize = false } = {}) {
+    function formatMt(value, { finalize = false, max = null } = {}) {
       let v = String(value || "").toUpperCase().replace(/\s*MT\s*$/i, "").trim().replace(/[^\d.]/g, "");
       const parts = v.split(".");
       if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
-      if (!v) return "";
-      return finalize ? v + " MT" : v;
+      if (!v) return { text: "", rejected: false };
+      let rejected = false;
+      if (max != null) {
+        while (v && Number(v) > max) {
+          rejected = true;
+          v = v.slice(0, -1);
+          if (v.endsWith(".")) v = v.slice(0, -1);
+        }
+      }
+      if (!v) return { text: "", rejected };
+      return { text: finalize ? v + " MT" : v, rejected };
     }
 
-    function formatRunway(value) {
-      return String(value || "").toUpperCase().replace(/[^0-9A-Z\s/-]/g, "");
+    /** Runway heading digits: first digit 0–3 (01–36). Optional L/R/C; SID text if allowSid. */
+    function acceptRunwayDesignator(value, { allowSid = false } = {}) {
+      const cleaned = String(value || "").toUpperCase();
+      let out = "";
+      let rejected = false;
+      let digs = 0;
+      let pastHeading = false;
+
+      for (const ch of cleaned) {
+        if (!/[0-9A-Z\s/-]/.test(ch)) {
+          rejected = true;
+          continue;
+        }
+        if (!pastHeading) {
+          if (/\d/.test(ch)) {
+            if (digs === 0 && ch > "3") {
+              rejected = true;
+              continue;
+            }
+            if (digs >= 2) {
+              rejected = true;
+              continue;
+            }
+            out += ch;
+            digs++;
+          } else if (/[LRC]/.test(ch) && digs > 0) {
+            out += ch;
+            if (!allowSid) pastHeading = true;
+          } else if (allowSid && digs > 0 && (/[\s/-]/.test(ch) || /[A-Z]/.test(ch))) {
+            out += ch;
+            pastHeading = true;
+          } else {
+            rejected = true;
+          }
+        } else if (allowSid) {
+          out += ch;
+        } else {
+          rejected = true;
+        }
+      }
+      return { text: out, rejected };
+    }
+
+    function formatRunway(value, opts) {
+      return acceptRunwayDesignator(value, opts).text;
     }
 
     /** Parse DSPERFO clipboard: "Take-off: 36L 10:18:28z" or "Take-off: 36L V2 10:18:28z" */
@@ -759,7 +813,9 @@
         return;
       }
       $("calcAt").value = parsed.calcAt;
-      $("rwy").value = parsed.rwy;
+      const rwyAccepted = acceptRunwayDesignator(parsed.rwy);
+      $("rwy").value = rwyAccepted.text;
+      if (rwyAccepted.rejected) flashFieldWarn($("rwy"));
       $("intersection").value = parsed.intersection;
       save();
       showToast("DSPERFO pasted");
@@ -975,6 +1031,48 @@
       });
     }
 
+    function bindMt(id, max) {
+      const el = $(id);
+      el.addEventListener("input", () => {
+        const start = el.selectionStart;
+        const before = el.value;
+        const { text, rejected } = formatMt(before, { max, finalize: false });
+        if (text !== before) {
+          el.value = text;
+          const removed = before.length - text.length;
+          const pos = Math.max(0, Math.min(text.length, (start || 0) - Math.max(0, removed)));
+          try { el.setSelectionRange(pos, pos); } catch (_) {}
+        }
+        if (rejected) flashFieldWarn(el);
+        save();
+      });
+      el.addEventListener("blur", () => {
+        el.value = formatMt(el.value, { max, finalize: true }).text;
+        save();
+      });
+    }
+
+    function bindRunway(id, { allowSid = false } = {}) {
+      const el = $(id);
+      el.addEventListener("input", () => {
+        const start = el.selectionStart;
+        const before = el.value;
+        const { text, rejected } = acceptRunwayDesignator(before, { allowSid });
+        if (text !== before) {
+          el.value = text;
+          const removed = before.length - text.length;
+          const pos = Math.max(0, Math.min(text.length, (start || 0) - Math.max(0, removed)));
+          try { el.setSelectionRange(pos, pos); } catch (_) {}
+        }
+        if (rejected) flashFieldWarn(el);
+        save();
+      });
+      el.addEventListener("blur", () => {
+        el.value = acceptRunwayDesignator(el.value, { allowSid }).text;
+        save();
+      });
+    }
+
     function parseAltFt(value) {
       const d = digitsOnly(value);
       return d ? parseInt(d, 10) : null;
@@ -1000,13 +1098,13 @@
     bindFormatter("pdc", (v) => onlyDigits(3, v));
     bindClock("ctot", 4, { onFocusClear: "N/A" });
     bindFormatter("atis", oneLetter);
-    bindFormatter("rwySid", formatRunway);
+    bindRunway("rwySid", { allowSid: true });
     bindFormatter("climbTo", formatClimbTo);
     bindSquawk();
-    bindFormatter("fuel", formatMt, { finalize: (v) => formatMt(v, { finalize: true }) });
-    bindFormatter("tom", formatMt, { finalize: (v) => formatMt(v, { finalize: true }) });
+    bindMt("fuel", FUEL_MAX_MT);
+    bindMt("tom", TOM_MAX_MT);
     bindClock("calcAt", 6);
-    bindFormatter("rwy", formatRunway);
+    bindRunway("rwy");
     bindFormatter("rvsmL", (v) => onlyDigits(5, v));
     bindFormatter("rvsmR", (v) => onlyDigits(5, v));
     bindFormatter("rvsmSby", (v) => onlyDigits(5, v));
