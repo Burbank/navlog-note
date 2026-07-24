@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var CACHE = 'navlog-note-v1.0.2';
+  var CACHE = 'navlog-note-v1.0.3';
   var PRECACHE = [
     './',
     './index.html',
@@ -43,10 +43,26 @@
   self.addEventListener('activate', function (event) {
     event.waitUntil(
       caches.keys().then(function (keys) {
+        var hadStale = keys.some(function (key) { return key !== CACHE; });
         return Promise.all(keys.map(function (key) {
           if (key !== CACHE) return caches.delete(key);
         })).then(function () {
           return self.clients.claim();
+        }).then(function () {
+          if (!hadStale) return;
+          /* Force open clients onto the new shell after a version bump (Home Screen) */
+          return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+            return Promise.all(clientList.map(function (client) {
+              if (!client.navigate) return;
+              try {
+                var next = new URL(client.url);
+                next.searchParams.set('_sw', String(Date.now()));
+                return client.navigate(next.pathname + next.search + next.hash);
+              } catch (e) {
+                return client.navigate(client.url);
+              }
+            }));
+          });
         });
       })
     );

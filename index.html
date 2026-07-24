@@ -229,18 +229,35 @@
       border-color: var(--accent);
     }
 
+    input.warn-diff {
+      background: rgba(180, 70, 70, 0.28);
+      border-color: #c45c5c;
+    }
+
+    input.warn-diff:focus {
+      outline-color: #c45c5c;
+      border-color: #c45c5c;
+    }
+
     input::placeholder { color: #6b7f96; }
 
     .row-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
 
     .row-3 .field {
       grid-template-columns: auto 1fr;
       margin-bottom: 0;
+    }
+
+    .rvsm-hint {
+      margin: 0 0 8px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
     }
 
     .toggle {
@@ -676,7 +693,7 @@
                 pattern="[0-9]*"
                 maxlength="5"
                 placeholder="0000"
-                title="4 or 5 digits"
+                title="4 or 5 digits — max Δ 200 ft vs R/SBY"
               />
             </div>
             <div class="field">
@@ -689,7 +706,7 @@
                 pattern="[0-9]*"
                 maxlength="5"
                 placeholder="0000"
-                title="4 or 5 digits"
+                title="4 or 5 digits — max Δ 200 ft vs L/SBY"
               />
             </div>
             <div class="field">
@@ -702,10 +719,11 @@
                 pattern="[0-9]*"
                 maxlength="5"
                 placeholder="0000"
-                title="4 or 5 digits"
+                title="4 or 5 digits — max Δ 200 ft vs L/R"
               />
             </div>
           </div>
+          <p class="rvsm-hint">Altimeter cross-check before RVSM — OM-A 8.3.2.6 (c)(3); max difference 200 ft</p>
 
           <div class="field">
             <label>MNPS RTE CHECKS: <span class="ref">8.3.2.11.3 (a)(5)</span></label>
@@ -742,8 +760,8 @@
           <div class="howto-col">
             <ol start="3">
               <li>Open the Home Screen icon anytime — works offline like a mini app.</li>
-              <li>Fill the form, tap <strong>Copy all text</strong>, then paste into your pilot nav app.</li>
-              <li>If an update banner appears (when online), tap <strong>Reload</strong> to get the latest version.</li>
+              <li>Fill the form, tap <strong>Copy all text</strong>, then paste into your OFP app.</li>
+              <li>Online update? Tap <strong>Reload</strong> on the banner (or reopen the app).</li>
             </ol>
           </div>
         </div>
@@ -1002,6 +1020,7 @@
       }
       setMnps("N/A");
       save();
+      checkRvsmDiff();
       showToast("Cleared");
     }
 
@@ -1068,6 +1087,62 @@
     $("btnCopy").addEventListener("click", copyAll);
     $("btnClear").addEventListener("click", clearForm);
 
+    /* RVSM altimeter cross-check — max 200 ft between any pair (OM-A 8.3.2.6 (c)(3)) */
+    const RVSM_MAX_DIFF_FT = 200;
+
+    function parseAltFt(value) {
+      const d = digitsOnly(value);
+      if (!d) return null;
+      return parseInt(d, 10);
+    }
+
+    function checkRvsmDiff() {
+      const ids = ["rvsmL", "rvsmR", "rvsmSby"];
+      const vals = ids.map((id) => ({ id, ft: parseAltFt($(id).value) }));
+      const warn = new Set();
+
+      for (let i = 0; i < vals.length; i++) {
+        for (let j = i + 1; j < vals.length; j++) {
+          const a = vals[i];
+          const b = vals[j];
+          if (a.ft === null || b.ft === null) continue;
+          if (Math.abs(a.ft - b.ft) > RVSM_MAX_DIFF_FT) {
+            warn.add(a.id);
+            warn.add(b.id);
+          }
+        }
+      }
+
+      ids.forEach((id) => {
+        $(id).classList.toggle("warn-diff", warn.has(id));
+      });
+    }
+
+    ["rvsmL", "rvsmR", "rvsmSby"].forEach((id) => {
+      $(id).addEventListener("input", checkRvsmDiff);
+      $(id).addEventListener("blur", checkRvsmDiff);
+    });
+
+    function stripReloadBustParam() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        let changed = false;
+        ["_", "fresh", "_sw"].forEach((key) => {
+          if (params.has(key)) {
+            params.delete(key);
+            changed = true;
+          }
+        });
+        if (!changed) return;
+        const qs = params.toString();
+        window.history.replaceState(
+          {},
+          "",
+          window.location.pathname + (qs ? "?" + qs : "") + window.location.hash
+        );
+      } catch (_) { /* ignore */ }
+    }
+
     /* Offline / update banner — same pattern as KLYear */
     function initServiceWorker() {
       if (!("serviceWorker" in navigator)) return;
@@ -1092,29 +1167,52 @@
         reloadBtn.addEventListener("click", () => {
           reloadOnControllerChange = true;
           if (waitingWorker) waitingWorker.postMessage("SKIP_WAITING");
+          /* Fallback if controllerchange never fires (common on iOS) */
           window.setTimeout(() => window.location.reload(), 400);
         });
       }
 
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").then((reg) => {
-          if (reg.waiting) showUpdateBanner(reg.waiting);
-          try { reg.update(); } catch (_) { /* ignore */ }
+        let freshBoot = false;
+        try {
+          const bootParams = new URLSearchParams(window.location.search);
+          freshBoot = bootParams.has("fresh") || bootParams.has("_sw") || bootParams.has("_");
+        } catch (_) { /* ignore */ }
 
-          reg.addEventListener("updatefound", () => {
-            const installing = reg.installing;
-            if (!installing) return;
-            installing.addEventListener("statechange", () => {
-              if (installing.state === "installed" && navigator.serviceWorker.controller) {
-                showUpdateBanner(reg.waiting || installing);
-              }
+        const delayMs = freshBoot ? 400 : 0;
+
+        window.setTimeout(() => {
+          navigator.serviceWorker.register("./sw.js").then((reg) => {
+            if (reg.waiting) showUpdateBanner(reg.waiting);
+            try { reg.update(); } catch (_) { /* ignore */ }
+
+            reg.addEventListener("updatefound", () => {
+              const installing = reg.installing;
+              if (!installing) return;
+              installing.addEventListener("statechange", () => {
+                if (installing.state === "installed" && navigator.serviceWorker.controller) {
+                  showUpdateBanner(reg.waiting || installing);
+                }
+              });
             });
-          });
+          }).catch(() => { /* ignore */ });
+        }, delayMs);
+      });
+
+      /* Re-check for updates when returning to the Home Screen app */
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") return;
+        navigator.serviceWorker.getRegistration("./sw.js").then((reg) => {
+          if (!reg) return;
+          try { reg.update(); } catch (_) { /* ignore */ }
+          if (reg.waiting) showUpdateBanner(reg.waiting);
         }).catch(() => { /* ignore */ });
       });
     }
 
+    stripReloadBustParam();
     load();
+    checkRvsmDiff();
     initServiceWorker();
   </script>
 </body>
