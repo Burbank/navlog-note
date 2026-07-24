@@ -1,11 +1,11 @@
 /**
- * NAVLOG NOTE — caches the app shell for offline use (same pattern as KLYear).
- * Online: network-first so updates are not stuck behind a stale shell.
+ * NAVLOG NOTE v1.1 — offline shell (KLYear-style, no forced navigate flash).
+ * Online: network-first. Updates via banner Reload.
  */
 (function () {
   'use strict';
 
-  var CACHE = 'navlog-note-v1.0.6';
+  var CACHE = 'navlog-note-v1.1.0';
   var PRECACHE = [
     './',
     './index.html',
@@ -21,9 +21,7 @@
         if (cached) return cached;
         return cache.match(request, { ignoreSearch: true }).then(function (byPath) {
           if (byPath) return byPath;
-          if (request.mode === 'navigate') {
-            return cache.match('./index.html');
-          }
+          if (request.mode === 'navigate') return cache.match('./index.html');
           return Response.error();
         });
       });
@@ -43,35 +41,17 @@
   self.addEventListener('activate', function (event) {
     event.waitUntil(
       caches.keys().then(function (keys) {
-        var hadStale = keys.some(function (key) { return key !== CACHE; });
         return Promise.all(keys.map(function (key) {
           if (key !== CACHE) return caches.delete(key);
         })).then(function () {
           return self.clients.claim();
-        }).then(function () {
-          if (!hadStale) return;
-          /* Force open clients onto the new shell after a version bump (Home Screen) */
-          return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-            return Promise.all(clientList.map(function (client) {
-              if (!client.navigate) return;
-              try {
-                var next = new URL(client.url);
-                next.searchParams.set('_sw', String(Date.now()));
-                return client.navigate(next.pathname + next.search + next.hash);
-              } catch (e) {
-                return client.navigate(client.url);
-              }
-            }));
-          });
         });
       })
     );
   });
 
   self.addEventListener('message', function (event) {
-    if (event.data === 'SKIP_WAITING') {
-      self.skipWaiting();
-    }
+    if (event.data === 'SKIP_WAITING') self.skipWaiting();
     if (event.data === 'CLEAR_CACHES') {
       event.waitUntil(
         caches.keys().then(function (keys) {
@@ -84,14 +64,8 @@
   self.addEventListener('fetch', function (event) {
     var request = event.request;
     if (request.method !== 'GET') return;
-
     var url;
-    try {
-      url = new URL(request.url);
-    } catch (e) {
-      return;
-    }
-
+    try { url = new URL(request.url); } catch (e) { return; }
     if (url.origin !== self.location.origin) return;
 
     event.respondWith(
