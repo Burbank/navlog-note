@@ -6,9 +6,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="NAVLOG NOTE" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2" />
-  <link rel="icon" type="image/png" href="favicon.png?v=2" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
+  <meta name="theme-color" content="#1a2332" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3" />
+  <link rel="icon" type="image/png" href="favicon.png?v=3" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3" />
   <title>NAVLOG NOTE ref OM-A 8.3.2.6 &amp; 8.1.10.2</title>
   <style>
     :root {
@@ -352,6 +355,39 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    .sw-update-banner {
+      position: sticky;
+      top: 0;
+      z-index: 10010;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      margin: -12px -14px 12px;
+      padding: 10px 14px;
+      background: rgba(36, 48, 68, 0.98);
+      border-bottom: 2px solid var(--accent);
+      color: var(--text);
+    }
+
+    .sw-update-banner.hidden { display: none !important; }
+
+    .sw-update-text {
+      margin: 0;
+      flex: 1 1 200px;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .sw-update-banner button {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 8px 14px;
+      background: var(--accent);
+    }
+
     @media (orientation: landscape) and (min-width: 900px) {
       body {
         padding-top: 8px;
@@ -369,6 +405,11 @@
   </style>
 </head>
 <body>
+  <div id="sw-update-banner" class="sw-update-banner hidden" role="status" aria-live="polite">
+    <p class="sw-update-text">New version ready. Open once online after an update, then reload.</p>
+    <button type="button" id="sw-update-reload">Reload</button>
+  </div>
+
   <div class="app">
     <header>
       <h1>NAVLOG NOTE <span class="ref">ref OM-A 8.3.2.6 &amp; 8.1.10.2</span></h1>
@@ -622,6 +663,7 @@
           </li>
           <li>Open the Home Screen icon anytime — works offline like a mini app.</li>
           <li>Fill the form, tap <strong>Copy all text</strong>, then paste into your pilot nav app.</li>
+          <li>If an update banner appears (when online), tap <strong>Reload</strong> to get the latest version.</li>
         </ol>
       </section>
     </div>
@@ -939,7 +981,54 @@
     $("btnCopy").addEventListener("click", copyAll);
     $("btnClear").addEventListener("click", clearForm);
 
+    /* Offline / update banner — same pattern as KLYear */
+    function initServiceWorker() {
+      if (!("serviceWorker" in navigator)) return;
+
+      const banner = document.getElementById("sw-update-banner");
+      const reloadBtn = document.getElementById("sw-update-reload");
+      let waitingWorker = null;
+      let reloadOnControllerChange = false;
+
+      function showUpdateBanner(worker) {
+        waitingWorker = worker || waitingWorker;
+        if (banner) banner.classList.remove("hidden");
+      }
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!reloadOnControllerChange) return;
+        reloadOnControllerChange = false;
+        window.location.reload();
+      });
+
+      if (reloadBtn) {
+        reloadBtn.addEventListener("click", () => {
+          reloadOnControllerChange = true;
+          if (waitingWorker) waitingWorker.postMessage("SKIP_WAITING");
+          window.setTimeout(() => window.location.reload(), 400);
+        });
+      }
+
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").then((reg) => {
+          if (reg.waiting) showUpdateBanner(reg.waiting);
+          try { reg.update(); } catch (_) { /* ignore */ }
+
+          reg.addEventListener("updatefound", () => {
+            const installing = reg.installing;
+            if (!installing) return;
+            installing.addEventListener("statechange", () => {
+              if (installing.state === "installed" && navigator.serviceWorker.controller) {
+                showUpdateBanner(reg.waiting || installing);
+              }
+            });
+          });
+        }).catch(() => { /* ignore */ });
+      });
+    }
+
     load();
+    initServiceWorker();
   </script>
 </body>
 </html>
