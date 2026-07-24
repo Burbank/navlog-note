@@ -498,7 +498,7 @@
           <p class="section-title">Departure clearance:</p>
           <div class="field indent">
             <label for="rwySid">* Runway and SID:</label>
-            <input id="rwySid" name="rwySid" type="text" autocapitalize="characters" placeholder="24L SID name" />
+            <input id="rwySid" name="rwySid" type="text" inputmode="numeric" autocapitalize="characters" placeholder="24L SID name" />
           </div>
           <div class="field indent climb-input">
             <label for="climbTo">* Climb to:</label>
@@ -596,7 +596,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v1.4</p>
+        <p class="howto-version">v1.5</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -609,7 +609,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "1.4";
+    const APP_VERSION = "1.5";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -688,9 +688,6 @@
         if (rejected) flashFieldWarn(el);
         save();
       });
-      if (onFocusClear) {
-        el.addEventListener("focus", () => { if (el.value === onFocusClear) el.value = ""; });
-      }
       el.addEventListener("blur", () => {
         if (onFocusClear && !digitsOnly(el.value)) el.value = onFocusClear;
         else el.value = formatClockDigits(acceptClockDigits(el.value, maxDigits).digits);
@@ -994,9 +991,6 @@
         }
         save();
       });
-      if (onFocusClear) {
-        el.addEventListener("focus", () => { if (el.value === onFocusClear) el.value = ""; });
-      }
       el.addEventListener("blur", () => {
         if (onFocusClear && !el.value.trim()) el.value = onFocusClear;
         else if (finalize) el.value = finalize(el.value);
@@ -1112,14 +1106,32 @@
     ["security", "rvsmCheck", "intersection"].forEach((id) => $(id).addEventListener("input", save));
     {
       const el = $("intersection");
-      el.addEventListener("focus", () => {
-        if (/^full$/i.test(el.value.trim())) el.value = "";
-      });
       el.addEventListener("blur", () => {
         if (!el.value.trim()) el.value = "FULL";
         save();
       });
     }
+    ["security", "rvsmCheck"].forEach((id) => {
+      const el = $(id);
+      el.addEventListener("blur", () => {
+        if (!el.value.trim()) el.value = DEFAULTS[id];
+        save();
+      });
+    });
+
+    /** Tap/focus any field → clear for fresh entry (defaults restored on blur when empty). */
+    function bindClearOnFocus() {
+      for (const id of FIELD_IDS) {
+        if (id === "mnps") continue;
+        const el = $(id);
+        if (!el) continue;
+        el.addEventListener("focus", () => {
+          el.value = "";
+          el.classList.remove("warn-diff");
+        });
+      }
+    }
+    bindClearOnFocus();
     ["rvsmL", "rvsmR", "rvsmSby"].forEach((id) => {
       $(id).addEventListener("input", checkRvsmDiff);
       $(id).addEventListener("blur", checkRvsmDiff);
