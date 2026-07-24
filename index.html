@@ -519,22 +519,70 @@
                  max(12px, env(safe-area-inset-bottom))
                  max(14px, env(safe-area-inset-left));
       }
-      header { margin-bottom: 12px; }
-      h1 { font-size: 1.15rem; }
+      header {
+        margin-bottom: 12px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      h1 { font-size: 1.1rem; text-align: left; }
+      h1 .ref {
+        display: block;
+        margin: 4px 0 0;
+        font-size: 0.62rem;
+        letter-spacing: 0.04em;
+      }
+      .header-clear { align-self: flex-end; }
       .card, .howto { padding: 12px 14px; }
-      .field { margin-bottom: 8px; }
+      .field,
+      .card-fuel .field,
+      .preflight-row .field-over-fuel {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding-left: 0;
+        margin-bottom: 10px;
+      }
+      .field.narrow-input input,
+      .field.climb-input input,
+      .field.time-input input,
+      .field.time-input-long input,
+      .field.mt-input input {
+        max-width: none;
+      }
       input[type="text"], .toggle button { min-height: 44px; padding: 10px 12px; }
       .rvsm-alt-row {
-        flex-wrap: wrap;
-        align-items: flex-start;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 10px;
       }
-      .rvsm-alt-row .row-3 { width: 100%; }
+      .rvsm-alt-row .row-3 {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .row-3 .field {
+        flex: 1 1 30%;
+        min-width: 6.5rem;
+      }
+      .row-3 .field label { min-width: auto; text-align: left; }
+      .row-3 .field input {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        flex: 1 1 auto;
+      }
       .rvsm-alt-row .mnps-row {
         margin-left: 0;
         width: 100%;
       }
       .field.mnps-row {
         flex-wrap: wrap;
+      }
+      .field.mnps-row .toggle { width: 100%; max-width: 16rem; }
+      .howto {
+        flex: 1 1 auto;
+        max-width: none;
+        min-width: 0;
       }
     }
 
@@ -678,9 +726,9 @@
       <section class="howto" aria-label="Offline iPad instructions">
         <div class="howto-grid">
           <div class="howto-col">
-            <h2>Save for offline (iPad)</h2>
+            <h2>Best viewed iPad landscape</h2>
             <ol>
-              <li>Open this page in <strong>Safari</strong> on your iPad.</li>
+              <li><strong>SAVE OFFLINE on your iPad:</strong></li>
               <li>Tap
                 <span class="help-ios-share" aria-hidden="true" title="Share">
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
@@ -698,7 +746,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v2.0</p>
+        <p class="howto-version">v2.1</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -711,7 +759,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "2.0";
+    const APP_VERSION = "2.1";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -729,6 +777,10 @@
     const $ = (id) => document.getElementById(id);
     const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
     const onlyDigits = (n, v) => digitsOnly(v).slice(0, n);
+
+    /** Values wiped by focus-to-clear; used so Clear/Copy still snapshot the prior entry. */
+    const preFocusById = Object.create(null);
+    let suppressFocusClear = false;
 
     function formatHHMMSS(raw) {
       return formatClockDigits(acceptClockDigits(raw, 6).digits);
@@ -934,7 +986,20 @@
 
     function getValues() {
       const data = {};
-      for (const id of FIELD_IDS) data[id] = $(id).value.trim();
+      for (const id of FIELD_IDS) {
+        const el = $(id);
+        if (!el) {
+          data[id] = "";
+          continue;
+        }
+        let v = el.value.trim();
+        // Focus-to-clear empties the field; if the pilot never typed after focus,
+        // keep the pre-focus value for Clear/Copy snapshots (survives blur into confirm).
+        if (!v && !el._editedSinceFocus && preFocusById[id] != null) {
+          v = String(preFocusById[id]).trim();
+        }
+        data[id] = v;
+      }
       return data;
     }
 
@@ -945,11 +1010,21 @@
     }
 
     function setValues(data) {
+      suppressFocusClear = true;
       for (const id of FIELD_IDS) {
         if (data[id] !== undefined && $(id)) $(id).value = data[id];
+        delete preFocusById[id];
       }
       setMnps(data.mnps || "N/A");
       checkRvsmDiff();
+      const active = document.activeElement;
+      if (active && active !== document.body && typeof active.blur === "function") {
+        try { active.blur(); } catch (_) {}
+      }
+      // iOS may focus an input after a button tap; keep suppress through two frames.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { suppressFocusClear = false; });
+      });
     }
 
     function save() {
@@ -1085,11 +1160,21 @@
 
     function clearForm() {
       if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore from H1 or H2.")) return;
-      pushCopyHistory();
-      for (const id of FIELD_IDS) if ($(id)) $(id).value = DEFAULTS[id] ?? "";
+      // Snapshot first (getValues recovers focus-cleared active field via preFocusById).
+      const snap = getValues();
+      const hist = loadHistory();
+      hist.h2 = hist.h1;
+      hist.h1 = snap;
+      saveHistory(hist);
+      suppressFocusClear = true;
+      for (const id of FIELD_IDS) {
+        if ($(id)) $(id).value = DEFAULTS[id] ?? "";
+        delete preFocusById[id];
+      }
       setMnps("N/A");
       save();
       checkRvsmDiff();
+      suppressFocusClear = false;
       if (navigator.onLine) {
         showToast("Cleared — updating…");
         forceLatestIfOnline();
@@ -1270,8 +1355,14 @@
         const el = $(id);
         if (!el) continue;
         el.addEventListener("focus", () => {
+          if (suppressFocusClear) return;
+          preFocusById[id] = el.value;
+          el._editedSinceFocus = false;
           el.value = "";
           el.classList.remove("warn-diff");
+        });
+        el.addEventListener("input", () => {
+          el._editedSinceFocus = true;
         });
       }
     }
