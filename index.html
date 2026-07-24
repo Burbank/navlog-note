@@ -61,10 +61,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 10px 14px;
       margin-bottom: 12px;
       padding-top: 4px;
+      text-align: center;
     }
 
     h1 {
@@ -82,6 +83,17 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--muted);
+    }
+
+    .header-clear {
+      flex-shrink: 0;
+    }
+
+    .header-clear button {
+      min-height: 40px;
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      background: #3a4b61;
     }
 
     .actions {
@@ -256,14 +268,23 @@
 
     .footer-bar {
       display: flex;
-      align-items: stretch;
+      align-items: flex-start;
       gap: 14px;
       margin-top: 14px;
     }
 
     .footer-bar .actions {
-      align-items: center;
-      align-self: center;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      align-self: flex-start;
+      min-width: 9.5rem;
+    }
+
+    .footer-bar .actions button {
+      width: 100%;
+      min-height: 48px;
+      font-size: 1rem;
     }
 
     .howto {
@@ -413,6 +434,9 @@
   <div class="app">
     <header>
       <h1>NAVLOG NOTE <span class="ref">ref OM-A 8.3.2.6 &amp; 8.1.10.2</span></h1>
+      <div class="header-clear">
+        <button type="button" class="secondary" id="btnClear" title="Clears all entered fields">Clear</button>
+      </div>
     </header>
 
     <form id="flightForm" autocomplete="off" spellcheck="false">
@@ -647,7 +671,6 @@
 
     <div class="footer-bar">
       <div class="actions">
-        <button type="button" class="secondary" id="btnClear">Clear</button>
         <button type="button" id="btnCopy">Copy all text</button>
       </div>
       <section class="howto" aria-label="Offline iPad instructions">
@@ -910,6 +933,11 @@
     }
 
     function clearForm() {
+      const ok = window.confirm(
+        "Clear all fields?\n\nEntered values will be reset to defaults (N/A / performed). This cannot be undone."
+      );
+      if (!ok) return;
+
       for (const id of FIELD_IDS) {
         if ($(id)) $(id).value = DEFAULTS[id] ?? "";
       }
