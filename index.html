@@ -138,15 +138,15 @@
 
     .field {
       display: grid;
-      grid-template-columns: minmax(110px, 38%) 1fr;
+      grid-template-columns: 10.5rem 1fr;
       gap: 6px;
       align-items: center;
       margin-bottom: 4px;
     }
 
     .field.indent {
-      grid-template-columns: minmax(130px, 42%) 1fr;
-      padding-left: 10px;
+      grid-template-columns: 10.5rem 1fr;
+      padding-left: 0;
     }
 
     .field.full { grid-template-columns: 1fr; gap: 2px; }
@@ -156,10 +156,28 @@
     .field.time-input-long input { max-width: 16ch; letter-spacing: 0.04em; }
     .field.mt-input input { max-width: 14ch; }
 
+    /* Fat-finger spacing in the two side cards (still landscape-tight overall) */
+    .card-clearance .field,
+    .card-fuel .field {
+      margin-bottom: 10px;
+    }
+
+    /* Longer labels in Fuel / Perf — keep input column aligned */
+    .card-fuel .field {
+      grid-template-columns: 14rem 1fr;
+    }
+
     .preflight-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px 12px;
+      gap: 8px; /* match .grid gap so columns track Clearance | Fuel */
+    }
+
+    /* Sit above Fuel / Perf: same label width + slight right nudge for card chrome */
+    .preflight-row .field-over-fuel {
+      grid-template-columns: 14rem 1fr;
+      padding-left: 13px;
+      box-sizing: border-box;
     }
 
     label {
@@ -207,26 +225,86 @@
 
     .row-3 {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
       margin-bottom: 4px;
     }
 
     .row-3 .field {
-      grid-template-columns: auto 1fr;
+      grid-template-columns: 2.5rem 1fr;
       margin-bottom: 0;
     }
 
-    .rvsm-hint,
-    .dsperfo-hint {
-      margin: 0 0 6px;
-      font-size: 0.7rem;
-      color: var(--muted);
-      line-height: 1.45;
+    .row-3 .field input {
+      width: 100%;
+      max-width: 7.5rem; /* five digits or FL + three */
+      min-width: 6.5rem;
+      box-sizing: border-box;
     }
+
+    .rvsm-alt-row {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px 12px;
+      margin-bottom: 2px;
+    }
+
+    .rvsm-alt-title {
+      flex: 0 0 auto;
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .rvsm-alt-row .row-3 {
+      flex: 0 1 auto;
+      width: min(100%, 28rem);
+      margin-bottom: 0;
+    }
+
+    .rvsm-alt-row .mnps-row {
+      margin: 0 0 0 auto;
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+
+    .field.mnps-row {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 6px 8px;
+      grid-template-columns: none;
+    }
+
+    .field.mnps-row label {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      font-size: 0.82rem;
+    }
+
+    .field.mnps-row .toggle {
+      width: 12.5rem;
+      max-width: 100%;
+      flex: 0 0 auto;
+    }
+
+    .rvsm-hint {
+      display: none;
+      margin: 2px 0 4px;
+      font-size: 0.7rem;
+      color: var(--warn);
+      line-height: 1.35;
+    }
+
+    .rvsm-hint.show { display: block; }
 
     .dsperfo-hint {
       margin: 0 0 8px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1.45;
     }
 
     .paste-here-btn {
@@ -254,7 +332,6 @@
 
     .toggle {
       display: inline-flex;
-      width: 100%;
       overflow: hidden;
       border: 1px solid var(--field-border);
       border-radius: 10px;
@@ -280,16 +357,17 @@
 
     .history-btns {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       gap: 8px;
       flex-shrink: 0;
+      align-items: stretch;
     }
 
     .history-btns button {
-      min-width: 3.5rem;
-      min-height: 52px;
-      padding: 12px 14px;
-      font-size: 1.1rem;
+      min-width: 3.2rem;
+      min-height: 44px;
+      padding: 10px 12px;
+      font-size: 1.05rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       background: var(--btn);
@@ -307,20 +385,21 @@
 
     .footer-bar .actions {
       flex-shrink: 0;
-      min-width: 9.5rem;
+      min-width: 8.5rem;
     }
 
     .footer-bar .actions button {
       width: 100%;
-      min-height: 42px;
-      font-size: 0.92rem;
+      min-height: 44px;
+      font-size: 0.9rem;
     }
 
     .howto {
-      flex: 1;
-      min-width: 0;
+      flex: 1 1 28rem;
+      max-width: none;
+      min-width: 16rem;
       position: relative;
-      padding: 8px 12px 18px;
+      padding: 6px 10px 14px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--panel);
@@ -329,15 +408,19 @@
     .howto-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px 16px;
+      gap: 2px 14px;
+    }
+
+    .howto h2 {
+      margin-bottom: 2px;
     }
 
     .howto ol {
       margin: 0;
-      padding-left: 1.15rem;
+      padding-left: 1.05rem;
       color: var(--muted);
-      font-size: 0.78rem;
-      line-height: 1.35;
+      font-size: 0.7rem;
+      line-height: 1.3;
     }
 
     .howto li + li { margin-top: 2px; }
@@ -436,6 +519,18 @@
       .card, .howto { padding: 12px 14px; }
       .field { margin-bottom: 8px; }
       input[type="text"], .toggle button { min-height: 44px; padding: 10px 12px; }
+      .rvsm-alt-row {
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .rvsm-alt-row .row-3 { width: 100%; }
+      .rvsm-alt-row .mnps-row {
+        margin-left: 0;
+        width: 100%;
+      }
+      .field.mnps-row {
+        flex-wrap: wrap;
+      }
     }
 
     @media (max-width: 700px) {
@@ -474,46 +569,45 @@
               <label for="security">Security check:</label>
               <input id="security" name="security" type="text" value="performed" />
             </div>
-            <div class="field">
+            <div class="field field-over-fuel">
               <label for="rvsmCheck">Rvsm check:</label>
               <input id="rvsmCheck" name="rvsmCheck" type="text" value="performed" />
             </div>
           </div>
         </section>
 
-        <section class="card">
+        <section class="card card-clearance">
           <h2>PDC / Clearance</h2>
           <div class="field narrow-input">
-            <label for="pdc">PDC/ACARS ref:</label>
-            <input id="pdc" name="pdc" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="000" />
+            <label for="atis">Atis code:</label>
+            <input id="atis" name="atis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
           </div>
           <div class="field time-input">
             <label for="ctot">CTOT:</label>
             <input id="ctot" name="ctot" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" value="N/A" />
           </div>
           <div class="field narrow-input">
-            <label for="atis">Atis code:</label>
-            <input id="atis" name="atis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
+            <label for="pdc">PDC/ACARS ref:</label>
+            <input id="pdc" name="pdc" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="000" />
           </div>
-          <p class="section-title">Departure clearance:</p>
-          <div class="field indent">
+          <div class="field">
             <label for="rwySid">* Runway and SID:</label>
             <input id="rwySid" name="rwySid" type="text" inputmode="numeric" autocapitalize="characters" placeholder="24L SID name" />
           </div>
-          <div class="field indent climb-input">
+          <div class="field climb-input">
             <label for="climbTo">* Climb to:</label>
             <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000 or FL000" />
           </div>
-          <div class="field indent narrow-input">
+          <div class="field narrow-input">
             <label for="transponder">* Transponder:</label>
             <input id="transponder" name="transponder" type="text" inputmode="numeric" pattern="[0-7]*" maxlength="4" placeholder="0000" title="Octal squawk 0000–7777 (digits 0–7 only)" />
           </div>
         </section>
 
-        <section class="card">
+        <section class="card card-fuel">
           <h2>Fuel / Perf</h2>
-          <div class="field full mt-input">
-            <label for="fuel">Fuel on board when starting engines:</label>
+          <div class="field mt-input">
+            <label for="fuel">Fuel when starting engines:</label>
             <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0 MT" />
           </div>
           <div class="field mt-input">
@@ -525,15 +619,15 @@
             Longpress “Calculated - 00:00:00z” in DSPERFO and
             <button type="button" id="btnPasteDsperfo" class="paste-here-btn">PASTE HERE</button>.
           </p>
-          <div class="field indent time-input-long">
+          <div class="field time-input-long">
             <label for="calcAt">* Calculated at:</label>
             <input id="calcAt" name="calcAt" type="text" inputmode="numeric" maxlength="8" placeholder="HH:MM:SS" />
           </div>
-          <div class="field indent">
+          <div class="field">
             <label for="rwy">* RWY:</label>
             <input id="rwy" name="rwy" type="text" inputmode="numeric" pattern="[0-9]*" autocapitalize="characters" placeholder="24L" />
           </div>
-          <div class="field indent">
+          <div class="field">
             <label for="intersection">* INTERSECTION:</label>
             <input id="intersection" name="intersection" type="text" value="FULL" />
           </div>
@@ -541,28 +635,31 @@
 
         <section class="card span-all">
           <h2>RVSM / MNPS</h2>
-          <div class="row-3">
-            <div class="field">
-              <label for="rvsmL">Before RVSM entry &nbsp; L:</label>
-              <input id="rvsmL" name="rvsmL" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+          <div class="rvsm-alt-row">
+            <p class="rvsm-alt-title">Before RVSM entry</p>
+            <div class="row-3" role="group" aria-label="Before RVSM entry altimeters">
+              <div class="field">
+                <label for="rvsmL">L:</label>
+                <input id="rvsmL" name="rvsmL" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+              </div>
+              <div class="field">
+                <label for="rvsmR">R:</label>
+                <input id="rvsmR" name="rvsmR" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+              </div>
+              <div class="field">
+                <label for="rvsmSby">SBY:</label>
+                <input id="rvsmSby" name="rvsmSby" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+              </div>
             </div>
-            <div class="field">
-              <label for="rvsmR">R:</label>
-              <input id="rvsmR" name="rvsmR" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
-            </div>
-            <div class="field">
-              <label for="rvsmSby">SBY:</label>
-              <input id="rvsmSby" name="rvsmSby" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+            <div class="field mnps-row">
+              <label>MNPS RTE CHECKS: <span class="ref">8.3.2.11.3 (a)(5)</span></label>
+              <div class="toggle" role="group" aria-label="MNPS RTE CHECKS">
+                <button type="button" id="mnpsNA" class="active" data-value="N/A">N/A</button>
+                <button type="button" id="mnpsPerformed" data-value="PERFORMED">PERFORMED</button>
+              </div>
             </div>
           </div>
-          <p class="rvsm-hint">Altimeter cross-check before RVSM — max difference 200 ft</p>
-          <div class="field">
-            <label>MNPS RTE CHECKS: <span class="ref">8.3.2.11.3 (a)(5)</span></label>
-            <div class="toggle" role="group" aria-label="MNPS RTE CHECKS">
-              <button type="button" id="mnpsNA" class="active" data-value="N/A">N/A</button>
-              <button type="button" id="mnpsPerformed" data-value="PERFORMED">PERFORMED</button>
-            </div>
-          </div>
+          <p class="rvsm-hint" id="rvsmHint">Altimeter cross-check before RVSM — max difference 200 ft</p>
           <input type="hidden" id="mnps" name="mnps" value="N/A" />
         </section>
       </div>
@@ -596,7 +693,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v1.7</p>
+        <p class="howto-version">v1.8</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -609,7 +706,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "1.7";
+    const APP_VERSION = "1.8";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -941,7 +1038,7 @@
         `* Climb to:  ${outValue(v.climbTo)}`, "",
         `* Transponder: ${outValue(v.transponder)}`, "",
         "___________________________________", "",
-        `Fuel on board when starting engines: ${outValue(v.fuel, { weight: true })}`, "",
+        `Fuel when starting engines: ${outValue(v.fuel, { weight: true })}`, "",
         `TOM:    ${outValue(v.tom, { weight: true })}`, "",
         "DSPERFO:", "",
         `* Calculated at     : ${outValue(v.calcAt, { time: true })}`, "",
@@ -1104,6 +1201,8 @@
         }
       }
       ids.forEach((id) => $(id).classList.toggle("warn-diff", warn.has(id)));
+      const hint = $("rvsmHint");
+      if (hint) hint.classList.toggle("show", warn.size > 0);
     }
 
     bindFormatter("pdc", (v) => onlyDigits(3, v));

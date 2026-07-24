@@ -1,11 +1,11 @@
 /**
- * NAVLOG NOTE v1.7 — offline shell (KLYear-style, no forced navigate flash).
+ * NAVLOG NOTE v1.8 — offline shell (KLYear-style, no forced navigate flash).
  * Online: network-first. Updates via banner Reload.
  */
 (function () {
   'use strict';
 
-  var CACHE = 'navlog-note-v1.7.0';
+  var CACHE = 'navlog-note-v1.8.0';
   var PRECACHE = [
     './',
     './index.html',
