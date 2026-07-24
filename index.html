@@ -641,7 +641,7 @@
           </div>
           <div class="field narrow-input">
             <label for="pdc">PDC/ACARS ref:</label>
-            <input id="pdc" name="pdc" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="000" />
+            <input id="pdc" name="pdc" type="text" inputmode="numeric" maxlength="8" placeholder="000" autocomplete="off" autocapitalize="characters" spellcheck="false" title="PDC/ACARS ref — digits and letters (up to 8)" />
           </div>
           <div class="field">
             <label for="rwySid">* Runway and SID:</label>
@@ -746,7 +746,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v2.2</p>
+        <p class="howto-version">v2.3</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -759,7 +759,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "2.2";
+    const APP_VERSION = "2.3";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -777,6 +777,7 @@
     const $ = (id) => document.getElementById(id);
     const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
     const onlyDigits = (n, v) => digitsOnly(v).slice(0, n);
+    const formatPdc = (v) => String(v || "").toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 8);
 
     /** Values wiped by focus-to-clear; used so Clear/Copy still snapshot the prior entry. */
     const preFocusById = Object.create(null);
@@ -1310,7 +1311,7 @@
       if (hint) hint.classList.toggle("show", warnLR);
     }
 
-    bindFormatter("pdc", (v) => onlyDigits(3, v));
+    bindFormatter("pdc", formatPdc);
     bindClock("ctot", 4, { onFocusClear: "N/A" });
     bindFormatter("atis", oneLetter);
     bindRunway("rwySid", { allowSid: true });
