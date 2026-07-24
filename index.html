@@ -596,7 +596,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v1.5</p>
+        <p class="howto-version">v1.6</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -609,7 +609,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "1.5";
+    const APP_VERSION = "1.6";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -663,6 +663,19 @@
       return d.slice(0, 2) + ":" + d.slice(2, 4) + ":" + d.slice(4, 6);
     }
 
+    /** Place caret after N digits in a formatted HH:MM[:SS] string. */
+    function caretPosAfterDigits(formatted, digitCount) {
+      if (digitCount <= 0) return 0;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i++) {
+        if (/\d/.test(formatted[i])) {
+          seen++;
+          if (seen === digitCount) return i + 1;
+        }
+      }
+      return formatted.length;
+    }
+
     function flashFieldWarn(el) {
       el.classList.add("warn-diff");
       clearTimeout(el._warnTimer);
@@ -677,12 +690,12 @@
         if (onFocusClear && /n\/?a/i.test(before)) {
           before = before.replace(/n\/?a/gi, "");
         }
+        const digitsBeforeCaret = digitsOnly(before.slice(0, start || 0)).length;
         const { digits, rejected } = acceptClockDigits(before, maxDigits);
         const next = formatClockDigits(digits);
         if (next !== el.value) {
           el.value = next;
-          const removed = before.length - next.length;
-          const pos = Math.max(0, Math.min(next.length, (start || 0) - Math.max(0, removed)));
+          const pos = caretPosAfterDigits(next, Math.min(digitsBeforeCaret, digits.length));
           try { el.setSelectionRange(pos, pos); } catch (_) {}
         }
         if (rejected) flashFieldWarn(el);
@@ -970,7 +983,7 @@
     }
 
     function clearForm() {
-      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults (N/A / performed). This cannot be undone.")) return;
+      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore from H1 or H2.")) return;
       for (const id of FIELD_IDS) if ($(id)) $(id).value = DEFAULTS[id] ?? "";
       setMnps("N/A");
       save();
