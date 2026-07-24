@@ -290,14 +290,21 @@
     .howto {
       flex: 1;
       min-width: 0;
-      padding: 14px 16px;
+      padding: 10px 14px;
       border: 1px solid var(--line);
       border-radius: 14px;
       background: var(--panel);
     }
 
+    .howto-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 20px;
+      align-items: start;
+    }
+
     .howto h2 {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -307,13 +314,13 @@
 
     .howto ol {
       margin: 0;
-      padding-left: 1.25rem;
+      padding-left: 1.2rem;
       color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.55;
+      font-size: 0.82rem;
+      line-height: 1.4;
     }
 
-    .howto li + li { margin-top: 4px; }
+    .howto li + li { margin-top: 3px; }
 
     .howto strong { color: var(--text); font-weight: 650; }
 
@@ -328,6 +335,10 @@
 
       .footer-bar .actions button {
         flex: 1;
+      }
+
+      .howto-grid {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -411,16 +422,56 @@
 
     @media (orientation: landscape) and (min-width: 900px) {
       body {
-        padding-top: 8px;
-        padding-bottom: 8px;
+        padding-top: 6px;
+        padding-bottom: 6px;
       }
 
-      .card, .howto { padding: 12px 14px; }
-      .field { margin-bottom: 6px; }
+      header {
+        margin-bottom: 8px;
+        padding-top: 0;
+      }
+
+      h1 { font-size: 1.05rem; }
+
+      .grid { gap: 8px; }
+
+      .card, .howto {
+        padding: 8px 12px;
+        border-radius: 12px;
+      }
+
+      .card h2 {
+        margin-bottom: 6px;
+        font-size: 0.72rem;
+      }
+
+      .section-title {
+        margin: 6px 0 4px;
+      }
+
+      .field { margin-bottom: 4px; }
+
+      .preflight-row { gap: 6px 12px; }
 
       input[type="text"],
       .toggle button {
-        min-height: 40px;
+        min-height: 36px;
+        padding: 6px 10px;
+      }
+
+      .footer-bar {
+        margin-top: 8px;
+        gap: 10px;
+      }
+
+      .footer-bar .actions button {
+        min-height: 42px;
+        font-size: 0.92rem;
+      }
+
+      .howto ol {
+        font-size: 0.78rem;
+        line-height: 1.35;
       }
     }
   </style>
@@ -674,20 +725,28 @@
         <button type="button" id="btnCopy">Copy all text</button>
       </div>
       <section class="howto" aria-label="Offline iPad instructions">
-        <h2>Save for offline (iPad)</h2>
-        <ol>
-          <li>Open this page in <strong>Safari</strong> on your iPad.</li>
-          <li>Tap
-            <span class="help-ios-share" aria-hidden="true" title="Share">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
-            </span>
-            <span class="sr-only">Share</span>
-            → <strong>Add to Home Screen</strong>.
-          </li>
-          <li>Open the Home Screen icon anytime — works offline like a mini app.</li>
-          <li>Fill the form, tap <strong>Copy all text</strong>, then paste into your pilot nav app.</li>
-          <li>If an update banner appears (when online), tap <strong>Reload</strong> to get the latest version.</li>
-        </ol>
+        <div class="howto-grid">
+          <div class="howto-col">
+            <h2>Save for offline (iPad)</h2>
+            <ol>
+              <li>Open this page in <strong>Safari</strong> on your iPad.</li>
+              <li>Tap
+                <span class="help-ios-share" aria-hidden="true" title="Share">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
+                </span>
+                <span class="sr-only">Share</span>
+                → <strong>Add to Home Screen</strong>.
+              </li>
+            </ol>
+          </div>
+          <div class="howto-col">
+            <ol start="3">
+              <li>Open the Home Screen icon anytime — works offline like a mini app.</li>
+              <li>Fill the form, tap <strong>Copy all text</strong>, then paste into your pilot nav app.</li>
+              <li>If an update banner appears (when online), tap <strong>Reload</strong> to get the latest version.</li>
+            </ol>
+          </div>
+        </div>
       </section>
     </div>
   </div>
