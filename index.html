@@ -623,7 +623,7 @@
               <input id="security" name="security" type="text" value="performed" />
             </div>
             <div class="field field-over-fuel">
-              <label for="rvsmCheck">Rvsm check:</label>
+              <label for="rvsmCheck">RVSM check:</label>
               <input id="rvsmCheck" name="rvsmCheck" type="text" value="performed" />
             </div>
           </div>
@@ -670,7 +670,7 @@
           <p class="section-title">DSPERFO:</p>
           <p class="dsperfo-hint">
             Longpress “Calculated - 00:00:00z” in DSPERFO and
-            <button type="button" id="btnPasteDsperfo" class="paste-here-btn">PASTE HERE</button>.
+            <button type="button" id="btnPasteDsperfo" class="paste-here-btn">PASTE HERE</button>
           </p>
           <div class="field time-input-long">
             <label for="calcAt">* Calculated at:</label>
@@ -712,7 +712,7 @@
               </div>
             </div>
           </div>
-          <p class="rvsm-hint" id="rvsmHint">Altimeter cross-check before RVSM — max difference 200 ft</p>
+          <p class="rvsm-hint" id="rvsmHint">L/R altimeter cross-check before RVSM — max difference 200 ft</p>
           <input type="hidden" id="mnps" name="mnps" value="N/A" />
         </section>
       </div>
@@ -746,7 +746,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v2.1</p>
+        <p class="howto-version">v2.2</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -759,7 +759,7 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "2.1";
+    const APP_VERSION = "2.2";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -1101,7 +1101,7 @@
         "___________________________________", "",
         "PREFLIGHT", "",
         `Security check: ${outValue(v.security)}`, "",
-        `Rvsm check: ${outValue(v.rvsmCheck)}`, "",
+        `RVSM check: ${outValue(v.rvsmCheck)}`, "",
         "___________________________________", "",
         `PDC/ACARS ref: ${outValue(v.pdc)}`, "",
         `CTOT:  ${outValue(v.ctot, { time: true })}`, "",
@@ -1300,22 +1300,14 @@
     }
 
     function checkRvsmDiff() {
-      const ids = ["rvsmL", "rvsmR", "rvsmSby"];
-      const vals = ids.map((id) => ({ id, ft: parseAltFt($(id).value) }));
-      const warn = new Set();
-      for (let i = 0; i < vals.length; i++) {
-        for (let j = i + 1; j < vals.length; j++) {
-          const a = vals[i], b = vals[j];
-          if (a.ft === null || b.ft === null) continue;
-          if (Math.abs(a.ft - b.ft) > RVSM_MAX_DIFF_FT) {
-            warn.add(a.id);
-            warn.add(b.id);
-          }
-        }
-      }
-      ids.forEach((id) => $(id).classList.toggle("warn-diff", warn.has(id)));
+      const left = parseAltFt($("rvsmL").value);
+      const right = parseAltFt($("rvsmR").value);
+      const warnLR = left !== null && right !== null && Math.abs(left - right) > RVSM_MAX_DIFF_FT;
+      $("rvsmL").classList.toggle("warn-diff", warnLR);
+      $("rvsmR").classList.toggle("warn-diff", warnLR);
+      $("rvsmSby").classList.remove("warn-diff");
       const hint = $("rvsmHint");
-      if (hint) hint.classList.toggle("show", warn.size > 0);
+      if (hint) hint.classList.toggle("show", warnLR);
     }
 
     bindFormatter("pdc", (v) => onlyDigits(3, v));
@@ -1367,7 +1359,7 @@
       }
     }
     bindClearOnFocus();
-    ["rvsmL", "rvsmR", "rvsmSby"].forEach((id) => {
+    ["rvsmL", "rvsmR"].forEach((id) => {
       $(id).addEventListener("input", checkRvsmDiff);
       $(id).addEventListener("blur", checkRvsmDiff);
     });
