@@ -984,6 +984,7 @@
 
     function clearForm() {
       if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore from H1 or H2.")) return;
+      pushCopyHistory();
       for (const id of FIELD_IDS) if ($(id)) $(id).value = DEFAULTS[id] ?? "";
       setMnps("N/A");
       save();
