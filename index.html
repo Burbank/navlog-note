@@ -596,7 +596,7 @@
             </ol>
           </div>
         </div>
-        <p class="howto-version">v1.6</p>
+        <p class="howto-version">v1.7</p>
       </section>
       <div class="actions">
         <button type="button" id="btnCopy">Copy all text</button>
@@ -609,10 +609,13 @@
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "1.6";
+    const APP_VERSION = "1.7";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
+    /** Obscure CounterAPI namespace; synced into private repo Burbank/navlog-note-stats */
+    const USAGE_NAMESPACE = "navlog-burbank-d0365decf143e070";
+    const USAGE_HIT_PREFIX = "navlog-note-usage-hit-";
     const FIELD_IDS = [
       "security", "rvsmCheck", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
       "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps"
@@ -1214,7 +1217,23 @@
     load();
     updateHistoryButtons();
     checkRvsmDiff();
+    trackUsageOncePerDay();
     initServiceWorker();
+
+    /** One anonymous open-count per device per UTC day (skipped on localhost). */
+    function trackUsageOncePerDay() {
+      try {
+        const host = location.hostname;
+        if (host === "localhost" || host === "127.0.0.1") return;
+        const day = new Date().toISOString().slice(0, 10);
+        const key = USAGE_HIT_PREFIX + day;
+        if (localStorage.getItem(key)) return;
+        const url = "https://api.counterapi.dev/v1/" + USAGE_NAMESPACE + "/" + day + "/up";
+        fetch(url, { mode: "cors", keepalive: true })
+          .then((res) => { if (res.ok) localStorage.setItem(key, "1"); })
+          .catch(() => {});
+      } catch (_) {}
+    }
   </script>
 </body>
 </html>
