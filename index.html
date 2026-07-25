@@ -420,7 +420,7 @@
         "hist howto dept"
         "land land arr"
         "flog flog flogCopy"
-        "flogPrev flogPrev flogPrev";
+        "flogPrev flogPrev flogPf90";
       column-gap: 10px;
       row-gap: 12px;
       margin-top: 8px;
@@ -432,9 +432,10 @@
       grid-area: flogPrev;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
       min-width: 0;
       padding: 2px 4px 0;
+      align-self: stretch;
     }
 
     .log-prev-line {
@@ -453,6 +454,35 @@
 
     .log-prev-line.empty {
       opacity: 0.35;
+    }
+
+    /* Same footprint as copy LOG text — PF T/O+LDG count in last 90 days */
+    .log-pf90 {
+      grid-area: flogPf90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: start;
+      width: 100%;
+      min-height: 40px;
+      margin-top: 2px; /* match .log-prev top pad so badge lines up with first history row */
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.25;
+      font-variant-numeric: tabular-nums;
+      box-sizing: border-box;
+    }
+
+    .log-pf90 strong {
+      color: var(--text);
+      font-weight: 700;
     }
 
     .history-col,
@@ -617,19 +647,6 @@
       min-width: 0;
     }
 
-    .landing-prep h2 {
-      flex: 0 0 11.5rem;
-      width: 11.5rem;
-      margin: 0;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      line-height: 1.25;
-      white-space: nowrap;
-    }
-
     /* Compact fields; left edges of ARR/OFF/AIR inputs snap to RVSM R via JS */
     .landing-fields {
       flex: 0 0 auto;
@@ -717,17 +734,6 @@
       justify-content: center;
       gap: 2px;
       min-width: 5.5rem;
-    }
-
-    .flight-log h2 {
-      margin: 0;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      line-height: 1.25;
-      white-space: nowrap;
     }
 
     /* Date, then dept utc, then days ago — stacked to stay narrow */
@@ -1118,11 +1124,6 @@
       .landing-prep {
         flex-wrap: wrap;
       }
-      .landing-prep h2 {
-        flex: 1 1 auto;
-        width: auto;
-        white-space: normal;
-      }
       .landing-fields .field {
         flex: 1 1 30%;
         min-width: 6.5rem;
@@ -1157,16 +1158,12 @@
           "arr"
           "flog"
           "flogCopy"
-          "flogPrev";
+          "flogPrev"
+          "flogPf90";
       }
       .landing-prep {
         flex-direction: column;
         align-items: stretch;
-      }
-      .landing-prep h2 {
-        width: auto;
-        flex: none;
-        white-space: normal;
       }
       .landing-ref {
         margin-left: 0;
@@ -1222,22 +1219,11 @@
         </p>
       </div>
       <div class="grid">
-        <section class="card span-all">
-          <h2>Preflight</h2>
-          <div class="preflight-row">
-            <div class="field">
-              <label for="security">Security check:</label>
-              <input id="security" name="security" type="text" value="performed" />
-            </div>
-            <div class="field field-over-fuel">
-              <label for="rvsmCheck">RVSM check:</label>
-              <input id="rvsmCheck" name="rvsmCheck" type="text" value="performed" />
-            </div>
-          </div>
-        </section>
-
         <section class="card card-clearance">
-          <h2>PDC / Clearance</h2>
+          <div class="field">
+            <label for="security">Security check:</label>
+            <input id="security" name="security" type="text" value="performed" />
+          </div>
           <div class="field narrow-input">
             <label for="atis">DEPT ATIS:</label>
             <input id="atis" name="atis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
@@ -1265,7 +1251,6 @@
         </section>
 
         <section class="card card-fuel">
-          <h2>Fuel / Perf</h2>
           <div class="field mt-input">
             <label for="fuel">Fuel when starting engines:</label>
             <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0 MT" />
@@ -1294,7 +1279,6 @@
         </section>
 
         <section class="card span-all">
-          <h2>RVSM / MNPS</h2>
           <div class="rvsm-alt-row">
             <p class="rvsm-alt-title">Before RVSM entry</p>
             <div class="row-3" role="group" aria-label="Before RVSM entry altimeters">
@@ -1343,14 +1327,13 @@
           </span></p>
           <p class="howto-item" role="listitem"><span class="n">4.</span><span>Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</span></p>
         </div>
-        <p class="howto-version">v2.9</p>
+        <p class="howto-version">v2.10</p>
       </section>
       <div class="dept-col">
         <button type="button" id="btnCopy">copy DEPT text</button>
         <div class="phase-rule" aria-hidden="true"></div>
       </div>
       <section class="landing-prep" aria-label="Landing preparation">
-        <h2>landing preparation</h2>
         <div class="row-3 landing-fields" role="group" aria-label="Arrival ATIS and landing distance">
           <div class="field">
             <label for="arrAtis">ARR ATIS:</label>
@@ -1367,7 +1350,6 @@
       <section class="flight-log" aria-label="Your log">
         <div class="flight-log-start">
           <div class="flight-log-lead">
-            <h2>your log</h2>
             <div class="flight-log-date-stack" id="logDateStack" aria-live="polite">
               <span class="flight-log-date" id="logDate"></span>
               <span class="flight-log-date-hint">dept utc</span>
@@ -1426,6 +1408,15 @@
         <p class="log-prev-line empty" data-slot="0">—</p>
         <p class="log-prev-line empty" data-slot="1">—</p>
         <p class="log-prev-line empty" data-slot="2">—</p>
+        <p class="log-prev-line empty" data-slot="3">—</p>
+        <p class="log-prev-line empty" data-slot="4">—</p>
+        <p class="log-prev-line empty" data-slot="5">—</p>
+        <p class="log-prev-line empty" data-slot="6">—</p>
+        <p class="log-prev-line empty" data-slot="7">—</p>
+        <p class="log-prev-line empty" data-slot="8">—</p>
+      </div>
+      <div class="log-pf90" id="logPf90" aria-live="polite" title="Pilot-flying takeoffs and landings in the last 90 days">
+        <span><strong id="logPf90Count">0</strong> T/O LDG last 90 days</span>
       </div>
     </div>
   </div>
@@ -1437,7 +1428,11 @@
     const HISTORY_KEY = "flight-plan-form-history-v2";
     const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
     const LOG_PREV_KEY = "flight-plan-form-log-prev-v1";
-    const APP_VERSION = "2.9";
+    const LOG_PREV_DISPLAY = 9;
+    /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
+    const LOG_PREV_STORE_MAX = 60;
+    const LOG_PF_WINDOW_DAYS = 90;
+    const APP_VERSION = "2.10";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -1445,7 +1440,7 @@
     const USAGE_NAMESPACE = "navlog-burbank-d0365decf143e070";
     const USAGE_HIT_PREFIX = "navlog-note-usage-hit-";
     const FIELD_IDS = [
-      "security", "rvsmCheck", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
+      "security", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
       "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps",
       "arrAtis", "ldis", "logPf", "logAcft", "logDeptDate", "logDep", "logArr",
       "offBlocks", "airborne", "touchdown", "onBlocks"
@@ -1454,7 +1449,7 @@
     const LOG_TIME_IDS = ["offBlocks", "airborne", "touchdown", "onBlocks"];
     const LOG_FIELD_IDS = ["logPf", "logAcft", "logDeptDate", "logDep", "logArr", ...LOG_TIME_IDS];
     const DEFAULTS = {
-      security: "performed", rvsmCheck: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
+      security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
       logAcft: "CKA", logPf: "no", logDeptDate: "", logDep: "XXX", logArr: "XXX"
     };
     const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -1800,27 +1795,50 @@
         const raw = localStorage.getItem(LOG_PREV_KEY);
         if (!raw) return [];
         const data = JSON.parse(raw);
-        return Array.isArray(data) ? data.slice(0, 3) : [];
+        return Array.isArray(data) ? data.slice(0, LOG_PREV_STORE_MAX) : [];
       } catch (_) {
         return [];
       }
     }
 
     function saveLogPrev(list) {
-      localStorage.setItem(LOG_PREV_KEY, JSON.stringify(list.slice(0, 3)));
+      localStorage.setItem(LOG_PREV_KEY, JSON.stringify(list.slice(0, LOG_PREV_STORE_MAX)));
     }
 
-    /** Render up to 3 lines: newest at top, oldest at bottom.
-     *  “— N days ago” only on the most recent PF leg (not PM). */
+    /** PF flights in the last 90 days → each counts as one T/O + one LDG. */
+    function countPfToLdgLast90Days() {
+      const list = loadLogPrev();
+      const now = new Date();
+      const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const cutoff = today - LOG_PF_WINDOW_DAYS * 86400000;
+      let n = 0;
+      for (const v of list) {
+        if (!v || v.logPf !== "yes") continue;
+        const dep = parseLogDeptDate(v.logDeptDate);
+        if (!dep) continue;
+        const t = dep.getTime();
+        if (t >= cutoff && t <= today) n++;
+      }
+      return n;
+    }
+
+    function updateLogPf90Badge() {
+      const el = $("logPf90Count");
+      if (el) el.textContent = String(countPfToLdgLast90Days());
+    }
+
+    /** Render display lines: newest at top, oldest at bottom.
+     *  “— N days ago” only on the most recent PF leg among the visible lines (not PM). */
     function renderLogPrev() {
       const list = loadLogPrev();
       const root = $("logPrev");
       if (!root) return;
-      const pfAgoIndex = list.findIndex((v) => v && v.logPf === "yes");
+      const visible = list.slice(0, LOG_PREV_DISPLAY);
+      const pfAgoIndex = visible.findIndex((v) => v && v.logPf === "yes");
       root.querySelectorAll(".log-prev-line").forEach((el, i) => {
-        let line = formatLogPrevLine(list[i]);
+        let line = formatLogPrevLine(visible[i]);
         if (line && i === pfAgoIndex) {
-          const ago = logDaysAgoText(list[i].logDeptDate);
+          const ago = logDaysAgoText(visible[i].logDeptDate);
           if (ago) line += " " + ago;
         }
         if (line) {
@@ -1831,6 +1849,7 @@
           el.classList.add("empty");
         }
       });
+      updateLogPf90Badge();
     }
 
     function snapshotLogLeg() {
@@ -1862,7 +1881,7 @@
       } else {
         list.unshift(snap);
       }
-      saveLogPrev(list.slice(0, 3));
+      saveLogPrev(list);
       renderLogPrev();
     }
 
@@ -2155,13 +2174,10 @@
       const v = getValues();
       const lines = [
         "___________________________________", "",
-        "PREFLIGHT", "",
         `Security check: ${outValue(v.security)}`, "",
-        `RVSM check: ${outValue(v.rvsmCheck)}`, "",
-        "___________________________________", "",
-        `PDC/ACARS ref: ${outValue(v.pdc)}`, "",
-        `CTOT:  ${outValue(v.ctot, { time: true })}`, "",
         `DEPT ATIS: ${outValue(v.atis)}`, "",
+        `CTOT:  ${outValue(v.ctot, { time: true })}`, "",
+        `PDC/ACARS ref: ${outValue(v.pdc)}`, "",
         "Departure clearance:", "",
         `* Runway and SID: ${outValue(v.rwySid)}`, "",
         `* Climb to:  ${outValue(v.climbTo)}`, "",
@@ -2445,7 +2461,7 @@
     bindFormatter("rvsmR", (v) => onlyDigits(5, v));
     bindFormatter("rvsmSby", (v) => onlyDigits(5, v));
 
-    ["security", "rvsmCheck", "intersection"].forEach((id) => $(id).addEventListener("input", save));
+    ["security", "intersection"].forEach((id) => $(id).addEventListener("input", save));
     {
       const el = $("intersection");
       el.addEventListener("blur", () => {
@@ -2453,13 +2469,13 @@
         save();
       });
     }
-    ["security", "rvsmCheck"].forEach((id) => {
-      const el = $(id);
+    {
+      const el = $("security");
       el.addEventListener("blur", () => {
-        if (!el.value.trim()) el.value = DEFAULTS[id];
+        if (!el.value.trim()) el.value = DEFAULTS.security;
         save();
       });
-    });
+    }
 
     /** Tap/focus any field → clear for fresh entry (defaults restored on blur when empty). */
     function bindClearOnFocus() {
