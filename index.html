@@ -14,6 +14,13 @@
   <link rel="icon" type="image/png" href="favicon.png?v=11" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=11" />
   <title>NAVLOG NOTE</title>
+  <script>
+    try {
+      if (localStorage.getItem("flight-plan-form-theme-v1") === "bright") {
+        document.documentElement.classList.add("theme-bright");
+      }
+    } catch (e) {}
+  </script>
   <style>
     :root {
       --bg: #1a2332;
@@ -28,11 +35,118 @@
       --accent: var(--klm-blue);
       --btn: var(--klm-blue-hover);
       --btn-press: var(--klm-blue-dark);
+      --btn-text: #ffffff;
       --ok: #3db88a;
       --field: #15202e;
       --field-border: #4a607a;
       --warn: #c45c5c;
+      --placeholder: #6b7f96;
+      --soft-accent: rgba(0, 161, 228, 0.18);
+      --soft-warn-bg: rgba(180, 70, 70, 0.28);
+      --soft-panel: rgba(0, 0, 0, 0.22);
+      --date-popover-bg: #1c1c1e;
       --radius: 10px;
+      color-scheme: dark;
+    }
+
+    /* Temporary Hi-Contrast Day Theme — cockpit daylight readability experiment */
+    html.theme-bright {
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --line: #000000;
+      --text: #000000;
+      --muted: #000000;
+      --klm-blue: #003d7a;
+      --klm-blue-hover: #002a54;
+      --klm-blue-dark: #001a33;
+      --accent: #003d7a;
+      --btn: #003d7a;
+      --btn-press: #001a33;
+      --btn-text: #ffffff;
+      --ok: #005c32;
+      --field: #ffffff;
+      --field-border: #000000;
+      --warn: #8b0000;
+      --placeholder: #8a8a8a;
+      --soft-accent: transparent;
+      --soft-warn-bg: #ffe5e5;
+      --soft-panel: #f0f0f0;
+      --date-popover-bg: #ffffff;
+      color-scheme: light;
+    }
+
+    /* Bright: thicker strokes + heavier type for sunlit cockpit glare */
+    html.theme-bright body {
+      -webkit-font-smoothing: antialiased;
+      font-weight: 500;
+    }
+
+    html.theme-bright .card,
+    html.theme-bright .howto,
+    html.theme-bright .flight-log,
+    html.theme-bright .landing-prep {
+      border-width: 2px;
+    }
+
+    html.theme-bright label,
+    html.theme-bright .howto-item,
+    html.theme-bright .app-rec,
+    html.theme-bright .app-rec-liability,
+    html.theme-bright .log-data-note,
+    html.theme-bright .preflight-banner,
+    html.theme-bright .dsperfo-hint,
+    html.theme-bright .landing-ref,
+    html.theme-bright .oma-ref,
+    html.theme-bright .view-hint {
+      opacity: 1;
+      color: #000;
+      font-weight: 650;
+    }
+
+    html.theme-bright input[type="text"],
+    html.theme-bright select,
+    html.theme-bright .flight-log-acft,
+    html.theme-bright .flight-log-apt {
+      border-width: 2px;
+      font-weight: 650;
+      color: #000;
+      background: #fff;
+    }
+
+    /* Placeholders stay muted so they never look like typed values */
+    html.theme-bright input::placeholder {
+      color: var(--placeholder);
+      font-weight: 400;
+      opacity: 1;
+    }
+
+    html.theme-bright .toggle {
+      border-width: 2px;
+      border-color: #000;
+    }
+
+    html.theme-bright .toggle button {
+      color: #000;
+      font-weight: 700;
+    }
+
+    html.theme-bright .toggle button.active {
+      color: #fff;
+    }
+
+    html.theme-bright .rvsm-hint,
+    html.theme-bright .howto-version,
+    html.theme-bright .flight-log-date,
+    html.theme-bright .flight-log-sum strong,
+    html.theme-bright .flight-log-date-hint,
+    html.theme-bright .flight-log-days-ago {
+      opacity: 1;
+      color: #000;
+      font-weight: 700;
+    }
+
+    html.theme-bright .rvsm-hint.show {
+      color: #8b0000;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -134,11 +248,13 @@
       align-self: center;
     }
 
-    .header-clear button {
+    .header-clear button,
+    .header-theme button {
       min-height: 28px;
       padding: 3px 10px;
       font-size: 0.78rem;
       background: var(--btn);
+      color: var(--btn-text);
     }
 
     button {
@@ -150,7 +266,7 @@
       min-height: 40px;
       font-size: 0.95rem;
       font-weight: 600;
-      color: #fff;
+      color: var(--btn-text);
       background: var(--btn);
       cursor: pointer;
     }
@@ -277,7 +393,7 @@
     }
 
     input.warn-diff {
-      background: rgba(180, 70, 70, 0.28);
+      background: var(--soft-warn-bg);
       border-color: var(--warn);
     }
 
@@ -286,7 +402,7 @@
       border-color: var(--warn);
     }
 
-    input::placeholder { color: #6b7f96; }
+    input::placeholder { color: var(--placeholder); }
 
     .row-3 {
       display: flex;
@@ -581,14 +697,15 @@
       pointer-events: none;
     }
 
-    /* Only PF legs highlight (recency focus) — PM stays muted */
-    .log-prev-row.pf > span {
+    /* PF cue: tiny box around ROLE letters only (no whole-row highlight) */
+    .role-pf-box {
+      display: inline-block;
+      padding: 0 2px;
+      border: 1px solid currentColor;
+      border-radius: 2px;
+      font-weight: 700;
+      line-height: 1.15;
       color: var(--text);
-      font-weight: 650;
-    }
-
-    .log-prev-row.pf > span.c-mark {
-      font-weight: 400;
     }
 
     /* Right column beside history: copy table/CSV + note + clear/edit */
@@ -875,7 +992,7 @@
       margin: 0;
       padding: 3px 7px;
       border-radius: 7px;
-      background: rgba(0, 0, 0, 0.22);
+      background: var(--soft-panel);
       color: var(--muted);
       font-size: 0.58rem;
       font-weight: 500;
@@ -1085,9 +1202,68 @@
       padding: 10px 10px 12px;
       border: 1px solid var(--line);
       border-radius: 14px;
-      background: #1c1c1e;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      background: var(--date-popover-bg);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
       color: var(--text);
+    }
+
+    html.theme-bright .log-date-popover {
+      border-width: 2px;
+      border-color: #000;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    html.theme-bright .log-side-col #btnClearMarkedLog,
+    html.theme-bright .log-side-col #btnEditMarkedLog {
+      background: #fff;
+      border: 2px solid #000;
+      color: #000;
+      font-weight: 700;
+    }
+
+    /* Log history: pure black on white for daylight glare */
+    html.theme-bright .log-prev-table {
+      color: #000;
+      background: #fff;
+    }
+
+    html.theme-bright .log-prev-head {
+      color: #000;
+      opacity: 1;
+      font-weight: 800;
+      border-bottom: 2px solid #000;
+    }
+
+    html.theme-bright .log-prev-row > span {
+      color: #000;
+      background: #fff;
+      font-weight: 650;
+    }
+
+    html.theme-bright .role-pf-box {
+      color: #000;
+      border-color: #000;
+    }
+
+    html.theme-bright .log-prev-row.empty > span {
+      color: #000;
+      opacity: 0.45;
+    }
+
+    html.theme-bright .log-pf90 {
+      background: #fff;
+      border: 2px solid #000;
+      color: #000;
+    }
+
+    html.theme-bright .log-pf90 strong {
+      color: #000;
+    }
+
+    html.theme-bright select {
+      color: #000;
+      background: #fff;
+      border-color: #000;
     }
 
     .log-date-popover[hidden] {
@@ -1548,6 +1724,7 @@
         align-items: stretch;
       }
       h1 { font-size: 1.1rem; text-align: left; }
+      .header-theme,
       .header-clear { align-self: flex-end; }
       .preflight-banner {
         flex-wrap: wrap;
@@ -1695,6 +1872,9 @@
   <div class="app">
     <header>
       <div class="phase-rule header-rule" aria-hidden="true"></div>
+      <div class="header-theme">
+        <button type="button" id="btnTheme" aria-pressed="false" title="Switch to Hi-Contrast Day Theme">Bright</button>
+      </div>
       <h1>NAVLOG NOTE</h1>
       <div class="header-clear">
         <button type="button" id="btnClear" title="Clears all entered fields">Clear</button>
@@ -1931,8 +2111,8 @@
       </div>
       <div class="log-side-col">
         <button type="button" id="btnCopyAllLog">copy LOG as table</button>
-        <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">Copy Log as CSV</button>
-        <p class="log-data-note">Backup frequently, data may be lost. CSV for LogTen/others.</p>
+        <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">copy Log as CSV</button>
+        <p class="log-data-note">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
         <button type="button" id="btnClearMarkedLog" title="Remove checked logbook lines">Clear Marked Lines</button>
         <button type="button" id="btnEditMarkedLog" title="Load one marked line into YOUR LOG for editing">Edit Marked Line</button>
       </div>
@@ -1992,7 +2172,8 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.26";
+    const APP_VERSION = "2.27";
+    const THEME_KEY = "flight-plan-form-theme-v1";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
@@ -2640,7 +2821,7 @@
       }));
     }
 
-    /** Render table rows: newest DEP DATE at top. Whole-row highlight only for PF legs. */
+    /** Render table rows: newest DEP DATE at top. PF = boxed ROLE letters only. */
     function renderLogPrev() {
       const table = $("logPrevTable");
       if (!table) return;
@@ -2654,9 +2835,17 @@
         const isPf = !!(v && v.logPf === "yes");
         row.className = "log-prev-row" + (v ? "" : " empty") + (isPf ? " pf" : "");
         row.dataset.slot = String(i);
-        logPrevCells(v, { phReg: false }).forEach((text) => {
+        logPrevCells(v, { phReg: false }).forEach((text, col) => {
           const span = document.createElement("span");
-          span.textContent = text;
+          // ROLE column — tiny box around PF only
+          if (col === 9 && text === "PF") {
+            const box = document.createElement("span");
+            box.className = "role-pf-box";
+            box.textContent = "PF";
+            span.appendChild(box);
+          } else {
+            span.textContent = text;
+          }
           row.appendChild(span);
         });
         const markCell = document.createElement("span");
@@ -3329,6 +3518,7 @@
      * CSV for LogTen Pro import (File → Import / column mapping).
      * Headers match common LogTen labels (Out/Off/On/In = OOOI).
      * Date: dd-MMM-yyyy; times HH:MM (Zulu); Aircraft ID = PH-…; oldest first.
+     * PIC time left blank (not assumed). PF → Day Takeoffs + Day Landings = 1.
      * @see https://github.com/Coradine/logten-api (flight_* field names)
      */
     const LOGTEN_CSV_HEADERS = [
@@ -3378,10 +3568,10 @@
             String(v.touchdown || "").trim(),
             String(v.onBlocks || "").trim(),
             block,
-            isPf ? block : "",
+            "", // PIC time — never assumed from PF
             String(v.logPic || "").trim(),
-            isPf ? "1" : "0",
-            isPf ? "1" : "0",
+            isPf ? "1" : "0", // exporting pilot flew the takeoff
+            isPf ? "1" : "0", // exporting pilot flew the landing
             isPf ? "PF" : "PM"
           ]
             .map(csvEscapeCell)
@@ -3397,7 +3587,7 @@
         return;
       }
       await writeClipboard(buildLogTenCsv());
-      flashCopyBtn($("btnCopyLogCsv"), "Copy Log as CSV");
+      flashCopyBtn($("btnCopyLogCsv"), "copy Log as CSV");
     }
 
     /** Remove checked (marked) visible log lines. */
@@ -3715,6 +3905,7 @@
     $("btnClearMarkedLog").addEventListener("click", clearMarkedLogLines);
     $("btnEditMarkedLog").addEventListener("click", editMarkedLogLine);
     bindAppAlert();
+    $("btnTheme").addEventListener("click", toggleTheme);
     $("btnClear").addEventListener("click", clearForm);
     $("btnRestore").addEventListener("click", restoreHistory);
     $("btnPasteDsperfo").addEventListener("click", pasteDsperfo);
@@ -3819,10 +4010,38 @@
       }
     }
 
+    function loadThemePref() {
+      try {
+        return localStorage.getItem(THEME_KEY) === "bright" ? "bright" : "dim";
+      } catch (_) {
+        return "dim";
+      }
+    }
+
+    function applyTheme(mode) {
+      const bright = mode === "bright";
+      document.documentElement.classList.toggle("theme-bright", bright);
+      const btn = $("btnTheme");
+      if (btn) {
+        /* Press-to-act: label is the theme you switch into */
+        btn.textContent = bright ? "Dim" : "Bright";
+        btn.title = bright ? "Switch to dim cockpit theme" : "Switch to Hi-Contrast Day Theme";
+        btn.setAttribute("aria-pressed", bright ? "true" : "false");
+      }
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", bright ? "#ffffff" : "#1a2332");
+      try { localStorage.setItem(THEME_KEY, bright ? "bright" : "dim"); } catch (_) {}
+    }
+
+    function toggleTheme() {
+      applyTheme(document.documentElement.classList.contains("theme-bright") ? "dim" : "bright");
+    }
+
     {
       const ver = $("howtoVersion");
       if (ver) ver.textContent = "v" + APP_VERSION;
     }
+    applyTheme(loadThemePref());
     initHowtoMode();
     load();
     updateHistoryButton();
