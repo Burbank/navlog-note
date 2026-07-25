@@ -54,8 +54,8 @@
 
     /*
      * Vertical shell matched to v2.16 (commit 4309148) — fits iPad landscape.
-     * Log: 9 rows @ row-gap 4px ≈ same band as prior 6px after v2.20 clip fix.
-     * A2903 (iPad Air 11") landscape CSS size ≈ 1180×820.
+     * Log: 9 rows @ row-gap 8px — uses ~2-line landscape height luxury for
+     * safer mark-checkbox spacing (A2903 ≈ 1180×820).
      */
     body {
       padding: max(4px, env(safe-area-inset-top))
@@ -506,7 +506,7 @@
         minmax(5.5rem, 1.55fr)   /* PIC — longer names */
         1.15rem;                 /* mark */
       column-gap: 5px;
-      row-gap: 4px; /* 9 rows on A2903 landscape; was 6px before v2.20 clip */
+      row-gap: 8px; /* v2.24: spend ~2-line height luxury on safer tick spacing */
       width: 100%;
       min-width: 42rem;
       margin: 0;
@@ -1916,7 +1916,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.23";
+    const APP_VERSION = "2.24";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
