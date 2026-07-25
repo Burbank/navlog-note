@@ -2206,7 +2206,7 @@
       </div>
       <h1>QUICKLOG</h1>
       <div class="header-clear">
-        <button type="button" id="btnClear" title="Tap: clear fields. Long-press: remove default PIC name and check for online update.">Clear</button>
+        <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update.">Clear</button>
       </div>
       <div class="phase-rule header-rule" aria-hidden="true"></div>
     </header>
@@ -2336,7 +2336,7 @@
           <p class="howto-item" role="listitem">Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</p>
         </div>
         <div class="howto-standalone-panel" id="howtoStandalone" aria-label="Web app notes">
-          <p class="howto-standalone-note">Long-press [clear] removes default PIC name and forces online version update check.</p>
+          <p class="howto-standalone-note">Hold [clear] 4 seconds to remove default PIC name and force online version update check.</p>
           <p class="howto-standalone-caution">CAUTION: deleting webapp also deletes LOGBOOK entries -&gt; export first. Normally a delete is not necessary.</p>
         </div>
         <p class="howto-version" id="howtoVersion"></p>
@@ -2501,7 +2501,7 @@
         spellcheck="false"
         placeholder="Yeager"
       />
-      <p class="pic-name-overlay-hint">Used when you tick PIC. Long-press Clear to remove this name and check for an online update of the website.</p>
+      <p class="pic-name-overlay-hint">Used when you tick PIC. Hold Clear for 4 seconds to remove this name and check for an online update of the website.</p>
       <p class="pic-name-overlay-hint">Logbook shows the 9 most recent added items. These are only lost when the web app is deleted.</p>
       <div class="pic-name-overlay-actions">
         <button type="button" id="picNameOverlayLater">Later</button>
@@ -2528,7 +2528,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.37";
+    const APP_VERSION = "2.38";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
@@ -4302,7 +4302,7 @@
     }
 
     function clearForm() {
-      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.\n\nTo clear the default PIC name and force an online update check, long-press the Clear button.\n\nLogbook shows the 9 most recent added items. These are only lost when the web app is deleted.")) return;
+      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.\n\nTo clear the default PIC name and force an online update check, hold the Clear button for 4 seconds.\n\nLogbook shows the 9 most recent added items. These are only lost when the web app is deleted.")) return;
       // Snapshot first (getValues recovers focus-cleared active field via preFocusById).
       pushHistory();
       suppressFocusClear = true;
@@ -4398,7 +4398,7 @@
     function bindClearLongPress() {
       const btn = $("btnClear");
       if (!btn) return;
-      const LONG_MS = 650;
+      const LONG_MS = 4000;
       let timer = 0;
       let longFired = false;
 
