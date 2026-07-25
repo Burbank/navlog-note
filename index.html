@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <!-- opaque status bar: webview starts below it (avoids large safe-area top gap on iPad PWA) -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="NAVLOG NOTE" />
   <meta name="theme-color" content="#1a2332" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -53,25 +54,25 @@
 
     /*
      * Vertical shell matched to v2.16 (commit 4309148) — fits iPad landscape.
-     * Log: 9 rows @ row-gap 6px ≈ same band height as v2.16’s 11 rows @ 3px.
+     * Log: 9 rows @ row-gap 4px ≈ same band as prior 6px after v2.20 clip fix.
+     * A2903 (iPad Air 11") landscape CSS size ≈ 1180×820.
      */
     body {
-      padding: max(5px, env(safe-area-inset-top))
+      padding: max(4px, env(safe-area-inset-top))
                max(8px, env(safe-area-inset-right))
-               max(5px, env(safe-area-inset-bottom))
+               max(4px, env(safe-area-inset-bottom))
                max(8px, env(safe-area-inset-left));
     }
 
     /*
-     * iPad landscape / wide shell: pin the page in the viewport (no rubber-band
-     * bounce). Portrait keeps normal document scroll below.
-     * Body is a column flex so the SW update banner can sit above .app without
-     * forcing .app past 100dvh. Fixed overlays (toast / alert / date) stay OK.
+     * iPad landscape / wide shell: pin the document (no rubber-band), but let
+     * .app scroll if content is taller than the frame — never hard-clip the
+     * log footer. overscroll-behavior:none keeps that scroll bounce-free.
+     * Opaque status bar (meta above) + tight top pad reclaim the old top gap.
      */
     @media (orientation: landscape) and (min-width: 901px) {
       html {
         height: 100%;
-        height: 100dvh;
         overflow: hidden;
       }
       body {
@@ -79,17 +80,24 @@
         inset: 0;
         width: 100%;
         height: 100%;
-        height: 100dvh;
-        max-height: 100dvh;
+        max-height: 100%;
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        /* Status bar is opaque — only keep a small top pad; respect home indicator. */
+        padding: 4px
+                 max(8px, env(safe-area-inset-right))
+                 max(4px, env(safe-area-inset-bottom))
+                 max(8px, env(safe-area-inset-left));
       }
       .app {
         flex: 1 1 auto;
         min-height: 0;
         width: 100%;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
       }
       .log-prev,
       .flight-log {
@@ -436,8 +444,8 @@
         "flogPrev flogPrev flogPf90"
         "appRec appRec appRec";
       column-gap: 8px;
-      row-gap: 8px;
-      margin-top: 6px;
+      row-gap: 6px;
+      margin-top: 4px;
       align-items: stretch;
     }
 
@@ -453,7 +461,7 @@
         rgba(0, 161, 228, 0.9),
         rgba(0, 161, 228, 0.15)
       );
-      margin: 2px 0;
+      margin: 1px 0;
     }
 
     /*
@@ -489,7 +497,7 @@
         minmax(5.5rem, 1.55fr)   /* PIC — longer names */
         1.15rem;                 /* mark */
       column-gap: 5px;
-      row-gap: 6px; /* safer tick targets; 9 rows ≈ v2.16 height */
+      row-gap: 4px; /* 9 rows on A2903 landscape; was 6px before v2.20 clip */
       width: 100%;
       min-width: 42rem;
       margin: 0;
@@ -644,13 +652,13 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 12px;
-      margin: 0 4px 2px;
+      margin: 0 4px 0;
       font-size: 0.62rem;
       font-weight: 500;
       letter-spacing: 0.02em;
       color: var(--muted);
       opacity: 0.72;
-      line-height: 1.25;
+      line-height: 1.2;
     }
 
     .app-rec-try {
@@ -720,7 +728,7 @@
       min-width: 0;
       align-self: stretch;
       position: relative;
-      padding: 2px 8px 12px;
+      padding: 2px 8px 4px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--panel);
@@ -1899,7 +1907,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.20";
+    const APP_VERSION = "2.21";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
