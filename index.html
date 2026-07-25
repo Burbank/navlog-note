@@ -168,10 +168,36 @@
     .field.time-input-long input { max-width: 16ch; letter-spacing: 0.04em; }
     .field.mt-input input { max-width: 14ch; }
 
-    /* Fat-finger spacing in the two side cards (still landscape-tight overall) */
+    /* ~15% shorter vertical stack for Clearance + Fuel / Perf */
+    .card-clearance,
+    .card-fuel {
+      padding: 6px 12px;
+    }
+
+    .card-clearance h2,
+    .card-fuel h2 {
+      margin: 0 0 4px;
+    }
+
     .card-clearance .field,
     .card-fuel .field {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      gap: 5px;
+    }
+
+    .card-clearance input[type="text"],
+    .card-fuel input[type="text"] {
+      min-height: 30px;
+      padding: 4px 8px;
+    }
+
+    .card-fuel .section-title {
+      margin: 4px 0 2px;
+      font-size: 0.82rem;
+    }
+
+    .card-fuel .dsperfo-row {
+      margin-bottom: 8px;
     }
 
     /* Longer labels in Fuel / Perf — keep input column aligned */
@@ -393,11 +419,40 @@
       grid-template-areas:
         "hist howto dept"
         "land land arr"
-        "flog flog flogCopy";
+        "flog flog flogCopy"
+        "flogPrev flogPrev flogPrev";
       column-gap: 10px;
       row-gap: 12px;
       margin-top: 8px;
       align-items: stretch;
+    }
+
+    /* Previous YOUR LOG legs — one horizontal line each; newest top, oldest bottom */
+    .log-prev {
+      grid-area: flogPrev;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      padding: 2px 4px 0;
+    }
+
+    .log-prev-line {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 550;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.25;
+      min-height: 1em;
+    }
+
+    .log-prev-line.empty {
+      opacity: 0.35;
     }
 
     .history-col,
@@ -634,13 +689,24 @@
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
-      gap: 10px 12px;
+      gap: 10px 14px;
       padding: 8px 12px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--panel);
       min-width: 0;
       margin-top: 2px;
+      overflow: hidden;
+    }
+
+    /* Left cluster: date stack | PF | aircraft — PF & acft share mid height */
+    .flight-log-start {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px 12px;
+      min-width: 0;
     }
 
     .flight-log-lead {
@@ -664,15 +730,16 @@
       white-space: nowrap;
     }
 
-    .flight-log-date-line {
+    /* Date, then dept utc, then days ago — stacked to stay narrow */
+    .flight-log-date-stack {
       display: none;
-      align-items: baseline;
-      gap: 0.35em;
-      min-height: 1em;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
     }
 
-    .flight-log-date-line.show {
-      display: inline-flex;
+    .flight-log-date-stack.show {
+      display: flex;
     }
 
     .flight-log-date {
@@ -689,16 +756,56 @@
       font-weight: 500;
       letter-spacing: 0.05em;
       color: var(--muted);
-      opacity: 0.5;
+      opacity: 0.55;
       white-space: nowrap;
     }
 
-    .flight-log-acft {
+    .flight-log-days-ago {
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      opacity: 0.65;
+      white-space: nowrap;
+      min-height: 0.9em;
+    }
+
+    .flight-log-pf {
       flex: 0 0 auto;
-      width: 4.5rem;
-      min-width: 4.5rem;
-      max-width: 4.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin: 0;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      align-self: center;
+    }
+
+    .flight-log-pf input {
+      width: 1.15rem;
+      height: 1.15rem;
+      margin: 0;
+      accent-color: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    .flight-log-meta {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      width: 4.6rem;
+      align-self: center;
+    }
+
+    .flight-log-acft {
+      width: 100%;
       min-height: 36px;
+      margin: 0;
       padding: 4px 6px;
       border: 1px solid var(--field-border);
       border-radius: 8px;
@@ -709,37 +816,33 @@
       letter-spacing: 0.04em;
     }
 
-    .flight-log-align {
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: center;
-      gap: 10px 16px;
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-
-    /* DOM order = tab OFF→AIR→TD→ON; areas place visual OFF/ON over AIR/TD */
+    /*
+     * DEP/ARR mid-height. BLOCK on ON BLOCKS row; FLIGHT on TOUCHDOWN row.
+     */
     .flight-log-times {
       display: grid;
-      grid-template-columns: auto auto auto;
+      grid-template-columns: 4.35rem auto 4.35rem auto auto;
       grid-template-areas:
-        "off on block"
-        "air td flight";
-      column-gap: 14px;
-      row-gap: 4px;
+        "dep off arr on block"
+        "dep air arr td flight";
+      column-gap: 10px;
+      row-gap: 6px;
       align-items: center;
-      flex: 0 1 auto;
+      flex: 1 1 auto;
       min-width: 0;
     }
 
     .flight-log-times .field {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       margin-bottom: 0;
       grid-template-columns: none;
+      min-width: 0;
     }
 
+    .flight-log-times .log-dep { grid-area: dep; }
+    .flight-log-times .log-arr { grid-area: arr; }
     .flight-log-times .log-off { grid-area: off; }
     .flight-log-times .log-air { grid-area: air; }
     .flight-log-times .log-td { grid-area: td; }
@@ -747,35 +850,99 @@
     .flight-log-times .log-block { grid-area: block; }
     .flight-log-times .log-flight { grid-area: flight; }
 
+    .flight-log-apt {
+      width: 100%;
+      min-width: 0;
+      min-height: 36px;
+      align-self: center;
+      padding: 4px 2px 4px 4px;
+      border: 1px solid var(--field-border);
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+    }
+
     .flight-log-times .field label {
-      flex: 0 0 6.6rem;
-      width: 6.6rem;
+      flex: 0 0 6.4rem;
+      width: 6.4rem;
       text-align: right;
       white-space: nowrap;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
     }
 
     .flight-log-times .field input {
-      flex: 0 0 6.25rem;
-      width: 6.25rem;
-      min-width: 6.25rem;
-      max-width: 6.25rem;
+      flex: 0 0 5.5rem;
+      width: 5.5rem;
+      min-width: 5.5rem;
+      max-width: 5.5rem;
       letter-spacing: 0.04em;
     }
 
+    .flight-log-block-cell {
+      grid-area: block;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      align-self: center;
+      gap: 6px 10px;
+      padding-left: 6px;
+      min-width: 5rem;
+    }
+
+    /* Fixed label column so FLIGHT time sits under BLOCK time */
     .flight-log-sum {
+      display: inline-grid;
+      grid-template-columns: 3.6rem max-content;
+      column-gap: 0.35em;
+      align-items: baseline;
       font-size: 0.72rem;
       font-weight: 650;
       color: var(--muted);
-      line-height: 1.25;
+      line-height: 1.2;
       white-space: nowrap;
-      padding-left: 2px;
+      align-self: center;
+      padding-left: 6px;
+    }
+
+    .flight-log-sum.log-flight {
+      grid-area: flight;
+      /* Nudge right to sit under BLOCK + time column (same left pad as block cell) */
+      padding-left: 6px;
+      justify-self: start;
+    }
+
+    .flight-log-block-cell .flight-log-sum {
+      padding-left: 0;
+    }
+
+    .flight-log-sum-lab {
+      text-align: left;
     }
 
     .flight-log-sum strong {
       color: var(--text);
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.04em;
+    }
+
+    /* Same size/weight as "BLOCK" — slightly quieter color */
+    .flight-log-s26 {
+      display: none;
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      opacity: 0.85;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .flight-log-s26.show {
+      display: inline;
     }
 
     input.log-time-error {
@@ -884,6 +1051,8 @@
         flex-wrap: wrap;
       }
       .card, .howto { padding: 12px 14px; }
+      .card-clearance,
+      .card-fuel { padding: 8px 14px; }
       .card.span-all { padding: 6px 14px 8px; }
       .field,
       .card-fuel .field,
@@ -893,6 +1062,15 @@
         gap: 4px;
         padding-left: 0;
         margin-bottom: 10px;
+      }
+      .card-clearance .field,
+      .card-fuel .field {
+        margin-bottom: 8px;
+      }
+      .card-clearance input[type="text"],
+      .card-fuel input[type="text"] {
+        min-height: 38px;
+        padding: 8px 10px;
       }
       .field.narrow-input input,
       .field.climb-input input,
@@ -978,7 +1156,8 @@
           "land"
           "arr"
           "flog"
-          "flogCopy";
+          "flogCopy"
+          "flogPrev";
       }
       .landing-prep {
         flex-direction: column;
@@ -997,12 +1176,18 @@
         flex-direction: column;
         align-items: stretch;
       }
-      .flight-log-align {
-        flex-wrap: wrap;
+      .flight-log-times {
+        grid-template-columns: 4rem 1fr 4rem 1fr;
+        grid-template-areas:
+          "dep off arr on"
+          "dep air arr td"
+          "block block flight flight";
       }
-      .flight-log-times .field label {
-        flex-basis: auto;
+      .flight-log-times .field input {
+        flex: 1 1 auto;
         width: auto;
+        min-width: 0;
+        max-width: none;
       }
     }
   </style>
@@ -1158,7 +1343,7 @@
           </span></p>
           <p class="howto-item" role="listitem"><span class="n">4.</span><span>Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</span></p>
         </div>
-        <p class="howto-version">v2.8</p>
+        <p class="howto-version">v2.9</p>
       </section>
       <div class="dept-col">
         <button type="button" id="btnCopy">copy DEPT text</button>
@@ -1180,47 +1365,67 @@
       </section>
       <button type="button" id="btnCopyArr">copy ARR text</button>
       <section class="flight-log" aria-label="Your log">
-        <div class="flight-log-lead">
-          <h2>your log</h2>
-          <span class="flight-log-date-line" id="logDateLine" aria-live="polite">
-            <span class="flight-log-date" id="logDate"></span>
-            <span class="flight-log-date-hint">dept utc</span>
-          </span>
-        </div>
-        <label class="sr-only" for="logAcft">Aircraft</label>
-        <select id="logAcft" name="logAcft" class="flight-log-acft" title="Aircraft">
-          <option value="CKA">CKA</option>
-          <option value="CKB">CKB</option>
-          <option value="CKC">CKC</option>
-          <option value="MPS">MPS</option>
-        </select>
-        <div class="flight-log-align" role="group" aria-label="Block and flight times UTC">
-          <!-- DOM order = tab OFF → AIRBORNE → TOUCHDOWN → ON -->
-          <div class="flight-log-times">
-            <div class="field log-off">
-              <label for="offBlocks">OFF BLOCKS:</label>
-              <input id="offBlocks" name="offBlocks" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Off blocks UTC" />
+        <div class="flight-log-start">
+          <div class="flight-log-lead">
+            <h2>your log</h2>
+            <div class="flight-log-date-stack" id="logDateStack" aria-live="polite">
+              <span class="flight-log-date" id="logDate"></span>
+              <span class="flight-log-date-hint">dept utc</span>
+              <span class="flight-log-days-ago" id="logDaysAgo"></span>
             </div>
-            <div class="field log-air">
-              <label for="airborne">AIRBORNE:</label>
-              <input id="airborne" name="airborne" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Airborne UTC" />
-            </div>
-            <div class="field log-td">
-              <label for="touchdown">TOUCHDOWN:</label>
-              <input id="touchdown" name="touchdown" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Touchdown UTC" />
-            </div>
-            <div class="field log-on">
-              <label for="onBlocks">ON BLOCKS:</label>
-              <input id="onBlocks" name="onBlocks" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="On blocks UTC" />
-            </div>
-            <span class="flight-log-sum log-block">BLOCK <strong id="blockTime">—</strong></span>
-            <span class="flight-log-sum log-flight">FLIGHT <strong id="flightTimeCalc">—</strong></span>
           </div>
+          <label class="flight-log-pf" for="logPf" title="Pilot flying this leg">
+            <input id="logPf" name="logPf" type="checkbox" />
+            <span>PF</span>
+          </label>
+          <div class="flight-log-meta">
+            <label class="sr-only" for="logAcft">Aircraft</label>
+            <select id="logAcft" name="logAcft" class="flight-log-acft" title="Aircraft">
+              <option value="CKA">CKA</option>
+              <option value="CKB">CKB</option>
+              <option value="CKC">CKC</option>
+              <option value="MPS">MPS</option>
+            </select>
+          </div>
+        </div>
+        <input type="hidden" id="logDeptDate" name="logDeptDate" value="" />
+        <!-- Tab: OFF → AIR → TD → ON; BLOCK row with ON; FLIGHT row with TD -->
+        <div class="flight-log-times" role="group" aria-label="Block and flight times UTC">
+          <label class="sr-only" for="logDep">Departure airport</label>
+          <select id="logDep" name="logDep" class="flight-log-apt log-dep" title="Departure airport"></select>
+          <div class="field log-off">
+            <label for="offBlocks">OFF BLOCKS:</label>
+            <input id="offBlocks" name="offBlocks" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Off blocks UTC" />
+          </div>
+          <div class="field log-air">
+            <label for="airborne">AIRBORNE:</label>
+            <input id="airborne" name="airborne" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Airborne UTC" />
+          </div>
+          <div class="field log-td">
+            <label for="touchdown">TOUCHDOWN:</label>
+            <input id="touchdown" name="touchdown" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Touchdown UTC" />
+          </div>
+          <label class="sr-only" for="logArr">Arrival airport</label>
+          <select id="logArr" name="logArr" class="flight-log-apt log-arr" title="Arrival airport"></select>
+          <div class="field log-on">
+            <label for="onBlocks">ON BLOCKS:</label>
+            <input id="onBlocks" name="onBlocks" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="On blocks UTC" />
+          </div>
+          <div class="flight-log-block-cell log-block">
+            <span class="flight-log-sum"><span class="flight-log-sum-lab">BLOCK</span><strong id="blockTime">—</strong></span>
+            <span class="flight-log-s26" id="logS26" aria-live="polite"></span>
+          </div>
+          <span class="flight-log-sum log-flight"><span class="flight-log-sum-lab">FLIGHT</span><strong id="flightTimeCalc">—</strong></span>
         </div>
       </section>
       <div class="log-copy-col">
         <div class="phase-rule" aria-hidden="true"></div>
         <button type="button" id="btnCopyLog">copy LOG text</button>
+      </div>
+      <div class="log-prev" id="logPrev" aria-label="Previous log summaries" aria-live="polite">
+        <p class="log-prev-line empty" data-slot="0">—</p>
+        <p class="log-prev-line empty" data-slot="1">—</p>
+        <p class="log-prev-line empty" data-slot="2">—</p>
       </div>
     </div>
   </div>
@@ -1231,7 +1436,8 @@
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v2";
     const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
-    const APP_VERSION = "2.8";
+    const LOG_PREV_KEY = "flight-plan-form-log-prev-v1";
+    const APP_VERSION = "2.9";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -1241,15 +1447,86 @@
     const FIELD_IDS = [
       "security", "rvsmCheck", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
       "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps",
-      "arrAtis", "ldis", "logAcft", "offBlocks", "airborne", "touchdown", "onBlocks"
+      "arrAtis", "ldis", "logPf", "logAcft", "logDeptDate", "logDep", "logArr",
+      "offBlocks", "airborne", "touchdown", "onBlocks"
     ];
     /** Tab / entry order: OFF → AIRBORNE → TOUCHDOWN → ON */
     const LOG_TIME_IDS = ["offBlocks", "airborne", "touchdown", "onBlocks"];
-    const LOG_FIELD_IDS = ["logAcft", ...LOG_TIME_IDS];
+    const LOG_FIELD_IDS = ["logPf", "logAcft", "logDeptDate", "logDep", "logArr", ...LOG_TIME_IDS];
     const DEFAULTS = {
       security: "performed", rvsmCheck: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
-      logAcft: "CKA"
+      logAcft: "CKA", logPf: "no", logDeptDate: "", logDep: "XXX", logArr: "XXX"
     };
+    const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    /** Martinair B747-400 Summer 2026 city pairs — OM-A style block times table */
+    const LOG_AIRPORTS = ["ALA", "AMS", "BOG", "DWC", "GYD", "HHN", "HKG", "ICN", "JNB", "MIA", "NBO", "XXX"];
+    const S26_BLOCK = {
+      "ALA-AMS": "8:10", "AMS-DWC": "6:40", "AMS-HHN": "1:05", "AMS-HKG": "11:55",
+      "AMS-ICN": "11:45", "AMS-JNB": "10:50", "AMS-MIA": "9:30", "BOG-MIA": "3:45",
+      "DWC-AMS": "7:05", "DWC-HKG": "8:00", "GYD-AMS": "5:30", "HHN-AMS": "1:10",
+      "HKG-ALA": "6:10", "HKG-GYD": "8:40", "HKG-DWC": "8:00", "ICN-HKG": "3:30",
+      "JNB-NBO": "3:55", "MIA-AMS": "8:35", "MIA-BOG": "3:35", "NBO-AMS": "8:50"
+    };
+    /**
+     * FDPFMS-style device timezone → departure airport (network airports only).
+     * Unknown / non-network zones → XXX.
+     */
+    const TZ_TO_DEP = {
+      "Europe/Amsterdam": "AMS",
+      "Europe/Brussels": "AMS",
+      "Europe/Luxembourg": "AMS",
+      "Europe/Berlin": "HHN",
+      "Asia/Almaty": "ALA",
+      "America/Bogota": "BOG",
+      "Asia/Dubai": "DWC",
+      "Asia/Baku": "GYD",
+      "Asia/Hong_Kong": "HKG",
+      "Asia/Seoul": "ICN",
+      "Africa/Johannesburg": "JNB",
+      "America/New_York": "MIA",
+      "America/Detroit": "MIA",
+      "America/Kentucky/Louisville": "MIA",
+      "America/Indiana/Indianapolis": "MIA",
+      "US/Eastern": "MIA",
+      "Africa/Nairobi": "NBO"
+    };
+    const TZ_CITY_TOKENS = [
+      ["amsterdam", "AMS"], ["brussels", "AMS"],
+      ["berlin", "HHN"], ["frankfurt", "HHN"],
+      ["almaty", "ALA"], ["bogota", "BOG"], ["dubai", "DWC"], ["baku", "GYD"],
+      ["hong_kong", "HKG"], ["hong kong", "HKG"], ["seoul", "ICN"],
+      ["johannesburg", "JNB"], ["miami", "MIA"], ["new_york", "MIA"], ["nairobi", "NBO"]
+    ];
+
+    /** Auto-select DEP from iPad system timezone (FDPFMS pattern). */
+    function detectDepAirport() {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+        if (TZ_TO_DEP[tz] && LOG_AIRPORTS.includes(TZ_TO_DEP[tz])) return TZ_TO_DEP[tz];
+        const lower = tz.toLowerCase().replace(/-/g, "_");
+        for (const [token, code] of TZ_CITY_TOKENS) {
+          if (lower.includes(token.replace(/\s+/g, "_")) || lower.includes(token)) {
+            if (LOG_AIRPORTS.includes(code)) return code;
+          }
+        }
+        for (const [key, code] of Object.entries(TZ_TO_DEP)) {
+          const k = key.toLowerCase();
+          if (lower.includes(k) || k.includes(lower)) {
+            if (LOG_AIRPORTS.includes(code)) return code;
+          }
+        }
+      } catch (_) {}
+      return "XXX";
+    }
+
+    /** Suggest DEP from system timezone (new leg / clear / empty). Manual wheel choice sticks. */
+    function applyDepFromTimezone() {
+      const code = detectDepAirport();
+      const el = $("logDep");
+      if (!el || el.value === code) return;
+      el.value = code;
+      updateS26Display();
+    }
 
     const $ = (id) => document.getElementById(id);
     const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
@@ -1372,31 +1649,49 @@
     }
 
     function formatUtcDate(date) {
-      const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
       const dd = String(date.getUTCDate()).padStart(2, "0");
-      return dd + " " + months[date.getUTCMonth()] + " " + date.getUTCFullYear();
+      return dd + " " + MONTHS_UTC[date.getUTCMonth()] + " " + date.getUTCFullYear();
+    }
+
+    /** Parse stored "DD MMM YYYY" (UTC) → UTC midnight Date, or null. */
+    function parseLogDeptDate(str) {
+      const m = String(str || "").trim().match(/^(\d{2}) ([A-Z]{3}) (\d{4})$/);
+      if (!m) return null;
+      const mi = MONTHS_UTC.indexOf(m[2]);
+      if (mi < 0) return null;
+      const day = parseInt(m[1], 10);
+      const year = parseInt(m[3], 10);
+      const d = new Date(Date.UTC(year, mi, day));
+      if (d.getUTCFullYear() !== year || d.getUTCMonth() !== mi || d.getUTCDate() !== day) return null;
+      return d;
     }
 
     /**
-     * Departure UTC date for YOUR LOG (timezone-agnostic).
-     * Shown once OFF BLOCKS is complete. Uses the UTC calendar day of OFF BLOCKS:
-     * - ON before OFF → Zulu midnight cross → departure was previous UTC day
-     * - else OFF later than current UTC clock → most recent such OFF was yesterday UTC
-     * Works the same in Americas (UTC-) and Asia (e.g. Seoul UTC+9); does not use local calendar.
+     * Infer departure UTC day from OFF/ON clocks vs now (timezone-agnostic).
+     * Used once when a leg is first completed; then stored in logDeptDate for weeks.
      */
-    function logUtcDate() {
+    function computeLogUtcDate() {
       const off = timeToMinutes($("offBlocks").value);
       if (off === null) return "";
       const now = new Date();
       const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
       const on = timeToMinutes($("onBlocks").value);
       const nowUtcMins = now.getUTCHours() * 60 + now.getUTCMinutes();
-      // Infer most recent UTC day for this OFF time — never compare local vs UTC calendars
-      // (that broke Asia: local already tomorrow while UTC still "today").
       if ((on !== null && on < off) || off > nowUtcMins) {
         d.setUTCDate(d.getUTCDate() - 1);
       }
       return formatUtcDate(d);
+    }
+
+    function logDaysAgoText(dateStr) {
+      const dep = parseLogDeptDate(dateStr);
+      if (!dep) return "";
+      const now = new Date();
+      const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const days = Math.round((today - dep.getTime()) / 86400000);
+      if (days <= 0) return "— 0 days ago";
+      if (days === 1) return "— 1 day ago";
+      return "— " + days + " days ago";
     }
 
     function checkLogTimeErrors() {
@@ -1409,51 +1704,169 @@
       $("onBlocks").classList.toggle("log-time-error", td !== null && on !== null && on < td);
     }
 
+    function s26BlockForPair(dep, arr) {
+      if (!dep || !arr || dep === "XXX" || arr === "XXX") return "";
+      return S26_BLOCK[dep + "-" + arr] || "";
+    }
+
+    function updateS26Display() {
+      const sched = s26BlockForPair($("logDep").value, $("logArr").value);
+      const el = $("logS26");
+      if (sched) {
+        el.textContent = "S26 " + sched;
+        el.classList.add("show");
+      } else {
+        el.textContent = "";
+        el.classList.remove("show");
+      }
+    }
+
+    function fillAirportSelect(el, defaultCode) {
+      const cur = el.value;
+      el.innerHTML = "";
+      LOG_AIRPORTS.forEach((code) => {
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = code;
+        el.appendChild(opt);
+      });
+      if (cur && LOG_AIRPORTS.includes(cur)) el.value = cur;
+      else if (defaultCode && LOG_AIRPORTS.includes(defaultCode)) el.value = defaultCode;
+      else el.value = LOG_AIRPORTS[0] || "";
+    }
+
     function updateLogCalcs() {
       const block = subtractTimes($("onBlocks").value, $("offBlocks").value);
       const flight = subtractTimes($("touchdown").value, $("airborne").value);
-      const date = logUtcDate();
+      // Persist DEPT DATE when first complete — do not recompute on later opens (weeks later).
+      if (timeToMinutes($("offBlocks").value) !== null && !$("logDeptDate").value.trim()) {
+        $("logDeptDate").value = computeLogUtcDate();
+        save();
+      }
+      const date = $("logDeptDate").value.trim();
+      const ago = logDaysAgoText(date);
       $("logDate").textContent = date;
-      $("logDateLine").classList.toggle("show", !!date);
+      $("logDaysAgo").textContent = ago;
+      $("logDateStack").classList.toggle("show", !!date);
       $("blockTime").textContent = block || "—";
       $("flightTimeCalc").textContent = flight || "—";
+      updateS26Display();
       checkLogTimeErrors();
     }
 
-    /** Snap ARR ATIS / OFF BLOCKS / AIRBORNE input left edges under RVSM R; others follow. */
+    /** Align landing ARR ATIS under RVSM R only — YOUR LOG uses a fixed CSS grid (no margin hacks). */
     function alignLogColumns() {
       const rvsmR = $("rvsmR");
       const arr = $("arrAtis");
-      const off = $("offBlocks");
-      const acft = $("logAcft");
-      const xpdr = $("transponder");
       const landingFields = document.querySelector(".landing-fields");
-      const logTimes = document.querySelector(".flight-log-times");
-      if (!rvsmR || !arr || !off || !acft || !xpdr || !landingFields || !logTimes) return;
+      if (!rvsmR || !arr || !landingFields) return;
       if (window.matchMedia("(max-width: 700px)").matches) {
         landingFields.style.marginLeft = "";
-        logTimes.style.marginLeft = "";
-        acft.style.marginLeft = "";
         return;
       }
       landingFields.style.marginLeft = "0";
-      logTimes.style.marginLeft = "0";
-      acft.style.marginLeft = "0";
-      const target = rvsmR.getBoundingClientRect().left;
       landingFields.style.marginLeft =
-        (target - arr.getBoundingClientRect().left) + "px";
-      // Re-measure after landing shift (same viewport frame is fine; off is independent).
-      logTimes.style.marginLeft =
-        (target - off.getBoundingClientRect().left) + "px";
-      acft.style.marginLeft =
-        (xpdr.getBoundingClientRect().left - acft.getBoundingClientRect().left) + "px";
+        (rvsmR.getBoundingClientRect().left - arr.getBoundingClientRect().left) + "px";
     }
 
     function logTimesAllEmpty() {
       return LOG_TIME_IDS.every((id) => !String($(id).value || "").trim());
     }
 
-    /** Starting a new log: first digit in OFF BLOCKS clears the other time fields. */
+    /** Compact one-liner for an archived YOUR LOG leg. */
+    function formatLogPrevLine(v) {
+      if (!v) return "";
+      const date = (v.logDeptDate || "").trim() || "—";
+      const acft = v.logAcft || "—";
+      const route = `${v.logDep || "XXX"}→${v.logArr || "XXX"}`;
+      const off = (v.offBlocks || "").trim() || "—";
+      const air = (v.airborne || "").trim() || "—";
+      const td = (v.touchdown || "").trim() || "—";
+      const on = (v.onBlocks || "").trim() || "—";
+      const block = subtractTimes(v.onBlocks, v.offBlocks) || "—";
+      const flight = subtractTimes(v.touchdown, v.airborne) || "—";
+      const role = v.logPf === "yes" ? "PF" : "PM";
+      return [
+        `${date} ${acft}  ${route}`,
+        `OFF BLOCKS ${off} AIRBORNE ${air}`,
+        `TOUCHDOWN ${td} ON BLOCKS ${on}`,
+        `BLK ${block}`,
+        `FLT ${flight} ${role}`
+      ].join(" · ");
+    }
+
+    function loadLogPrev() {
+      try {
+        const raw = localStorage.getItem(LOG_PREV_KEY);
+        if (!raw) return [];
+        const data = JSON.parse(raw);
+        return Array.isArray(data) ? data.slice(0, 3) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveLogPrev(list) {
+      localStorage.setItem(LOG_PREV_KEY, JSON.stringify(list.slice(0, 3)));
+    }
+
+    /** Render up to 3 lines: newest at top, oldest at bottom.
+     *  “— N days ago” only on the most recent PF leg (not PM). */
+    function renderLogPrev() {
+      const list = loadLogPrev();
+      const root = $("logPrev");
+      if (!root) return;
+      const pfAgoIndex = list.findIndex((v) => v && v.logPf === "yes");
+      root.querySelectorAll(".log-prev-line").forEach((el, i) => {
+        let line = formatLogPrevLine(list[i]);
+        if (line && i === pfAgoIndex) {
+          const ago = logDaysAgoText(list[i].logDeptDate);
+          if (ago) line += " " + ago;
+        }
+        if (line) {
+          el.textContent = line;
+          el.classList.remove("empty");
+        } else {
+          el.textContent = "—";
+          el.classList.add("empty");
+        }
+      });
+    }
+
+    function snapshotLogLeg() {
+      const v = getValues();
+      return {
+        logAcft: v.logAcft || "",
+        logPf: v.logPf === "yes" ? "yes" : "no",
+        logDep: v.logDep || "",
+        logArr: v.logArr || "",
+        logDeptDate: (v.logDeptDate || "").trim(),
+        offBlocks: v.offBlocks || "",
+        airborne: v.airborne || "",
+        touchdown: v.touchdown || "",
+        onBlocks: v.onBlocks || ""
+      };
+    }
+
+    /**
+     * Write current YOUR LOG segment to the top summary line.
+     * Newer entries push older ones down (max 3). Identical top line is refreshed in place.
+     */
+    function pushLogPrevFromCurrent() {
+      const snap = snapshotLogLeg();
+      const line = formatLogPrevLine(snap);
+      if (!line) return;
+      const list = loadLogPrev();
+      if (list[0] && formatLogPrevLine(list[0]) === line) {
+        list[0] = snap;
+      } else {
+        list.unshift(snap);
+      }
+      saveLogPrev(list.slice(0, 3));
+      renderLogPrev();
+    }
+
+    /** Starting a new log: first digit in OFF BLOCKS clears prior leg times/date/PF. */
     function bindOffBlocksStartsNewLog() {
       const el = $("offBlocks");
       let prevDigits = digitsOnly(el.value).length;
@@ -1469,9 +1882,28 @@
             delete preFocusById[id];
             $(id)._editedSinceFocus = false;
           });
+          $("logDeptDate").value = "";
+          $("logPf").checked = false;
+          // Keep DEP (manual override sticks); only ARR resets for the new leg.
+          $("logArr").value = "XXX";
+          updateS26Display();
         }
         prevDigits = n;
         // bindClock already calls updateLogCalcs on input
+      });
+    }
+
+    /** When ON BLOCKS first becomes a complete HH:MM, archive that segment to the top line. */
+    function bindOnBlocksArchivesLog() {
+      const el = $("onBlocks");
+      let wasComplete = digitsOnly(el.value).length >= 4;
+      el.addEventListener("focus", () => {
+        wasComplete = false; // focus-to-clear; re-entry can archive again
+      });
+      el.addEventListener("input", () => {
+        const complete = digitsOnly(el.value).length >= 4;
+        if (!wasComplete && complete) pushLogPrevFromCurrent();
+        wasComplete = complete;
       });
     }
 
@@ -1606,6 +2038,10 @@
           data[id] = "";
           continue;
         }
+        if (el.type === "checkbox") {
+          data[id] = el.checked ? "yes" : "no";
+          continue;
+        }
         let v = el.value.trim();
         // Focus-to-clear empties the field; if the pilot never typed after focus,
         // keep the pre-focus value for Clear/Copy snapshots (survives blur into confirm).
@@ -1626,7 +2062,13 @@
     function setValues(data) {
       suppressFocusClear = true;
       for (const id of FIELD_IDS) {
-        if (data[id] !== undefined && $(id)) $(id).value = data[id];
+        if (data[id] === undefined || !$(id)) continue;
+        const el = $(id);
+        if (el.type === "checkbox") {
+          el.checked = data[id] === "yes" || data[id] === true || data[id] === "true";
+        } else {
+          el.value = data[id];
+        }
         delete preFocusById[id];
       }
       setMnps(data.mnps || "N/A");
@@ -1650,6 +2092,10 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) setValues(JSON.parse(raw));
       } catch (_) {}
+      // Keep saved / manual DEP; only auto-detect when empty.
+      if (!$("logDep").value) applyDepFromTimezone();
+      if (!$("logArr").value) $("logArr").value = "XXX";
+      renderLogPrev();
     }
 
     function loadHistory() {
@@ -1685,19 +2131,7 @@
     function restoreHistory() {
       const snap = loadHistory();
       if (!snap) return;
-      const data = Object.assign({}, snap);
-      // YOUR LOG is independent of Clear: refill only empty log time fields.
-      // Aircraft restores when all log times are empty (section unused).
-      LOG_FIELD_IDS.forEach((id) => {
-        const el = $(id);
-        if (!el) return;
-        if (el.tagName === "SELECT") {
-          if (!logTimesAllEmpty()) delete data[id];
-          return;
-        }
-        if (String(el.value || "").trim()) delete data[id];
-      });
-      setValues(data);
+      setValues(Object.assign({}, snap));
       save();
       updateLogCalcs();
       showToast("History restored");
@@ -1798,8 +2232,13 @@
       const v = getValues();
       const block = subtractTimes(v.onBlocks, v.offBlocks);
       const flight = subtractTimes(v.touchdown, v.airborne);
-      const date = logUtcDate();
-      const lines = [`ACFT: ${v.logAcft || ""}`];
+      const date = (v.logDeptDate || "").trim() || computeLogUtcDate();
+      const lines = [
+        `ACFT: ${v.logAcft || ""}`,
+        `Pilot Flying: ${v.logPf === "yes" ? "yes" : "no"}`,
+        `DEP: ${v.logDep || ""}`,
+        `ARR: ${v.logArr || ""}`
+      ];
       if (date) lines.push(`DEPT DATE: ${date}`);
       lines.push(
         `OFF BLOCKS: ${logTimeOut(v.offBlocks)}`,
@@ -1826,6 +2265,7 @@
 
     async function copyLog() {
       pushHistory();
+      pushLogPrevFromCurrent();
       await writeClipboard(buildLogOutput());
       flashCopyBtn($("btnCopyLog"), "copy LOG text");
     }
@@ -1836,13 +2276,20 @@
       pushHistory();
       suppressFocusClear = true;
       for (const id of FIELD_IDS) {
-        if (LOG_FIELD_IDS.includes(id)) continue; // YOUR LOG is cleared by typing OFF BLOCKS, not Clear
-        if ($(id)) $(id).value = DEFAULTS[id] ?? "";
+        const el = $(id);
+        if (!el) continue;
+        if (el.type === "checkbox") el.checked = false;
+        else el.value = DEFAULTS[id] ?? "";
         delete preFocusById[id];
+        el._editedSinceFocus = false;
+        el.classList.remove("warn-diff", "log-time-error");
       }
       setMnps("N/A");
+      applyDepFromTimezone();
+      $("logArr").value = "XXX";
       save();
       checkRvsmDiff();
+      updateLogCalcs();
       suppressFocusClear = false;
       if (navigator.onLine) {
         showToast("Cleared — updating…");
@@ -2014,13 +2461,13 @@
       });
     });
 
-    /** Tap/focus any field → clear for fresh entry (defaults restored on blur when empty).
-     *  YOUR LOG times use this instead of the Clear button (Clear never wipes the log). */
+    /** Tap/focus any field → clear for fresh entry (defaults restored on blur when empty). */
     function bindClearOnFocus() {
       for (const id of FIELD_IDS) {
-        if (id === "mnps" || id === "logAcft") continue;
+        if (id === "mnps" || id === "logAcft" || id === "logPf" || id === "logDeptDate" ||
+            id === "logDep" || id === "logArr") continue;
         const el = $(id);
-        if (!el) continue;
+        if (!el || el.type === "checkbox" || el.type === "hidden" || el.tagName === "SELECT") continue;
         el.addEventListener("focus", () => {
           if (suppressFocusClear) return;
           preFocusById[id] = el.value;
@@ -2033,9 +2480,19 @@
         });
       }
     }
+    fillAirportSelect($("logDep"), detectDepAirport());
+    fillAirportSelect($("logArr"), "XXX");
     bindClearOnFocus();
     bindOffBlocksStartsNewLog();
+    bindOnBlocksArchivesLog();
     $("logAcft").addEventListener("change", () => { save(); });
+    $("logPf").addEventListener("change", () => { save(); });
+    ["logDep", "logArr"].forEach((id) => {
+      $(id).addEventListener("change", () => {
+        updateS26Display();
+        save();
+      });
+    });
     ["rvsmL", "rvsmR"].forEach((id) => {
       $(id).addEventListener("input", checkRvsmDiff);
       $(id).addEventListener("blur", checkRvsmDiff);
