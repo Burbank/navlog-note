@@ -49,7 +49,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     }
 
-    /* Default = iPad landscape; v2.12 ~15% more vertical room than v2.11 */
+    /* Default = iPad landscape; ~15% more vertical room than v2.11 */
     body {
       padding: max(5px, env(safe-area-inset-top))
                max(8px, env(safe-area-inset-right))
@@ -548,6 +548,10 @@
 
     .app-rec {
       grid-area: appRec;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
       margin: 0 4px 2px;
       font-size: 0.62rem;
       font-weight: 500;
@@ -555,7 +559,20 @@
       color: var(--muted);
       opacity: 0.72;
       line-height: 1.25;
+    }
+
+    .app-rec-try {
+      flex: 1 1 auto;
+      min-width: 0;
       text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .app-rec-update {
+      flex: 0 0 auto;
+      text-align: right;
       white-space: nowrap;
     }
 
@@ -1541,12 +1558,16 @@
         <button type="button" id="btnClearTopLog" title="Remove the newest logbook line">clear top log line</button>
       </div>
       <p class="app-rec">
-        Also try:
-        <a href="https://klyear.netlify.app/" target="_blank" rel="noopener noreferrer">https://klyear.netlify.app/</a>
-        for a calendar overview and
-        <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
-        for checking today’s EASA limits.
-        | In order to update this web app, it may be necessary to swipe-close it several times to force a refresh.
+        <span class="app-rec-try">
+          Also try:
+          <a href="https://klyear.netlify.app/" target="_blank" rel="noopener noreferrer">https://klyear.netlify.app/</a>
+          for a calendar overview and
+          <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
+          for checking today’s EASA limits.
+        </span>
+        <span class="app-rec-update">
+          In order to update this web app, it may be necessary to swipe-close it several times to force a refresh.
+        </span>
       </p>
     </div>
   </div>
@@ -1562,7 +1583,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.12";
+    const APP_VERSION = "2.14";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
