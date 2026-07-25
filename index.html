@@ -1862,7 +1862,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.18";
+    const APP_VERSION = "2.19";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
@@ -2683,7 +2683,10 @@
       renderLogPrev();
     }
 
-    /** Starting a new log: first digit in OFF BLOCKS clears prior leg times/date/PF. */
+    /**
+     * Starting a new log: first digit in OFF BLOCKS clears prior leg times/date/PF.
+     * Skipped while Edit Marked Line is active — only the fields the user edits change.
+     */
     function bindOffBlocksStartsNewLog() {
       const el = $("offBlocks");
       let prevDigits = digitsOnly(el.value).length;
@@ -2693,8 +2696,7 @@
       });
       el.addEventListener("input", () => {
         const n = digitsOnly(el.value).length;
-        if (prevDigits === 0 && n >= 1) {
-          logEditIndex = null; // new leg — stop replacing a prior edited row
+        if (prevDigits === 0 && n >= 1 && logEditIndex == null) {
           ["airborne", "touchdown", "onBlocks"].forEach((id) => {
             $(id).value = "";
             delete preFocusById[id];
@@ -2702,8 +2704,7 @@
           });
           $("logDeptDate").value = "";
           $("logPf").checked = false;
-          // Keep DEP (manual override sticks); only ARR resets for the new leg.
-          $("logArr").value = "XXX";
+          // Keep DEP and ARR (manual airport picks stick across a new OFF entry).
           updateS26Display();
         }
         prevDigits = n;
