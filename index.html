@@ -84,10 +84,9 @@
       font-weight: 400;
     }
 
-    @media (orientation: landscape) and (min-width: 901px) {
-      html.theme-bright {
-        font-size: 93.75%; /* ~15px if root 16 — reclaim a few rows of height */
-      }
+    /* Bright must not read larger than Dim — same root size; weight stays light */
+    html.theme-bright {
+      font-size: 100%;
     }
 
     html.theme-bright .card,
@@ -109,7 +108,7 @@
     html.theme-bright .view-hint {
       opacity: 1;
       color: #000;
-      font-weight: 600;
+      font-weight: 500; /* was 600 — heavier type looked larger than Dim */
     }
 
     html.theme-bright input[type="text"],
@@ -119,7 +118,7 @@
     html.theme-bright .flight-log-apt-add,
     html.theme-bright .flight-log-picname {
       border-width: 2px;
-      font-weight: 600;
+      font-weight: 500;
       color: #000;
       background: #fff;
     }
@@ -168,10 +167,10 @@
     html.theme-bright .flight-log-days-ago {
       opacity: 1;
       color: #000;
-      font-weight: 650;
+      font-weight: 600;
     }
 
-    /* Bright landscape: shave a little more from howto / log side stack */
+    /* Bright landscape: reclaim vertical space (2px borders eat height) */
     @media (orientation: landscape) and (min-width: 901px) {
       html.theme-bright .howto {
         padding: 0 5px 1px;
@@ -180,7 +179,11 @@
       html.theme-bright .howto-item {
         font-size: 0.55rem;
         line-height: 1.12;
-        font-weight: 600;
+        font-weight: 500;
+      }
+      html.theme-bright .card-clearance,
+      html.theme-bright .card-fuel {
+        padding: 4px 10px 5px;
       }
       html.theme-bright .log-side-col {
         gap: 4px;
@@ -189,7 +192,10 @@
         row-gap: 1px;
       }
       html.theme-bright .footer-stack {
-        row-gap: 4px;
+        row-gap: 3px;
+      }
+      html.theme-bright .grid {
+        gap: 5px;
       }
     }
 
@@ -248,9 +254,9 @@
         display: flex;
         flex-direction: column;
         /* A bit more top pad so header buttons clear status-bar / top-edge miss taps */
-        padding: 8px
+        padding: 5px
                  max(8px, env(safe-area-inset-right))
-                 max(8px, env(safe-area-inset-bottom))
+                 max(6px, env(safe-area-inset-bottom))
                  max(8px, env(safe-area-inset-left));
       }
       .app {
@@ -350,7 +356,7 @@
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 7px;
+      gap: 5px;
     }
 
     .card {
@@ -391,16 +397,16 @@
     .field.time-input-long input { max-width: 16ch; letter-spacing: 0.04em; }
     .field.mt-input input { max-width: 14ch; }
 
-    /* Clearance + Fuel / Perf — extra vertical padding for fat-finger iPad entry */
+    /* Clearance + Fuel / Perf — tight padding (A2903 bottom tips budget) */
     .card-clearance,
     .card-fuel {
-      padding: 8px 12px 9px;
+      padding: 5px 10px 6px;
     }
 
     .card-clearance .field,
     .card-fuel .field {
-      margin-bottom: 6px;
-      gap: 6px;
+      margin-bottom: 4px;
+      gap: 5px;
     }
 
     .card-clearance .field:last-child,
@@ -410,8 +416,8 @@
 
     .card-clearance input[type="text"],
     .card-fuel input[type="text"] {
-      min-height: 32px;
-      padding: 5px 9px;
+      min-height: 30px;
+      padding: 4px 8px;
     }
 
     .card.span-all input[type="text"] {
@@ -720,6 +726,12 @@
       margin-bottom: 1px;
     }
 
+    /* Subtle band on header + every second data line (orientation aid) */
+    .log-prev-head > span {
+      background: rgba(0, 161, 228, 0.1);
+      border-radius: 2px;
+    }
+
     .log-prev-row {
       display: contents;
     }
@@ -732,6 +744,11 @@
       line-height: 1.3;
       min-height: 1.05em;
       text-align: center;
+    }
+
+    .log-prev-row.alt > span {
+      background: rgba(0, 161, 228, 0.06);
+      border-radius: 2px;
     }
 
     /* Align with left edge of YOUR LOG segment; PIC left for long names */
@@ -1263,7 +1280,7 @@
       font-weight: 700;
     }
 
-    /* Log history: pure black on white for daylight glare */
+    /* Log history: black type for glare; zebra/header bands stay subtle */
     html.theme-bright .log-prev-table {
       color: #000;
       background: #fff;
@@ -1277,10 +1294,18 @@
       padding-bottom: 2px;
     }
 
+    html.theme-bright .log-prev-head > span {
+      background: #e4eaf0;
+    }
+
     html.theme-bright .log-prev-row > span {
       color: #000;
-      background: #fff;
-      font-weight: 600;
+      background: transparent;
+      font-weight: 500;
+    }
+
+    html.theme-bright .log-prev-row.alt > span {
+      background: #f2f2f2;
     }
 
     html.theme-bright .task-pf-box {
@@ -2346,7 +2371,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.29";
+    const APP_VERSION = "2.30";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
@@ -3274,7 +3299,10 @@
         const v = visible[i];
         const row = document.createElement("div");
         const isPf = !!(v && v.logPf === "yes");
-        row.className = "log-prev-row" + (v ? "" : " empty") + (isPf ? " pf" : "");
+        row.className = "log-prev-row"
+          + (v ? "" : " empty")
+          + (isPf ? " pf" : "")
+          + (i % 2 === 1 ? " alt" : "");
         row.dataset.slot = String(i);
         logPrevCells(v, { phReg: false }).forEach((text, col) => {
           const span = document.createElement("span");
