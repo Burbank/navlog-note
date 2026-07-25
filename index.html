@@ -235,11 +235,57 @@
     }
 
     /*
-     * iPad landscape / wide shell: pin the document — no rubber-band and no
-     * vertical finger scroll. Compact RVSM alert (v2.22) keeps height in budget
-     * on A2903 so we do not need .app scroll padding (that left empty bottom space).
+     * iPad landscape / wide shell.
+     * Browser tab: stay scrollable so the full form remains usable without
+     * installing as a Home Screen web app.
+     * Installed web app only: pin the document (no page rubber-band / scroll).
      */
     @media (orientation: landscape) and (min-width: 901px) {
+      body {
+        /* A bit more top pad so header buttons clear status-bar / top-edge miss taps */
+        padding: 5px
+                 max(8px, env(safe-area-inset-right))
+                 max(6px, env(safe-area-inset-bottom))
+                 max(8px, env(safe-area-inset-left));
+      }
+      .footer-stack {
+        align-content: start; /* don’t stretch grid rows into empty viewport space */
+      }
+      /* Standalone: keep howto on the same band as Restore / copy DEPT */
+      .howto.is-standalone {
+        align-self: center;
+        padding: 1px 6px;
+      }
+      .log-prev,
+      .flight-log {
+        overscroll-behavior: contain;
+      }
+
+      html.is-standalone-app {
+        height: 100%;
+        overflow: hidden;
+      }
+      body.is-standalone-app {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      body.is-standalone-app .app {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+    }
+
+    /* display-mode backup (in case class init is late); still web-app only */
+    @media (orientation: landscape) and (min-width: 901px) and (display-mode: standalone) {
       html {
         height: 100%;
         overflow: hidden;
@@ -253,11 +299,6 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        /* A bit more top pad so header buttons clear status-bar / top-edge miss taps */
-        padding: 5px
-                 max(8px, env(safe-area-inset-right))
-                 max(6px, env(safe-area-inset-bottom))
-                 max(8px, env(safe-area-inset-left));
       }
       .app {
         flex: 1 1 auto;
@@ -265,18 +306,6 @@
         width: 100%;
         overflow: hidden;
         overscroll-behavior: none;
-      }
-      .footer-stack {
-        align-content: start; /* don’t stretch grid rows into empty viewport space */
-      }
-      /* Standalone: keep howto on the same band as Restore / copy DEPT */
-      .howto.is-standalone {
-        align-self: center;
-        padding: 1px 6px;
-      }
-      .log-prev,
-      .flight-log {
-        overscroll-behavior: contain;
       }
     }
 
@@ -1033,20 +1062,67 @@
       font-weight: 650;
     }
 
-    /* iOS Safari (browser tab only): slow pulse on save cue */
+    /* Browser tab (iPad): whole howto panel pulses — hard to miss in Dim + Bright */
     .howto-save-pulse {
       display: inline;
-      color: var(--muted);
-      font-weight: 650;
+      color: var(--text);
+      font-weight: 750;
     }
 
-    .howto-save-pulse.is-pulsing {
-      animation: howto-save-pulse 3.2s ease-in-out infinite;
+    .howto.is-pulsing {
+      animation: howto-panel-pulse-dim 1.45s ease-in-out infinite;
+      will-change: box-shadow, border-color, background-color;
     }
 
-    @keyframes howto-save-pulse {
-      0%, 100% { opacity: 0.45; color: var(--muted); }
-      50% { opacity: 1; color: var(--text); }
+    @keyframes howto-panel-pulse-dim {
+      0%, 100% {
+        border-color: var(--line);
+        background: var(--panel);
+        box-shadow: 0 0 0 0 rgba(0, 161, 228, 0);
+      }
+      50% {
+        border-color: #5ecfff;
+        background: #2f4a66;
+        box-shadow:
+          0 0 0 3px rgba(0, 161, 228, 0.65),
+          0 0 22px rgba(0, 161, 228, 0.55);
+      }
+    }
+
+    html.theme-bright .howto.is-pulsing {
+      animation-name: howto-panel-pulse-bright;
+    }
+
+    @keyframes howto-panel-pulse-bright {
+      0%, 100% {
+        border-color: #000;
+        background: #fff;
+        box-shadow: 0 0 0 0 rgba(0, 61, 122, 0);
+      }
+      50% {
+        border-color: #003d7a;
+        background: #c8e4ff;
+        box-shadow:
+          0 0 0 4px rgba(0, 61, 122, 0.45),
+          0 0 0 8px rgba(0, 61, 122, 0.18);
+      }
+    }
+
+    html.theme-bright .howto.is-pulsing .howto-item,
+    html.theme-bright .howto.is-pulsing .howto-save-pulse {
+      color: #000;
+      opacity: 1;
+      font-weight: 700;
+    }
+
+    .howto.is-pulsing .howto-save-pulse {
+      color: #fff;
+      text-shadow: 0 0 8px rgba(0, 161, 228, 0.8);
+    }
+
+    html.theme-bright .howto.is-pulsing .howto-save-pulse {
+      color: #003d7a;
+      text-shadow: none;
     }
 
     .howto.is-standalone .howto-grid {
@@ -2387,7 +2463,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.31";
+    const APP_VERSION = "2.32";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
@@ -4582,25 +4658,16 @@
       );
     }
 
-    /** Safari on iOS/iPadOS in a normal tab (not home-screen web app). */
-    function isIosSafariBrowser() {
-      if (!isAppleTouchDevice() || isStandaloneDisplay()) return false;
-      const ua = navigator.userAgent || "";
-      if (/CriOS|FxiOS|EdgiOS|OPiOS|OPT\//.test(ua)) return false;
-      return /AppleWebKit/.test(ua);
-    }
-
     function initHowtoMode() {
       const box = $("howto");
-      const pulse = $("howtoSavePulse");
       if (!box) return;
       const standalone = isAppleTouchDevice() && isStandaloneDisplay();
       box.classList.toggle("is-standalone", standalone);
+      document.documentElement.classList.toggle("is-standalone-app", standalone);
       document.body.classList.toggle("is-standalone-app", standalone);
-      if (pulse) {
-        if (!standalone && isIosSafariBrowser()) pulse.classList.add("is-pulsing");
-        else pulse.classList.remove("is-pulsing");
-      }
+      /* Whole help panel pulses on iPad browser tabs until installed as web app */
+      const cuePulse = isAppleTouchDevice() && !standalone;
+      box.classList.toggle("is-pulsing", cuePulse);
     }
 
     function loadThemePref() {
