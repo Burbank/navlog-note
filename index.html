@@ -1158,7 +1158,7 @@
           </span></p>
           <p class="howto-item" role="listitem"><span class="n">4.</span><span>Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</span></p>
         </div>
-        <p class="howto-version">v2.7</p>
+        <p class="howto-version">v2.8</p>
       </section>
       <div class="dept-col">
         <button type="button" id="btnCopy">copy DEPT text</button>
@@ -1231,7 +1231,7 @@
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v2";
     const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
-    const APP_VERSION = "2.7";
+    const APP_VERSION = "2.8";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -1377,20 +1377,12 @@
       return dd + " " + months[date.getUTCMonth()] + " " + date.getUTCFullYear();
     }
 
-    function dateKeyLocal(date) {
-      return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
-    }
-
-    function dateKeyUtc(date) {
-      return date.getUTCFullYear() + "-" + String(date.getUTCMonth() + 1).padStart(2, "0") + "-" + String(date.getUTCDate()).padStart(2, "0");
-    }
-
     /**
-     * Departure UTC date for YOUR LOG.
-     * Shown once OFF BLOCKS is complete. Uses yesterday UTC when:
-     * - ON BLOCKS is earlier than OFF BLOCKS (Zulu midnight cross), or
-     * - local calendar date differs from UTC calendar date, or
-     * - OFF BLOCKS UTC time is later than the current UTC clock (already next UTC day).
+     * Departure UTC date for YOUR LOG (timezone-agnostic).
+     * Shown once OFF BLOCKS is complete. Uses the UTC calendar day of OFF BLOCKS:
+     * - ON &lt; OFF → Zulu midnight cross → departure was previous UTC day
+     * - else OFF later than current UTC clock → most recent such OFF was yesterday UTC
+     * Works the same in Americas (UTC−) and Asia (e.g. Seoul UTC+9); does not use local calendar.
      */
     function logUtcDate() {
       const off = timeToMinutes($("offBlocks").value);
@@ -1399,11 +1391,11 @@
       const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
       const on = timeToMinutes($("onBlocks").value);
       const nowUtcMins = now.getUTCHours() * 60 + now.getUTCMinutes();
-      let yesterday = false;
-      if (on !== null && on < off) yesterday = true;
-      else if (dateKeyLocal(now) !== dateKeyUtc(now)) yesterday = true;
-      else if (off > nowUtcMins) yesterday = true;
-      if (yesterday) d.setUTCDate(d.getUTCDate() - 1);
+      // Infer most recent UTC day for this OFF time — never compare local vs UTC calendars
+      // (that broke Asia: local already tomorrow while UTC still "today").
+      if ((on !== null && on < off) || off > nowUtcMins) {
+        d.setUTCDate(d.getUTCDate() - 1);
+      }
       return formatUtcDate(d);
     }
 
