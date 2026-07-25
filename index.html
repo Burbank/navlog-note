@@ -592,6 +592,16 @@
 
     .help-ios-share svg { display: block; }
 
+    /* iOS / iPadOS keyboard Tab key glyph (arrow into bar) */
+    .help-ios-tab {
+      display: inline-flex;
+      vertical-align: -0.18em;
+      margin: 0 0.2em;
+      color: currentColor;
+    }
+
+    .help-ios-tab svg { display: block; }
+
     .sr-only {
       position: absolute;
       width: 1px;
@@ -807,7 +817,15 @@
     <form id="flightForm" autocomplete="off" spellcheck="false">
       <div class="preflight-banner">
         <p class="oma-ref">ref OM-A 8.3.2.6</p>
-        <p class="view-hint">Best viewed iPad landscape</p>
+        <p class="view-hint">Best viewed iPad landscape
+          <span class="help-ios-tab" aria-hidden="true" title="Tab">
+            <svg width="15" height="12" viewBox="0 0 20 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1.5 7.2h9.4V4.6L16.2 8l-5.3 3.4V8.8H1.5V7.2z"/>
+              <path d="M17.6 2.4v11.2h1.6V2.4h-1.6z"/>
+            </svg>
+          </span><span class="sr-only">Tab</span>
+          selects next field
+        </p>
       </div>
       <div class="grid">
         <section class="card span-all">
@@ -931,7 +949,7 @@
           </span></p>
           <p class="howto-item" role="listitem"><span class="n">4.</span><span>Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</span></p>
         </div>
-        <p class="howto-version">v2.4</p>
+        <p class="howto-version">v2.5</p>
       </section>
       <div class="dept-col">
         <button type="button" id="btnCopy">copy DEPT text</button>
@@ -965,7 +983,7 @@
     const STORAGE_KEY = "flight-plan-form-v3";
     const HISTORY_KEY = "flight-plan-form-history-v2";
     const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
-    const APP_VERSION = "2.4";
+    const APP_VERSION = "2.5";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
