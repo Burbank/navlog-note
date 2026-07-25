@@ -2528,7 +2528,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.36";
+    const APP_VERSION = "2.37";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
@@ -3307,7 +3307,7 @@
       if (!pendingVersionToast || isPicNameOverlayOpen()) return;
       const msg = pendingVersionToast;
       pendingVersionToast = "";
-      showToast(msg, 3000);
+      showToast(msg, 3500);
     }
 
     function maybeShowVersionUpdateToast() {
@@ -3315,7 +3315,7 @@
       try { prev = String(localStorage.getItem(SEEN_VERSION_KEY) || ""); } catch (_) {}
       try { localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION); } catch (_) {}
       if (!prev || prev === APP_VERSION) return;
-      pendingVersionToast = "Updated to v" + APP_VERSION;
+      pendingVersionToast = "Update successful — v" + APP_VERSION;
       flushVersionUpdateToast();
     }
 
@@ -4383,11 +4383,12 @@
           }
         }
       } catch (_) {}
+      /* Replace long “checking” copy so a fast update still leaves readable success time */
       showUpdateBusy(
-        "Reloading…",
-        "Keep the app open — it has not frozen. If nothing happens after 20 seconds when online, swipe up to close and reopen; this may need to be repeated several times. Known Apple limitation."
+        "Update successful — reloading…",
+        "Please wait a moment while QUICKLOG reloads."
       );
-      await sleep(350);
+      await sleep(3000);
       const url = new URL(window.location.href);
       url.searchParams.set("r", Date.now().toString(36));
       window.location.replace(url.pathname + url.search + url.hash);
