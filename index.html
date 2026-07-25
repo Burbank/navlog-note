@@ -840,12 +840,12 @@
       min-width: 5.5rem;
     }
 
-    /* Tap target → native date picker via showPicker() (works on localhost too) */
+    /* Custom calendar popover — works in Cursor browser, iPad Safari, desktop */
     button.flight-log-date-hit {
       position: relative;
       display: none;
       min-width: 5.5rem;
-      min-height: 0;
+      min-height: 2.6rem;
       margin: 0;
       padding: 3px 6px 4px;
       border: 1px solid var(--field-border);
@@ -860,6 +860,7 @@
       font-weight: 400;
       text-align: left;
       -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
     }
 
     button.flight-log-date-hit.show {
@@ -876,15 +877,14 @@
 
     button.flight-log-date-hit:active {
       transform: scale(0.98);
-      border-color: var(--accent);
       background: var(--field);
+      border-color: var(--accent);
     }
 
     button.flight-log-date-hit:active .flight-log-date {
       color: var(--accent);
     }
 
-    /* Date, then dept utc, then days ago — stacked to stay narrow */
     .flight-log-date-stack {
       display: flex;
       flex-direction: column;
@@ -892,17 +892,102 @@
       gap: 1px;
     }
 
-    /* Keep in DOM for showPicker; must not be display:none */
-    .flight-log-date-native {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: 0;
+    .log-date-popover {
+      position: fixed;
+      z-index: 80;
+      width: 17.5rem;
+      padding: 10px 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #1c1c1e;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      color: var(--text);
+    }
+
+    .log-date-popover[hidden] {
+      display: none !important;
+    }
+
+    .log-date-popover-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 0 2px;
+    }
+
+    .log-date-popover-head strong {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .log-date-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .log-date-nav button {
+      min-width: 1.75rem;
+      min-height: 1.75rem;
       padding: 0;
-      border: 0;
-      opacity: 0;
-      pointer-events: none;
-      overflow: hidden;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--accent);
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .log-date-nav button:active {
+      background: rgba(0, 161, 228, 0.18);
+      transform: none;
+    }
+
+    .log-date-dow,
+    .log-date-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      text-align: center;
+    }
+
+    .log-date-dow {
+      margin-bottom: 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.68rem;
+      font-weight: 650;
+      color: var(--muted);
+    }
+
+    .log-date-grid button {
+      min-height: 2rem;
+      min-width: 0;
+      padding: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .log-date-grid button.muted {
+      color: rgba(255, 255, 255, 0.28);
+    }
+
+    .log-date-grid button.selected {
+      background: rgba(80, 80, 84, 0.95);
+      color: #ff453a;
+      font-weight: 700;
+    }
+
+    .log-date-grid button:active {
+      background: rgba(0, 161, 228, 0.22);
+      transform: none;
     }
 
     .flight-log-date {
@@ -1545,7 +1630,9 @@
               class="flight-log-date-hit"
               id="logDateHit"
               title="Tap to change departure date (UTC)"
-              aria-label="Change departure date UTC"
+              aria-haspopup="dialog"
+              aria-controls="logDatePopover"
+              aria-expanded="false"
             >
               <div class="flight-log-date-stack" id="logDateStack" aria-live="polite">
                 <span class="flight-log-date" id="logDate"></span>
@@ -1553,13 +1640,6 @@
                 <span class="flight-log-days-ago" id="logDaysAgo"></span>
               </div>
             </button>
-            <input
-              type="date"
-              id="logDeptDatePicker"
-              class="flight-log-date-native"
-              tabindex="-1"
-              aria-hidden="true"
-            />
           </div>
           <label class="flight-log-pf" for="logPf" title="Pilot flying this leg">
             <input id="logPf" name="logPf" type="checkbox" />
@@ -1640,6 +1720,28 @@
     </div>
   </div>
 
+  <div
+    class="log-date-popover"
+    id="logDatePopover"
+    role="dialog"
+    aria-label="Departure date UTC"
+    aria-modal="true"
+    hidden
+  >
+    <div class="log-date-popover-head">
+      <strong id="logDateMonthLabel">Jul 2026</strong>
+      <div class="log-date-nav">
+        <button type="button" id="logDatePrev" aria-label="Previous month">‹</button>
+        <button type="button" id="logDateToday" aria-label="Jump to selected / today">●</button>
+        <button type="button" id="logDateNext" aria-label="Next month">›</button>
+      </div>
+    </div>
+    <div class="log-date-dow" aria-hidden="true">
+      <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+    </div>
+    <div class="log-date-grid" id="logDateGrid"></div>
+  </div>
+
   <div class="toast" id="toast" aria-live="polite">Copied</div>
 
   <script>
@@ -1651,7 +1753,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.15";
+    const APP_VERSION = "2.16";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -1871,25 +1973,6 @@
       return dd + " " + MONTHS_UTC[date.getUTCMonth()] + " " + date.getUTCFullYear();
     }
 
-    /** "DD MMM YYYY" (UTC) → YYYY-MM-DD for <input type="date"> (calendar day = UTC day). */
-    function deptDateToIso(str) {
-      const d = parseLogDeptDate(str);
-      if (!d) return "";
-      const y = d.getUTCFullYear();
-      const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-      const day = String(d.getUTCDate()).padStart(2, "0");
-      return y + "-" + m + "-" + day;
-    }
-
-    /** YYYY-MM-DD from date picker → stored "DD MMM YYYY" (treat as UTC day). */
-    function isoToDeptDate(iso) {
-      const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (!m) return "";
-      const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-      if (Number.isNaN(d.getTime())) return "";
-      return formatUtcDate(d);
-    }
-
     /** Parse stored "DD MMM YYYY" (UTC) → UTC midnight Date, or null. */
     function parseLogDeptDate(str) {
       const m = String(str || "").trim().match(/^(\d{2}) ([A-Z]{3}) (\d{4})$/);
@@ -1985,11 +2068,9 @@
       $("logDate").textContent = date;
       $("logDaysAgo").textContent = ago;
       const hit = $("logDateHit");
-      if (hit) hit.classList.toggle("show", !!date);
-      const picker = $("logDeptDatePicker");
-      if (picker && date) {
-        const iso = deptDateToIso(date);
-        if (iso) picker.value = iso;
+      if (hit) {
+        hit.classList.toggle("show", !!date);
+        if (!date) closeDeptDatePopover();
       }
       $("blockTime").textContent = block || "—";
       $("flightTimeCalc").textContent = flight || "—";
@@ -1997,73 +2078,153 @@
       checkLogTimeErrors();
     }
 
-    /** Native calendar (iOS/macOS style via type=date). Picked day = UTC DEPT DATE. */
-    function openDeptDatePicker() {
-      const picker = $("logDeptDatePicker");
+    /** In-app calendar (Cursor browser / iPad / desktop — native type=date is unreliable). */
+    let deptCalYear = 0;
+    let deptCalMonth = 0; // 0–11 UTC
+
+    function closeDeptDatePopover() {
+      const pop = $("logDatePopover");
       const hit = $("logDateHit");
-      if (!picker || !hit) return;
-      const cur = $("logDeptDate").value.trim();
-      if (!cur) return;
-      const iso = deptDateToIso(cur);
-      if (iso) picker.value = iso;
+      if (!pop) return;
+      pop.hidden = true;
+      if (hit) hit.setAttribute("aria-expanded", "false");
+    }
 
-      const coverHit = () => {
-        // Fallback: temporarily cover the box so a real type=date control receives the tap.
-        const r = hit.getBoundingClientRect();
-        picker.style.cssText =
-          "position:fixed;left:" + r.left + "px;top:" + r.top +
-          "px;width:" + Math.max(r.width, 44) + "px;height:" + Math.max(r.height, 44) +
-          "px;opacity:0.02;pointer-events:auto;z-index:40;margin:0;border:0;padding:0;font-size:16px;";
-        try { picker.focus({ preventScroll: true }); } catch (_) {}
-        try { picker.click(); } catch (_) {}
-        clearTimeout(picker._coverTimer);
-        picker._coverTimer = setTimeout(() => {
-          picker.removeAttribute("style");
-          picker.className = "flight-log-date-native";
-        }, 1200);
-      };
+    function positionDeptDatePopover() {
+      const pop = $("logDatePopover");
+      const hit = $("logDateHit");
+      if (!pop || !hit) return;
+      const r = hit.getBoundingClientRect();
+      const pad = 8;
+      const w = pop.offsetWidth || 280;
+      const h = pop.offsetHeight || 280;
+      let left = r.left;
+      let top = r.bottom + 6;
+      if (left + w > window.innerWidth - pad) left = window.innerWidth - w - pad;
+      if (left < pad) left = pad;
+      if (top + h > window.innerHeight - pad) top = Math.max(pad, r.top - h - 6);
+      pop.style.left = Math.round(left) + "px";
+      pop.style.top = Math.round(top) + "px";
+    }
 
-      // Not a localhost limitation — open from this click via showPicker when available.
-      try {
-        if (typeof picker.showPicker === "function") {
-          const p = picker.showPicker();
-          if (p && typeof p.then === "function") {
-            p.catch(coverHit);
-            return;
-          }
-          return;
+    function renderDeptDateGrid() {
+      const grid = $("logDateGrid");
+      const label = $("logDateMonthLabel");
+      if (!grid || !label) return;
+      label.textContent = MONTHS_UTC[deptCalMonth].charAt(0) +
+        MONTHS_UTC[deptCalMonth].slice(1).toLowerCase() + " " + deptCalYear;
+
+      const selected = parseLogDeptDate($("logDeptDate").value);
+      const first = new Date(Date.UTC(deptCalYear, deptCalMonth, 1));
+      // Monday-first: UTC Sunday=0 → 6, Monday=1 → 0, …
+      const startPad = (first.getUTCDay() + 6) % 7;
+      const daysInMonth = new Date(Date.UTC(deptCalYear, deptCalMonth + 1, 0)).getUTCDate();
+      const prevDays = new Date(Date.UTC(deptCalYear, deptCalMonth, 0)).getUTCDate();
+
+      grid.replaceChildren();
+      const total = 42;
+      for (let i = 0; i < total; i++) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        let y = deptCalYear;
+        let m = deptCalMonth;
+        let d;
+        if (i < startPad) {
+          d = prevDays - startPad + i + 1;
+          m -= 1;
+          if (m < 0) { m = 11; y -= 1; }
+          btn.classList.add("muted");
+        } else if (i >= startPad + daysInMonth) {
+          d = i - startPad - daysInMonth + 1;
+          m += 1;
+          if (m > 11) { m = 0; y += 1; }
+          btn.classList.add("muted");
+        } else {
+          d = i - startPad + 1;
         }
-      } catch (_) {}
-      coverHit();
+        btn.textContent = String(d);
+        const cell = new Date(Date.UTC(y, m, d));
+        if (
+          selected &&
+          selected.getUTCFullYear() === y &&
+          selected.getUTCMonth() === m &&
+          selected.getUTCDate() === d
+        ) {
+          btn.classList.add("selected");
+        }
+        btn.addEventListener("click", () => {
+          const next = formatUtcDate(cell);
+          if (next !== $("logDeptDate").value.trim()) {
+            $("logDeptDate").value = next;
+            saveNow();
+            updateLogCalcs();
+            showToast("DEPT DATE updated");
+          }
+          closeDeptDatePopover();
+        });
+        grid.appendChild(btn);
+      }
+    }
+
+    function openDeptDatePopover() {
+      const pop = $("logDatePopover");
+      const hit = $("logDateHit");
+      if (!pop || !hit || !hit.classList.contains("show")) return;
+      const cur = parseLogDeptDate($("logDeptDate").value) || new Date();
+      deptCalYear = cur.getUTCFullYear();
+      deptCalMonth = cur.getUTCMonth();
+      pop.hidden = false;
+      hit.setAttribute("aria-expanded", "true");
+      renderDeptDateGrid();
+      positionDeptDatePopover();
     }
 
     function bindDeptDatePicker() {
       const hit = $("logDateHit");
-      const picker = $("logDeptDatePicker");
-      if (!hit || !picker) return;
+      const pop = $("logDatePopover");
+      if (!hit || !pop) return;
 
       hit.addEventListener("click", (e) => {
         e.preventDefault();
-        openDeptDatePicker();
+        e.stopPropagation();
+        if (!pop.hidden) closeDeptDatePopover();
+        else openDeptDatePopover();
       });
 
-      picker.addEventListener("change", () => {
-        const next = isoToDeptDate(picker.value);
-        if (!next || next === $("logDeptDate").value.trim()) return;
-        $("logDeptDate").value = next;
-        saveNow();
-        updateLogCalcs();
-        showToast("DEPT DATE updated");
+      $("logDatePrev").addEventListener("click", (e) => {
+        e.stopPropagation();
+        deptCalMonth -= 1;
+        if (deptCalMonth < 0) { deptCalMonth = 11; deptCalYear -= 1; }
+        renderDeptDateGrid();
+        positionDeptDatePopover();
+      });
+      $("logDateNext").addEventListener("click", (e) => {
+        e.stopPropagation();
+        deptCalMonth += 1;
+        if (deptCalMonth > 11) { deptCalMonth = 0; deptCalYear += 1; }
+        renderDeptDateGrid();
+        positionDeptDatePopover();
+      });
+      $("logDateToday").addEventListener("click", (e) => {
+        e.stopPropagation();
+        const cur = parseLogDeptDate($("logDeptDate").value) || new Date();
+        deptCalYear = cur.getUTCFullYear();
+        deptCalMonth = cur.getUTCMonth();
+        renderDeptDateGrid();
+        positionDeptDatePopover();
       });
 
-      // Some browsers fire input without change when confirming same day — ignore.
-      picker.addEventListener("input", () => {
-        if (!picker.value) return;
-        const next = isoToDeptDate(picker.value);
-        if (!next || next === $("logDeptDate").value.trim()) return;
-        $("logDeptDate").value = next;
-        saveNow();
-        updateLogCalcs();
+      pop.addEventListener("click", (e) => e.stopPropagation());
+      document.addEventListener("click", (e) => {
+        if (pop.hidden) return;
+        if (pop.contains(e.target) || hit.contains(e.target)) return;
+        closeDeptDatePopover();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeDeptDatePopover();
+      });
+      window.addEventListener("resize", () => {
+        if (!pop.hidden) positionDeptDatePopover();
       });
     }
 
