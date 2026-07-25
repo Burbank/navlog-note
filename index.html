@@ -440,7 +440,8 @@
         minmax(2.8rem, 0.6fr)
         minmax(2.8rem, 0.6fr)
         minmax(2.2rem, 0.45fr)
-        minmax(4rem, 1fr);
+        minmax(3.4rem, 0.9fr)
+        1.05rem; /* mark — after PIC; keep row height unchanged */
       column-gap: 6px;
       row-gap: 3px;
       min-width: 46rem;
@@ -475,14 +476,42 @@
       text-align: center;
     }
 
+    .log-prev-row > span.c-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+
+    /* Compact mark box — must not grow row line-height / min-height */
+    .log-prev-mark {
+      width: 0.78rem;
+      height: 0.78rem;
+      margin: 0;
+      padding: 0;
+      flex: 0 0 auto;
+      accent-color: var(--accent);
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
     .log-prev-row.empty > span {
       opacity: 0.3;
+    }
+
+    .log-prev-row.empty > span.c-mark {
+      opacity: 0;
+      pointer-events: none;
     }
 
     /* Only PF legs highlight (recency focus) — PM stays muted */
     .log-prev-row.pf > span {
       color: var(--text);
       font-weight: 650;
+    }
+
+    .log-prev-row.pf > span.c-mark {
+      font-weight: 400;
     }
 
     /* Right column: 90-day badge + copy-all + note */
@@ -522,14 +551,14 @@
       font-weight: 700;
     }
 
-    .log-side-col #btnClearTopLog {
+    .log-side-col #btnClearMarkedLog {
       background: transparent;
       color: var(--muted);
       border: 1px solid var(--line);
       font-weight: 600;
     }
 
-    .log-side-col #btnClearTopLog:active {
+    .log-side-col #btnClearMarkedLog:active {
       background: rgba(196, 92, 92, 0.25);
       color: var(--text);
       border-color: var(--warn);
@@ -608,7 +637,7 @@
     .footer-stack > #btnCopyArr,
     .log-copy-col #btnCopyLog,
     .log-side-col #btnCopyAllLog,
-    .log-side-col #btnClearTopLog {
+    .log-side-col #btnClearMarkedLog {
       width: 100%;
       min-height: 32px;
       font-size: 0.74rem;
@@ -1703,7 +1732,7 @@
         </div>
         <button type="button" id="btnCopyAllLog">copy LOG as table</button>
         <p class="log-data-note">Backup frequently, data may be lost.</p>
-        <button type="button" id="btnClearTopLog" title="Remove the newest logbook line">clear top log line</button>
+        <button type="button" id="btnClearMarkedLog" title="Remove checked logbook lines">Clear Marked Lines</button>
       </div>
       <p class="app-rec">
         <span class="app-rec-try">
@@ -1753,7 +1782,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.16";
+    const APP_VERSION = "2.17";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -1773,6 +1802,8 @@
       "DEP DATE", "REG", "ROUTE", "OFF BLK", "T/O", "LDG",
       "ON BLK", "BLOCK", "FLIGHT", "ROLE", "PIC"
     ];
+    /** UI table only — mark column after PIC (not included in copy LOG as table). */
+    const LOG_PREV_UI_HEADERS = LOG_PREV_HEADERS.concat([""]);
     const DEFAULTS = {
       security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
       logAcft: "CKA", logPf: "no", logPic: "", logDeptDate: "", logDep: "XXX", logArr: "XXX"
@@ -2329,10 +2360,11 @@
 
     function syncLogPrevHead() {
       const head = document.querySelector("#logPrevTable .log-prev-head");
-      if (!head || head.childElementCount === LOG_PREV_HEADERS.length) return;
-      head.replaceChildren(...LOG_PREV_HEADERS.map((h) => {
+      if (!head || head.childElementCount === LOG_PREV_UI_HEADERS.length) return;
+      head.replaceChildren(...LOG_PREV_UI_HEADERS.map((h) => {
         const span = document.createElement("span");
         span.textContent = h;
+        if (!h) span.className = "c-mark";
         return span;
       }));
     }
@@ -2356,6 +2388,19 @@
           span.textContent = text;
           row.appendChild(span);
         });
+        const markCell = document.createElement("span");
+        markCell.className = "c-mark";
+        if (v) {
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.className = "log-prev-mark";
+          cb.dataset.index = String(i);
+          cb.title = "Mark line for clearance";
+          cb.setAttribute("aria-label", "Mark log line " + (i + 1) + " for clearance");
+          cb.addEventListener("click", (e) => e.stopPropagation());
+          markCell.appendChild(cb);
+        }
+        row.appendChild(markCell);
         table.appendChild(row);
       }
       updateLogPf90Badge(list);
@@ -2899,17 +2944,27 @@
       flashCopyBtn($("btnCopyAllLog"), "copy LOG as table");
     }
 
-    /** Remove newest archived log line (top of table). Repeat to clear further. */
-    function clearTopLogLine() {
+    /** Remove checked (marked) visible log lines. */
+    function clearMarkedLogLines() {
       const list = loadLogPrev();
       if (!list.length) {
         showToast("Log empty");
         return;
       }
-      list.shift();
-      saveLogPrev(list);
+      const marked = new Set();
+      document.querySelectorAll("#logPrevTable .log-prev-mark:checked").forEach((cb) => {
+        const idx = parseInt(cb.dataset.index, 10);
+        if (!Number.isNaN(idx) && idx >= 0 && idx < list.length) marked.add(idx);
+      });
+      if (!marked.size) {
+        showToast("No lines marked");
+        return;
+      }
+      const next = list.filter((_, i) => !marked.has(i));
+      saveLogPrev(next);
       renderLogPrev();
-      showToast("Top log line cleared");
+      const n = marked.size;
+      showToast(n === 1 ? "1 marked line cleared" : n + " marked lines cleared");
     }
 
     function clearForm() {
@@ -3150,7 +3205,7 @@
     $("btnCopyArr").addEventListener("click", copyArr);
     $("btnCopyLog").addEventListener("click", copyLog);
     $("btnCopyAllLog").addEventListener("click", copyAllLogText);
-    $("btnClearTopLog").addEventListener("click", clearTopLogLine);
+    $("btnClearMarkedLog").addEventListener("click", clearMarkedLogLines);
     $("btnClear").addEventListener("click", clearForm);
     $("btnRestore").addEventListener("click", restoreHistory);
     $("btnPasteDsperfo").addEventListener("click", pasteDsperfo);
