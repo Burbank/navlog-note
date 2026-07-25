@@ -533,13 +533,13 @@
       font-weight: 400;
     }
 
-    /* Right column: 90-day badge + copy-all + note */
+    /* Right column beside history: copy table/CSV + note + clear/edit */
     .log-side-col {
       grid-area: flogPf90;
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 8px;
+      gap: 6px;
       align-self: start;
       width: 100%;
       margin-top: 2px;
@@ -570,7 +570,8 @@
       font-weight: 700;
     }
 
-    .log-side-col #btnClearMarkedLog {
+    .log-side-col #btnClearMarkedLog,
+    .log-side-col #btnEditMarkedLog {
       background: transparent;
       color: var(--muted);
       border: 1px solid var(--line);
@@ -581,6 +582,12 @@
       background: rgba(196, 92, 92, 0.25);
       color: var(--text);
       border-color: var(--warn);
+    }
+
+    .log-side-col #btnEditMarkedLog:active {
+      background: rgba(0, 161, 228, 0.22);
+      color: var(--text);
+      border-color: var(--accent);
     }
 
     .log-data-note {
@@ -656,7 +663,9 @@
     .footer-stack > #btnCopyArr,
     .log-copy-col #btnCopyLog,
     .log-side-col #btnCopyAllLog,
-    .log-side-col #btnClearMarkedLog {
+    .log-side-col #btnCopyLogCsv,
+    .log-side-col #btnClearMarkedLog,
+    .log-side-col #btnEditMarkedLog {
       width: 100%;
       min-height: 32px;
       font-size: 0.74rem;
@@ -685,11 +694,12 @@
       align-self: end;
     }
 
+    /* Beside YOUR LOG: copy/add at top, recency badge at bottom */
     .log-copy-col {
       grid-area: flogCopy;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
+      justify-content: flex-start;
       gap: 8px;
       align-self: stretch;
       width: 100%;
@@ -697,6 +707,10 @@
 
     .log-copy-col #btnCopyLog {
       margin-top: 0;
+    }
+
+    .log-copy-col .log-pf90 {
+      margin-top: auto;
     }
 
     .phase-rule {
@@ -1329,6 +1343,44 @@
       transform: translateX(-50%) translateY(0);
     }
 
+    .app-alert {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.55);
+    }
+
+    .app-alert[hidden] {
+      display: none !important;
+    }
+
+    .app-alert-box {
+      width: min(22rem, 100%);
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .app-alert-box p {
+      margin: 0 0 14px;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .app-alert-box button {
+      width: 100%;
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+
     .sw-update-banner {
       position: sticky;
       top: 0;
@@ -1739,6 +1791,9 @@
       </section>
       <div class="log-copy-col">
         <button type="button" id="btnCopyLog">copy/add to LOG</button>
+        <div class="log-pf90" id="logPf90" aria-live="polite" title="Pilot-flying takeoffs and landings in the last 90 days">
+          <span><strong id="logPf90Count">0</strong> T/O and LDG in the last 90 days</span>
+        </div>
       </div>
       <div class="log-prev" id="logPrev" aria-label="Previous log summaries" aria-live="polite">
         <div class="log-prev-table" id="logPrevTable">
@@ -1746,12 +1801,11 @@
         </div>
       </div>
       <div class="log-side-col">
-        <div class="log-pf90" id="logPf90" aria-live="polite" title="Pilot-flying takeoffs and landings in the last 90 days">
-          <span><strong id="logPf90Count">0</strong> T/O and LDG in the last 90 days</span>
-        </div>
         <button type="button" id="btnCopyAllLog">copy LOG as table</button>
-        <p class="log-data-note">Backup frequently, data may be lost.</p>
+        <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">Copy Log as CSV</button>
+        <p class="log-data-note">Backup frequently, data may be lost. CSV for LogTen.</p>
         <button type="button" id="btnClearMarkedLog" title="Remove checked logbook lines">Clear Marked Lines</button>
+        <button type="button" id="btnEditMarkedLog" title="Load one marked line into YOUR LOG for editing">Edit Marked Line</button>
       </div>
       <p class="app-rec">
         <span class="app-rec-try">
@@ -1790,6 +1844,13 @@
     <div class="log-date-grid" id="logDateGrid"></div>
   </div>
 
+  <div class="app-alert" id="appAlert" hidden role="alertdialog" aria-modal="true" aria-labelledby="appAlertMsg">
+    <div class="app-alert-box">
+      <p id="appAlertMsg"></p>
+      <button type="button" id="appAlertOk">OK</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast" aria-live="polite">Copied</div>
 
   <script>
@@ -1801,7 +1862,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.17";
+    const APP_VERSION = "2.18";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
@@ -2016,8 +2077,31 @@
       const start = timeToMinutes(startStr);
       if (end === null || start === null) return "";
       let total = end - start;
-      if (total < 0) total += 24 * 60; // past midnight Zulu
+      if (total < 0) total += 24 * 60; // past midnight Zulu (FDPFMS-style)
       return minutesToDuration(total);
+    }
+
+    /**
+     * Minutes from start→end, allowing Zulu day rollover (same as subtractTimes).
+     * e.g. 23:56 → 00:14 = 18 min, not an order error.
+     */
+    function minutesBetweenAllowingMidnight(endMins, startMins) {
+      if (endMins === null || startMins === null) return null;
+      let d = endMins - startMins;
+      if (d < 0) d += 24 * 60;
+      return d;
+    }
+
+    /**
+     * True when end is before start and a midnight wrap would be absurdly long
+     * (typo). Short wraps like TD 23:56 / ON 00:14 are valid next-day.
+     * maxMinutes: max plausible same-leg interval (taxi-out / taxi-in).
+     */
+    function isLogTimeOrderError(endMins, startMins, maxMinutes) {
+      if (endMins === null || startMins === null) return false;
+      if (endMins >= startMins) return false;
+      const wrapped = minutesBetweenAllowingMidnight(endMins, startMins);
+      return wrapped === null || wrapped > maxMinutes;
     }
 
     function formatUtcDate(date) {
@@ -2066,14 +2150,23 @@
       return "— " + days + " days ago";
     }
 
+    /** Max plausible taxi-out / taxi-in when end clock < start (next Zulu day). */
+    const LOG_TAXI_WRAP_MAX_MIN = 6 * 60;
+
     function checkLogTimeErrors() {
       const off = timeToMinutes($("offBlocks").value);
       const air = timeToMinutes($("airborne").value);
       const td = timeToMinutes($("touchdown").value);
       const on = timeToMinutes($("onBlocks").value);
-      // No midnight wrap — earlier airborne/on-blocks than the prior event is an entry error.
-      $("airborne").classList.toggle("log-time-error", off !== null && air !== null && air < off);
-      $("onBlocks").classList.toggle("log-time-error", td !== null && on !== null && on < td);
+      // FDPFMS-style: end < start ⇒ next day unless wrapped duration is absurd.
+      $("airborne").classList.toggle(
+        "log-time-error",
+        isLogTimeOrderError(air, off, LOG_TAXI_WRAP_MAX_MIN)
+      );
+      $("onBlocks").classList.toggle(
+        "log-time-error",
+        isLogTimeOrderError(on, td, LOG_TAXI_WRAP_MAX_MIN)
+      );
     }
 
     function s26BlockForPair(dep, arr) {
@@ -2342,19 +2435,46 @@
       ].map((x) => String(x || "").trim()).join("|");
     }
 
+    /** Sort key: DEP DATE (UTC day), then OFF BLOCKS. Missing date → oldest. */
+    function logLegChronoParts(v) {
+      const d = parseLogDeptDate(v && v.logDeptDate);
+      const day = d ? d.getTime() : Number.NEGATIVE_INFINITY;
+      const off = timeToMinutes(v && v.offBlocks);
+      const mins = off !== null ? off : -1;
+      return { day, mins };
+    }
+
+    /** Newest calendar date (then later OFF) first — web UI order. */
+    function sortLogPrevNewestFirst(list) {
+      return (list || []).slice().sort((a, b) => {
+        const ka = logLegChronoParts(a);
+        const kb = logLegChronoParts(b);
+        if (ka.day !== kb.day) return kb.day - ka.day;
+        if (ka.mins !== kb.mins) return kb.mins - ka.mins;
+        return 0;
+      });
+    }
+
+    /** Oldest calendar date first — table/CSV export order. */
+    function sortLogPrevOldestFirst(list) {
+      return sortLogPrevNewestFirst(list).reverse();
+    }
+
     function loadLogPrev() {
       try {
         const raw = localStorage.getItem(LOG_PREV_KEY);
         if (!raw) return [];
         const data = JSON.parse(raw);
-        return Array.isArray(data) ? data.slice(0, LOG_PREV_STORE_MAX) : [];
+        if (!Array.isArray(data)) return [];
+        return sortLogPrevNewestFirst(data.slice(0, LOG_PREV_STORE_MAX));
       } catch (_) {
         return [];
       }
     }
 
     function saveLogPrev(list) {
-      localStorage.setItem(LOG_PREV_KEY, JSON.stringify(list.slice(0, LOG_PREV_STORE_MAX)));
+      const ordered = sortLogPrevNewestFirst(list).slice(0, LOG_PREV_STORE_MAX);
+      localStorage.setItem(LOG_PREV_KEY, JSON.stringify(ordered));
     }
 
     /** PF flights in the last 90 days → each counts as one T/O + one LDG. */
@@ -2390,7 +2510,7 @@
       }));
     }
 
-    /** Render table rows: newest at top. Whole-row highlight only for PF legs. */
+    /** Render table rows: newest DEP DATE at top. Whole-row highlight only for PF legs. */
     function renderLogPrev() {
       const table = $("logPrevTable");
       if (!table) return;
@@ -2416,8 +2536,8 @@
           cb.type = "checkbox";
           cb.className = "log-prev-mark";
           cb.dataset.index = String(i);
-          cb.title = "Mark line for clearance";
-          cb.setAttribute("aria-label", "Mark log line " + (i + 1) + " for clearance");
+          cb.title = "Mark line to clear or edit";
+          cb.setAttribute("aria-label", "Mark log line " + (i + 1));
           cb.addEventListener("click", (e) => e.stopPropagation());
           markCell.appendChild(cb);
         }
@@ -2443,19 +2563,121 @@
       };
     }
 
+    /** Index in archived log list currently loaded for edit (null = new / top-insert). */
+    let logEditIndex = null;
+
+    function getMarkedLogIndices() {
+      const list = loadLogPrev();
+      const marked = [];
+      // Use .checked (not :checked) — more reliable with display:contents rows.
+      document.querySelectorAll("#logPrevTable input.log-prev-mark").forEach((cb) => {
+        if (!cb.checked) return;
+        const idx = parseInt(cb.getAttribute("data-index"), 10);
+        if (!Number.isNaN(idx) && idx >= 0 && idx < list.length) marked.push(idx);
+      });
+      return marked;
+    }
+
+    function showAppAlert(msg) {
+      const box = $("appAlert");
+      const text = $("appAlertMsg");
+      if (!box || !text) {
+        window.alert(msg);
+        return;
+      }
+      text.textContent = msg;
+      box.hidden = false;
+      const ok = $("appAlertOk");
+      if (ok) {
+        try { ok.focus(); } catch (_) {}
+      }
+    }
+
+    function bindAppAlert() {
+      const box = $("appAlert");
+      const ok = $("appAlertOk");
+      if (!box || !ok) return;
+      const close = () => { box.hidden = true; };
+      ok.addEventListener("click", close);
+      box.addEventListener("click", (e) => {
+        if (e.target === box) close();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !box.hidden) close();
+      });
+    }
+
+    /** Load one archived leg into YOUR LOG fields for editing. */
+    function loadLogLegIntoForm(v) {
+      if (!v) return;
+      suppressFocusClear = true;
+      $("logAcft").value = v.logAcft || DEFAULTS.logAcft || "CKA";
+      $("logPf").checked = v.logPf === "yes";
+      $("logPic").value = v.logPic || "";
+      $("logDeptDate").value = v.logDeptDate || "";
+      if (v.logDep && LOG_AIRPORTS.includes(v.logDep)) $("logDep").value = v.logDep;
+      if (v.logArr && LOG_AIRPORTS.includes(v.logArr)) $("logArr").value = v.logArr;
+      $("offBlocks").value = v.offBlocks || "";
+      $("airborne").value = v.airborne || "";
+      $("touchdown").value = v.touchdown || "";
+      $("onBlocks").value = v.onBlocks || "";
+      LOG_TIME_IDS.forEach((id) => {
+        delete preFocusById[id];
+        const el = $(id);
+        if (el) {
+          el._editedSinceFocus = false;
+          el.classList.remove("log-time-error", "warn-diff");
+        }
+      });
+      saveNow();
+      updateLogCalcs();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { suppressFocusClear = false; });
+      });
+    }
+
+    function editMarkedLogLine() {
+      const marked = getMarkedLogIndices();
+      if (!marked.length) {
+        showToast("No line marked");
+        return;
+      }
+      if (marked.length > 1) {
+        showAppAlert(
+          "Mark only one log line to edit.\n\n" +
+          "You have " + marked.length + " lines marked. Uncheck the extras, then try again."
+        );
+        return;
+      }
+      const list = loadLogPrev();
+      const idx = marked[0];
+      const v = list[idx];
+      if (!v) {
+        showToast("Line not found");
+        return;
+      }
+      logEditIndex = idx;
+      loadLogLegIntoForm(v);
+      showToast("Line loaded — edit, then copy/add to LOG", 3200);
+    }
+
     /**
-     * Write current YOUR LOG segment to the top summary row.
-     * Newer entries push older ones down. Identical top row is refreshed in place.
+     * Write current YOUR LOG segment into the history table.
+     * If editing a marked line, replace that row; else replace identical key or insert.
+     * Storage/UI order is always by DEP DATE (newest calendar date first).
      */
     function pushLogPrevFromCurrent() {
       const snap = snapshotLogLeg();
       // Need at least a completed OFF or ON to keep a useful history row.
       if (digitsOnly(snap.offBlocks).length < 4 && digitsOnly(snap.onBlocks).length < 4) return;
       const list = loadLogPrev();
-      if (list[0] && logLegKey(list[0]) === logLegKey(snap)) {
-        list[0] = snap;
+      if (logEditIndex != null && logEditIndex >= 0 && logEditIndex < list.length) {
+        list[logEditIndex] = snap;
+        logEditIndex = null;
       } else {
-        list.unshift(snap);
+        const existing = list.findIndex((v) => v && logLegKey(v) === logLegKey(snap));
+        if (existing >= 0) list[existing] = snap;
+        else list.unshift(snap);
       }
       saveLogPrev(list);
       renderLogPrev();
@@ -2472,6 +2694,7 @@
       el.addEventListener("input", () => {
         const n = digitsOnly(el.value).length;
         if (prevDigits === 0 && n >= 1) {
+          logEditIndex = null; // new leg — stop replacing a prior edited row
           ["airborne", "touchdown", "onBlocks"].forEach((id) => {
             $(id).value = "";
             delete preFocusById[id];
@@ -2788,11 +3011,16 @@
       return lines.join("\n");
     }
 
-    function showToast(msg) {
+    let toastTimer = 0;
+    function showToast(msg, ms) {
       const t = $("toast");
       t.textContent = msg;
       t.classList.add("show");
-      setTimeout(() => t.classList.remove("show"), 1600);
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toastTimer = 0;
+        t.classList.remove("show");
+      }, ms != null ? ms : 1600);
     }
 
     /** Copy plain text; optional HTML (e.g. real table for Apple Notes). */
@@ -2872,7 +3100,7 @@
     }
 
     function allLogRowsOldestFirst() {
-      return loadLogPrev().slice().reverse().map((v) =>
+      return sortLogPrevOldestFirst(loadLogPrev()).map((v) =>
         logPrevCells(v, { phReg: true }).map((c) => String(c).replace(/\|/g, "/"))
       );
     }
@@ -2966,6 +3194,81 @@
       flashCopyBtn($("btnCopyAllLog"), "copy LOG as table");
     }
 
+    /**
+     * CSV for LogTen Pro import (File → Import / column mapping).
+     * Headers match common LogTen labels (Out/Off/On/In = OOOI).
+     * Date: dd-MMM-yyyy; times HH:MM (Zulu); Aircraft ID = PH-…; oldest first.
+     * @see https://github.com/Coradine/logten-api (flight_* field names)
+     */
+    const LOGTEN_CSV_HEADERS = [
+      "Date", "Aircraft ID", "Aircraft Type", "From", "To",
+      "Out", "Off", "On", "In",
+      "Total Time", "PIC", "PIC Name",
+      "Day Takeoffs", "Day Landings", "Remarks"
+    ];
+
+    function formatLogTenDate(dateStr) {
+      const d = parseLogDeptDate(dateStr);
+      if (!d) return String(dateStr || "").trim();
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return (
+        String(d.getUTCDate()).padStart(2, "0") +
+        "-" +
+        months[d.getUTCMonth()] +
+        "-" +
+        d.getUTCFullYear()
+      );
+    }
+
+    function csvEscapeCell(val) {
+      const s = String(val ?? "");
+      if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function buildLogTenCsv() {
+      const rows = sortLogPrevOldestFirst(loadLogPrev());
+      const lines = [LOGTEN_CSV_HEADERS.map(csvEscapeCell).join(",")];
+      for (const v of rows) {
+        if (!v) continue;
+        const block = subtractTimes(v.onBlocks, v.offBlocks) || "";
+        const isPf = v.logPf === "yes";
+        const regRaw = String(v.logAcft || "").trim().toUpperCase().replace(/^PH-/, "");
+        const reg = acftRegistration(regRaw) || "";
+        lines.push(
+          [
+            formatLogTenDate(v.logDeptDate),
+            reg,
+            "B744",
+            String(v.logDep || "").trim(),
+            String(v.logArr || "").trim(),
+            String(v.offBlocks || "").trim(),
+            String(v.airborne || "").trim(),
+            String(v.touchdown || "").trim(),
+            String(v.onBlocks || "").trim(),
+            block,
+            isPf ? block : "",
+            String(v.logPic || "").trim(),
+            isPf ? "1" : "0",
+            isPf ? "1" : "0",
+            isPf ? "PF" : "PM"
+          ]
+            .map(csvEscapeCell)
+            .join(",")
+        );
+      }
+      return lines.join("\r\n");
+    }
+
+    async function copyLogCsv() {
+      if (!loadLogPrev().length) {
+        showToast("Log empty");
+        return;
+      }
+      await writeClipboard(buildLogTenCsv());
+      flashCopyBtn($("btnCopyLogCsv"), "Copy Log as CSV");
+    }
+
     /** Remove checked (marked) visible log lines. */
     function clearMarkedLogLines() {
       const list = loadLogPrev();
@@ -2973,15 +3276,12 @@
         showToast("Log empty");
         return;
       }
-      const marked = new Set();
-      document.querySelectorAll("#logPrevTable .log-prev-mark:checked").forEach((cb) => {
-        const idx = parseInt(cb.dataset.index, 10);
-        if (!Number.isNaN(idx) && idx >= 0 && idx < list.length) marked.add(idx);
-      });
+      const marked = new Set(getMarkedLogIndices());
       if (!marked.size) {
         showToast("No lines marked");
         return;
       }
+      if (logEditIndex != null && marked.has(logEditIndex)) logEditIndex = null;
       const next = list.filter((_, i) => !marked.has(i));
       saveLogPrev(next);
       renderLogPrev();
@@ -3280,7 +3580,10 @@
     $("btnCopyArr").addEventListener("click", copyArr);
     $("btnCopyLog").addEventListener("click", copyLog);
     $("btnCopyAllLog").addEventListener("click", copyAllLogText);
+    $("btnCopyLogCsv").addEventListener("click", copyLogCsv);
     $("btnClearMarkedLog").addEventListener("click", clearMarkedLogLines);
+    $("btnEditMarkedLog").addEventListener("click", editMarkedLogLine);
+    bindAppAlert();
     $("btnClear").addEventListener("click", clearForm);
     $("btnRestore").addEventListener("click", restoreHistory);
     $("btnPasteDsperfo").addEventListener("click", pasteDsperfo);
