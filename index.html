@@ -65,10 +65,9 @@
     }
 
     /*
-     * iPad landscape / wide shell: pin the document (no rubber-band), but let
-     * .app scroll if content is taller than the frame — never hard-clip the
-     * log footer. overscroll-behavior:none keeps that scroll bounce-free.
-     * Opaque status bar (meta above) + tight top pad reclaim the old top gap.
+     * iPad landscape / wide shell: pin the document — no rubber-band and no
+     * vertical finger scroll. Compact RVSM alert (v2.22) keeps height in budget
+     * on A2903 so we do not need .app scroll padding (that left empty bottom space).
      */
     @media (orientation: landscape) and (min-width: 901px) {
       html {
@@ -84,28 +83,20 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        /* Bottom safe-area lives on .app (scroll padding) so the tips line can
-           scroll fully clear of the home indicator — not clipped by body pad. */
         padding: 4px
                  max(8px, env(safe-area-inset-right))
-                 0
+                 max(4px, env(safe-area-inset-bottom))
                  max(8px, env(safe-area-inset-left));
       }
       .app {
         flex: 1 1 auto;
         min-height: 0;
         width: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
+        overflow: hidden;
         overscroll-behavior: none;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
-        scroll-padding-bottom: max(12px, env(safe-area-inset-bottom));
       }
-      .app-rec {
-        margin-bottom: 0;
-        padding-bottom: 2px;
-        flex-shrink: 0;
+      .footer-stack {
+        align-content: start; /* don’t stretch grid rows into empty viewport space */
       }
       .log-prev,
       .flight-log {
@@ -1866,7 +1857,7 @@
       <div class="log-side-col">
         <button type="button" id="btnCopyAllLog">copy LOG as table</button>
         <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">Copy Log as CSV</button>
-        <p class="log-data-note">Backup frequently, data may be lost. CSV for LogTen.</p>
+        <p class="log-data-note">Backup frequently, data may be lost. CSV for LogTen/others.</p>
         <button type="button" id="btnClearMarkedLog" title="Remove checked logbook lines">Clear Marked Lines</button>
         <button type="button" id="btnEditMarkedLog" title="Load one marked line into YOUR LOG for editing">Edit Marked Line</button>
       </div>
@@ -1925,7 +1916,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.22";
+    const APP_VERSION = "2.23";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
