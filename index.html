@@ -332,14 +332,34 @@
     }
 
     .rvsm-alt-title {
-      flex: 0 0 10.5rem;
-      width: 10.5rem;
+      flex: 0 0 auto;
+      width: auto;
       margin: 0;
       font-size: 0.78rem;
       color: var(--muted);
       white-space: nowrap;
       position: relative;
       top: 1px;
+    }
+
+    /* Compact L/R>200′ alert — sits between title and L; never grows card height */
+    .rvsm-hint {
+      display: none;
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0 2px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      color: var(--warn);
+      white-space: nowrap;
+      position: relative;
+      top: 1px;
+    }
+
+    .rvsm-hint.show {
+      display: inline;
     }
 
     .rvsm-alt-row .row-3 {
@@ -372,16 +392,6 @@
       max-width: 100%;
       flex: 0 0 auto;
     }
-
-    .rvsm-hint {
-      display: none;
-      margin: 0;
-      font-size: 0.65rem;
-      color: var(--warn);
-      line-height: 1.15;
-    }
-
-    .rvsm-hint.show { display: block; }
 
     .dsperfo-row {
       display: grid;
@@ -1707,6 +1717,7 @@
         <section class="card span-all">
           <div class="rvsm-alt-row">
             <p class="rvsm-alt-title">Before RVSM entry</p>
+            <span class="rvsm-hint" id="rvsmHint" aria-live="polite">MAX Δ 200′</span>
             <div class="row-3" role="group" aria-label="Before RVSM entry altimeters">
               <div class="field">
                 <label for="rvsmL">L:</label>
@@ -1729,7 +1740,6 @@
               </div>
             </div>
           </div>
-          <p class="rvsm-hint" id="rvsmHint">L/R altimeter cross-check before RVSM — max difference 200 ft</p>
           <input type="hidden" id="mnps" name="mnps" value="N/A" />
         </section>
       </div>
@@ -1915,7 +1925,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.21";
+    const APP_VERSION = "2.22";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
