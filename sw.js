@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var CACHE = 'navlog-note-v2.21.0';
+  var CACHE = 'navlog-note-v2.21.1';
   var PRECACHE = [
     './',
     './index.html',

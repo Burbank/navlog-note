@@ -84,10 +84,11 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        /* Status bar is opaque — only keep a small top pad; respect home indicator. */
+        /* Bottom safe-area lives on .app (scroll padding) so the tips line can
+           scroll fully clear of the home indicator — not clipped by body pad. */
         padding: 4px
                  max(8px, env(safe-area-inset-right))
-                 max(4px, env(safe-area-inset-bottom))
+                 0
                  max(8px, env(safe-area-inset-left));
       }
       .app {
@@ -98,6 +99,13 @@
         overflow-y: auto;
         overscroll-behavior: none;
         -webkit-overflow-scrolling: touch;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        scroll-padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+      .app-rec {
+        margin-bottom: 0;
+        padding-bottom: 2px;
+        flex-shrink: 0;
       }
       .log-prev,
       .flight-log {
