@@ -39,6 +39,7 @@
     html {
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
+      overscroll-behavior: none;
     }
 
     html, body {
@@ -47,6 +48,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      overscroll-behavior: none;
     }
 
     /*
@@ -58,6 +60,41 @@
                max(8px, env(safe-area-inset-right))
                max(5px, env(safe-area-inset-bottom))
                max(8px, env(safe-area-inset-left));
+    }
+
+    /*
+     * iPad landscape / wide shell: pin the page in the viewport (no rubber-band
+     * bounce). Portrait keeps normal document scroll below.
+     * Body is a column flex so the SW update banner can sit above .app without
+     * forcing .app past 100dvh. Fixed overlays (toast / alert / date) stay OK.
+     */
+    @media (orientation: landscape) and (min-width: 901px) {
+      html {
+        height: 100%;
+        height: 100dvh;
+        overflow: hidden;
+      }
+      body {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .app {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        overflow: hidden;
+      }
+      .log-prev,
+      .flight-log {
+        overscroll-behavior: contain;
+      }
     }
 
     .app { max-width: 1180px; margin: 0 auto; }
@@ -1862,7 +1899,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.19";
+    const APP_VERSION = "2.20";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
