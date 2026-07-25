@@ -54,8 +54,7 @@
 
     /*
      * Vertical shell matched to v2.16 (commit 4309148) — fits iPad landscape.
-     * Log: 9 rows @ row-gap 8px — uses ~2-line landscape height luxury for
-     * safer mark-checkbox spacing (A2903 ≈ 1180×820).
+     * Log: 9 rows @ row-gap 2px — reclaim bottom tips line on A2903 landscape.
      */
     body {
       padding: max(4px, env(safe-area-inset-top))
@@ -506,7 +505,7 @@
         minmax(5.5rem, 1.55fr)   /* PIC — longer names */
         1.15rem;                 /* mark */
       column-gap: 5px;
-      row-gap: 8px; /* v2.24: spend ~2-line height luxury on safer tick spacing */
+      row-gap: 2px; /* v2.25: tighter than v2.23 so bottom tips line clears */
       width: 100%;
       min-width: 42rem;
       margin: 0;
@@ -819,21 +818,86 @@
     }
 
     .howto-item {
-      display: grid;
-      grid-template-columns: 1.15rem 1fr;
-      gap: 2px;
+      display: block;
       margin: 0;
       color: var(--muted);
       font-size: 0.65rem;
       line-height: 1.25;
+      opacity: 0.85;
     }
 
-    .howto-item .n {
-      font-variant-numeric: tabular-nums;
+    .howto strong {
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    /* iOS Safari (browser tab only): slow pulse on save cue */
+    .howto-save-pulse {
+      display: inline;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .howto-save-pulse.is-pulsing {
+      animation: howto-save-pulse 3.2s ease-in-out infinite;
+    }
+
+    @keyframes howto-save-pulse {
+      0%, 100% { opacity: 0.45; color: var(--muted); }
+      50% { opacity: 1; color: var(--text); }
+    }
+
+    .howto.is-standalone .howto-grid {
+      display: none;
+    }
+
+    .howto-standalone-panel {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      min-height: 100%;
+      padding: 2px 0 10px;
+      box-sizing: border-box;
+    }
+
+    .howto.is-standalone .howto-standalone-panel {
+      display: flex;
+    }
+
+    .howto-standalone-note {
+      margin: 0;
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--muted);
+      font-size: 0.58rem;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: 0.01em;
+      opacity: 0.78;
+    }
+
+    .app-rec-liability {
+      display: none;
+      flex: 0 0 auto;
+      margin: 0;
       text-align: right;
+      white-space: nowrap;
+      font-size: 0.55rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--muted);
+      opacity: 0.55;
     }
 
-    .howto strong { color: var(--text); font-weight: 650; }
+    body.is-standalone-app .app-rec-update {
+      display: none;
+    }
+
+    body.is-standalone-app .app-rec-liability {
+      display: block;
+    }
 
     .howto-version {
       position: absolute;
@@ -1741,19 +1805,24 @@
         <button type="button" id="btnRestore" disabled title="Restore last cleared or copied form values">Restore History</button>
         <div class="phase-rule" aria-hidden="true"></div>
       </div>
-      <section class="howto" aria-label="Offline iPad instructions">
+      <section class="howto" id="howto" aria-label="Offline iPad instructions">
         <div class="howto-grid" role="list">
-          <!-- DOM order 1,3,2,4 so 2-col grid reads down each column: 1→2 | 3→4 -->
-          <p class="howto-item" role="listitem"><span class="n">1.</span><span><strong>SAVE SITE OFFLINE on your iPad:</strong></span></p>
-          <p class="howto-item" role="listitem"><span class="n">3.</span><span>Open the Home Screen icon anytime — works offline like a mini app.</span></p>
-          <p class="howto-item" role="listitem"><span class="n">2.</span><span>Tap
+          <!-- DOM order TL, TR, BL, BR → 2-col grid reads down each column -->
+          <p class="howto-item" id="howtoSave" role="listitem">
+            <strong class="howto-save-pulse" id="howtoSavePulse">SAVE SITE OFFLINE on your iPad</strong>
+          </p>
+          <p class="howto-item" role="listitem">Open the Home Screen icon anytime — works offline like a mini app.</p>
+          <p class="howto-item" id="howtoAdd" role="listitem">Tap
             <span class="help-ios-share" aria-hidden="true" title="Share">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
             </span>
             <span class="sr-only">Share</span>
             → <strong>Add to Home Screen</strong>.
-          </span></p>
-          <p class="howto-item" role="listitem"><span class="n">4.</span><span>Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</span></p>
+          </p>
+          <p class="howto-item" role="listitem">Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</p>
+        </div>
+        <div class="howto-standalone-panel" id="howtoStandalone" aria-label="Web app notes">
+          <p class="howto-standalone-note">In order to update this web app, it may be necessary to swipe-close it several times to force a refresh.</p>
         </div>
         <p class="howto-version" id="howtoVersion"></p>
       </section>
@@ -1872,6 +1941,7 @@
         <span class="app-rec-update">
           In order to update this web app, it may be necessary to swipe-close it several times to force a refresh.
         </span>
+        <span class="app-rec-liability">Runs locally/offline, sends no data, author assumes no liability.</span>
       </p>
     </div>
   </div>
@@ -1916,7 +1986,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.24";
+    const APP_VERSION = "2.25";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
@@ -3708,10 +3778,46 @@
       });
     }
 
+    /** iPad/iPhone (incl. iPadOS desktop UA) */
+    function isAppleTouchDevice() {
+      const ua = navigator.userAgent || "";
+      if (/iPad|iPhone|iPod/.test(ua)) return true;
+      return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    }
+
+    function isStandaloneDisplay() {
+      return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true
+      );
+    }
+
+    /** Safari on iOS/iPadOS in a normal tab (not home-screen web app). */
+    function isIosSafariBrowser() {
+      if (!isAppleTouchDevice() || isStandaloneDisplay()) return false;
+      const ua = navigator.userAgent || "";
+      if (/CriOS|FxiOS|EdgiOS|OPiOS|OPT\//.test(ua)) return false;
+      return /AppleWebKit/.test(ua);
+    }
+
+    function initHowtoMode() {
+      const box = $("howto");
+      const pulse = $("howtoSavePulse");
+      if (!box) return;
+      const standalone = isAppleTouchDevice() && isStandaloneDisplay();
+      box.classList.toggle("is-standalone", standalone);
+      document.body.classList.toggle("is-standalone-app", standalone);
+      if (pulse) {
+        if (!standalone && isIosSafariBrowser()) pulse.classList.add("is-pulsing");
+        else pulse.classList.remove("is-pulsing");
+      }
+    }
+
     {
       const ver = $("howtoVersion");
       if (ver) ver.textContent = "v" + APP_VERSION;
     }
+    initHowtoMode();
     load();
     updateHistoryButton();
     checkRvsmDiff(true);
