@@ -49,11 +49,11 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     }
 
-    /* Default = iPad landscape-tight so first paint already fits (A2903) */
+    /* Default = iPad landscape; v2.12 ~15% more vertical room than v2.11 */
     body {
-      padding: max(3px, env(safe-area-inset-top))
+      padding: max(5px, env(safe-area-inset-top))
                max(8px, env(safe-area-inset-right))
-               max(3px, env(safe-area-inset-bottom))
+               max(5px, env(safe-area-inset-bottom))
                max(8px, env(safe-area-inset-left));
     }
 
@@ -64,8 +64,8 @@
       align-items: center;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 4px 10px;
-      margin-bottom: 0;
+      gap: 5px 10px;
+      margin-bottom: 2px;
       text-align: center;
     }
 
@@ -110,19 +110,19 @@
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 5px;
+      gap: 7px;
     }
 
     .card {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 5px 10px;
+      padding: 7px 10px;
     }
 
     .card.span-all {
       grid-column: 1 / -1;
-      padding: 2px 10px 3px;
+      padding: 4px 10px 5px;
     }
 
     /* Title sits tight above; content band nudged slightly down */
@@ -151,16 +151,16 @@
     .field.time-input-long input { max-width: 16ch; letter-spacing: 0.04em; }
     .field.mt-input input { max-width: 14ch; }
 
-    /* Compact Clearance + Fuel / Perf for iPad landscape fit */
+    /* Clearance + Fuel / Perf — extra vertical padding for fat-finger iPad entry */
     .card-clearance,
     .card-fuel {
-      padding: 3px 10px 4px;
+      padding: 8px 12px 9px;
     }
 
     .card-clearance .field,
     .card-fuel .field {
-      margin-bottom: 3px;
-      gap: 4px;
+      margin-bottom: 6px;
+      gap: 6px;
     }
 
     .card-clearance .field:last-child,
@@ -169,19 +169,23 @@
     }
 
     .card-clearance input[type="text"],
-    .card-fuel input[type="text"],
+    .card-fuel input[type="text"] {
+      min-height: 32px;
+      padding: 5px 9px;
+    }
+
     .card.span-all input[type="text"] {
-      min-height: 26px;
-      padding: 2px 7px;
+      min-height: 28px;
+      padding: 3px 8px;
     }
 
     .card-fuel .section-title {
-      margin: 2px 0 1px;
+      margin: 4px 0 2px;
       font-size: 0.74rem;
     }
 
     .card-fuel .dsperfo-row {
-      margin-bottom: 3px;
+      margin-bottom: 6px;
     }
 
     /* Longer labels in Fuel / Perf — keep input column aligned */
@@ -326,9 +330,9 @@
     .dsperfo-row {
       display: grid;
       grid-template-columns: 14rem 1fr;
-      gap: 4px;
+      gap: 6px;
       align-items: center;
-      margin-bottom: 3px;
+      margin-bottom: 6px;
     }
 
     .dsperfo-hint {
@@ -344,8 +348,8 @@
       justify-content: center;
       justify-self: start;
       margin: 0;
-      padding: 2px 8px;
-      min-height: 24px;
+      padding: 4px 10px;
+      min-height: 28px;
       font-size: 0.66rem;
       font-weight: 700;
       letter-spacing: 0.03em;
@@ -371,8 +375,8 @@
 
     .toggle button {
       flex: 1;
-      min-height: 26px;
-      padding: 2px 6px;
+      min-height: 28px;
+      padding: 3px 7px;
       font-size: 0.78rem;
       border-radius: 0;
       background: transparent;
@@ -392,8 +396,8 @@
         "flogPrev flogPrev flogPf90"
         "appRec appRec appRec";
       column-gap: 8px;
-      row-gap: 6px;
-      margin-top: 4px;
+      row-gap: 8px;
+      margin-top: 6px;
       align-items: stretch;
     }
 
@@ -438,7 +442,7 @@
         minmax(2.2rem, 0.45fr)
         minmax(4rem, 1fr);
       column-gap: 6px;
-      row-gap: 2px;
+      row-gap: 3px;
       min-width: 46rem;
       font-size: 0.66rem;
       font-variant-numeric: tabular-nums;
@@ -544,7 +548,7 @@
 
     .app-rec {
       grid-area: appRec;
-      margin: -4px 4px 0; /* sit closer under the logbook lines */
+      margin: 0 4px 2px;
       font-size: 0.62rem;
       font-weight: 500;
       letter-spacing: 0.02em;
@@ -552,6 +556,7 @@
       opacity: 0.72;
       line-height: 1.25;
       text-align: left;
+      white-space: nowrap;
     }
 
     .app-rec a {
@@ -716,8 +721,8 @@
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
-      gap: 4px 10px;
-      padding: 2px 8px;
+      gap: 5px 10px;
+      padding: 4px 8px;
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--panel);
@@ -944,7 +949,7 @@
         "dep off arr on block"
         "dep air arr td flight";
       column-gap: 8px;
-      row-gap: 3px;
+      row-gap: 5px;
       align-items: center;
       flex: 1 1 auto;
       min-width: 34rem;
@@ -1536,11 +1541,12 @@
         <button type="button" id="btnClearTopLog" title="Remove the newest logbook line">clear top log line</button>
       </div>
       <p class="app-rec">
-        Also try these on your iPad:
+        Also try:
         <a href="https://klyear.netlify.app/" target="_blank" rel="noopener noreferrer">https://klyear.netlify.app/</a>
         for a calendar overview and
         <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
         for checking today’s EASA limits.
+        | In order to update this web app, it may be necessary to swipe-close it several times to force a refresh.
       </p>
     </div>
   </div>
@@ -1556,7 +1562,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.11";
+    const APP_VERSION = "2.12";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
