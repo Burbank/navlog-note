@@ -2346,7 +2346,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.28";
+    const APP_VERSION = "2.29";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
@@ -2947,8 +2947,9 @@
     function openDeptDatePopover() {
       const pop = $("logDatePopover");
       const hit = $("logDateHit");
-      if (!pop || !hit || !hit.classList.contains("show")) return;
-      const cur = parseLogDeptDate($("logDeptDate").value) || new Date();
+      const dateStr = ($("logDeptDate") && $("logDeptDate").value.trim()) || "";
+      if (!pop || !hit || !dateStr) return;
+      const cur = parseLogDeptDate(dateStr) || new Date();
       deptCalYear = cur.getUTCFullYear();
       deptCalMonth = cur.getUTCMonth();
       pop.hidden = false;
@@ -2965,6 +2966,7 @@
       hit.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        // Empty (dimmed) box: nudge to enter OFF first. Once a date shows, always editable.
         if (!$("logDeptDate").value.trim()) {
           showAppAlert("type off blocks first");
           return;
