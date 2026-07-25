@@ -161,6 +161,7 @@
 
     html.theme-bright .rvsm-hint,
     html.theme-bright .howto-version,
+    html.theme-bright .howto-standalone-caution,
     html.theme-bright .flight-log-date,
     html.theme-bright .flight-log-sum strong,
     html.theme-bright .flight-log-date-hint,
@@ -1168,6 +1169,30 @@
       letter-spacing: 0.01em;
       color: var(--muted);
       opacity: 0.55;
+    }
+
+    /* Same bottom band as version — uses existing panel padding, no added height */
+    .howto-standalone-caution {
+      display: none;
+      position: absolute;
+      left: 6px;
+      right: 2.6rem;
+      bottom: 1px;
+      margin: 0;
+      font-size: 0.52rem;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: 0.01em;
+      color: var(--muted);
+      opacity: 0.7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    .howto.is-standalone .howto-standalone-caution {
+      display: block;
     }
 
     .howto-version {
@@ -2282,6 +2307,7 @@
         <div class="howto-standalone-panel" id="howtoStandalone" aria-label="Web app notes">
           <p class="howto-standalone-note">Long-press [clear] removes default PIC name and forces online version update check.</p>
         </div>
+        <p class="howto-standalone-caution">CAUTION: deleting webapp also deletes LOGBOOK entries -&gt; export first. Normally a delete is not necessary.</p>
         <p class="howto-version" id="howtoVersion"></p>
       </section>
       <div class="dept-col">
@@ -2463,7 +2489,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.32";
+    const APP_VERSION = "2.33";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
