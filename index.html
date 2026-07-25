@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=11" />
   <link rel="icon" type="image/png" href="favicon.png?v=11" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=11" />
-  <title>NAVLOG NOTE ref OM-A 8.3.2.6 &amp; 8.1.10.2</title>
+  <title>NAVLOG NOTE</title>
   <style>
     :root {
       --bg: #1a2332;
@@ -20,10 +20,14 @@
       --line: #3d4f66;
       --text: #e8eef6;
       --muted: #9aadc2;
-      --accent: #3d9cf0;
-      --accent-press: #2b7fc7;
-      --btn: #2f5f8a;
-      --btn-press: #274f72;
+      /* KLM blue — same tokens as KLYear / FDPFMS */
+      --klm-blue: #00A1E4;
+      --klm-blue-hover: #0080B5;
+      --klm-blue-dark: #003d5c;
+      --accent: var(--klm-blue);
+      --accent-press: var(--klm-blue-hover);
+      --btn: var(--klm-blue-hover);
+      --btn-press: var(--klm-blue-dark);
       --ok: #3db88a;
       --field: #15202e;
       --field-border: #4a607a;
@@ -62,7 +66,7 @@
       justify-content: center;
       flex-wrap: wrap;
       gap: 8px 12px;
-      margin-bottom: 8px;
+      margin-bottom: 2px;
       text-align: center;
     }
 
@@ -71,15 +75,13 @@
       font-size: 1.05rem;
       font-weight: 650;
       letter-spacing: 0.02em;
+      line-height: 1.2;
     }
 
-    h1 .ref {
-      margin-left: 0.35em;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
+    .header-rule {
+      width: 2.75rem;
+      flex: 0 0 2.75rem;
+      align-self: center;
     }
 
     .header-clear button {
@@ -257,7 +259,8 @@
     }
 
     .rvsm-alt-title {
-      flex: 0 0 auto;
+      flex: 0 0 11.5rem;
+      width: 11.5rem;
       margin: 0;
       font-size: 0.88rem;
       color: var(--muted);
@@ -305,21 +308,29 @@
 
     .rvsm-hint.show { display: block; }
 
+    .dsperfo-row {
+      display: grid;
+      grid-template-columns: 14rem 1fr;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
     .dsperfo-hint {
-      margin: 0 0 8px;
+      margin: 0;
       font-size: 0.7rem;
       color: var(--muted);
-      line-height: 1.45;
+      line-height: 1.35;
     }
 
     .paste-here-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin: 0 2px;
+      justify-self: start;
+      margin: 0;
       padding: 4px 10px;
       min-height: 28px;
-      vertical-align: middle;
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.03em;
@@ -353,95 +364,223 @@
 
     .toggle button.active { background: var(--btn); color: #fff; }
 
-    .footer-bar {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
+    .footer-stack {
+      display: grid;
+      grid-template-columns: 8.5rem minmax(0, 1fr) 8.5rem;
+      grid-template-areas:
+        "hist howto dept"
+        "land land arr";
+      column-gap: 10px;
+      row-gap: 8px;
       margin-top: 8px;
-    }
-
-    .history-btns {
-      display: flex;
-      flex-direction: row;
-      gap: 8px;
-      flex-shrink: 0;
       align-items: stretch;
     }
 
-    .history-btns button {
-      min-width: 3.2rem;
-      min-height: 44px;
-      padding: 10px 12px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      background: var(--btn);
+    .history-col,
+    .dept-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-self: stretch;
+      width: 100%;
     }
 
-    .history-btns button:disabled {
+    .history-col { grid-area: hist; }
+    .dept-col { grid-area: dept; }
+
+    .history-col .phase-rule,
+    .dept-col .phase-rule {
+      margin-top: auto;
+    }
+
+    .history-col #btnRestore,
+    .dept-col #btnCopy,
+    .footer-stack > #btnCopyArr {
+      width: 100%;
+      min-height: 40px;
+      font-size: 0.82rem;
+      padding: 8px 10px;
+    }
+
+    .history-col #btnRestore:disabled {
       opacity: 0.35;
       cursor: default;
       transform: none;
     }
 
-    .history-btns button.has-data {
-      background: var(--btn);
-    }
-
-    .footer-bar .actions {
-      flex-shrink: 0;
-      min-width: 8.5rem;
-    }
-
-    .footer-bar .actions button {
-      width: 100%;
-      min-height: 44px;
-      font-size: 0.9rem;
-    }
-
     .howto {
-      flex: 1 1 28rem;
-      max-width: none;
-      min-width: 16rem;
+      grid-area: howto;
+      min-width: 0;
+      align-self: stretch;
       position: relative;
-      padding: 6px 10px 14px;
+      padding: 4px 10px 16px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--panel);
     }
 
+    .footer-stack > #btnCopyArr {
+      grid-area: arr;
+      align-self: end;
+    }
+
+    .phase-rule {
+      height: 2px;
+      width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        rgba(0, 161, 228, 0.15),
+        rgba(0, 161, 228, 0.85),
+        rgba(0, 161, 228, 0.15)
+      );
+      box-shadow: 0 0 0 1px rgba(0, 161, 228, 0.18);
+    }
+
+    .preflight-banner {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px 16px;
+      margin: 0 0 2px;
+    }
+
+    .preflight-banner .oma-ref,
+    .preflight-banner .view-hint {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: 1.2;
+    }
+
+    .preflight-banner .oma-ref {
+      text-align: left;
+      flex: 0 1 auto;
+    }
+
+    .preflight-banner .view-hint {
+      text-align: right;
+      flex: 0 1 auto;
+      margin-left: auto;
+    }
+
     .howto-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2px 14px;
+      grid-template-rows: auto auto;
+      gap: 8px 12px;
+      align-items: start;
     }
 
-    .howto h2 {
-      margin-bottom: 2px;
-    }
-
-    .howto ol {
+    .howto-item {
+      display: grid;
+      grid-template-columns: 1.15rem 1fr;
+      gap: 2px;
       margin: 0;
-      padding-left: 1.05rem;
       color: var(--muted);
-      font-size: 0.7rem;
-      line-height: 1.3;
+      font-size: 0.65rem;
+      line-height: 1.25;
     }
 
-    .howto li + li { margin-top: 2px; }
+    .howto-item .n {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
     .howto strong { color: var(--text); font-weight: 650; }
 
     .howto-version {
       position: absolute;
-      right: 10px;
+      right: 8px;
       bottom: 4px;
       margin: 0;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       color: var(--muted);
       opacity: 0.55;
+      white-space: nowrap;
       pointer-events: none;
+    }
+
+    .landing-prep {
+      grid-area: land;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px 14px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      min-width: 0;
+    }
+
+    .landing-prep h2 {
+      flex: 0 0 11.5rem;
+      width: 11.5rem;
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    .landing-fields {
+      flex: 0 0 auto;
+      width: auto;
+    }
+
+    .landing-fields .field {
+      position: relative;
+      justify-content: flex-end;
+      width: calc(2.1rem + 4px + 7.5rem);
+      box-sizing: border-box;
+    }
+
+    .landing-fields .field label {
+      position: absolute;
+      right: calc(7.5rem + 4px);
+      top: 50%;
+      transform: translateY(-50%);
+      flex: 0 0 auto;
+      min-width: 0;
+      width: max-content;
+      text-align: right;
+      white-space: nowrap;
+      font-size: 0.88rem;
+    }
+
+    .landing-fields .field input {
+      flex: 0 0 7.5rem;
+      width: 7.5rem;
+      min-width: 7.5rem;
+      max-width: 7.5rem;
+    }
+
+    .landing-fields .field.ldis-input input {
+      letter-spacing: 0.04em;
+    }
+
+    .landing-fields .landing-spacer {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .landing-ref {
+      margin: 0 0 0 auto;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     .help-ios-share {
@@ -525,17 +664,15 @@
         align-items: stretch;
       }
       h1 { font-size: 1.1rem; text-align: left; }
-      h1 .ref {
-        display: block;
-        margin: 4px 0 0;
-        font-size: 0.62rem;
-        letter-spacing: 0.04em;
-      }
       .header-clear { align-self: flex-end; }
+      .preflight-banner {
+        flex-wrap: wrap;
+      }
       .card, .howto { padding: 12px 14px; }
       .field,
       .card-fuel .field,
-      .preflight-row .field-over-fuel {
+      .preflight-row .field-over-fuel,
+      .dsperfo-row {
         grid-template-columns: 1fr;
         gap: 4px;
         padding-left: 0;
@@ -584,18 +721,70 @@
         max-width: none;
         min-width: 0;
       }
+      .landing-prep {
+        flex-wrap: wrap;
+      }
+      .landing-prep h2 {
+        flex: 1 1 auto;
+        width: auto;
+        white-space: normal;
+      }
+      .landing-fields .landing-spacer { display: none; }
+      .landing-fields .field {
+        position: static;
+        width: auto;
+        flex: 1 1 30%;
+        min-width: 6.5rem;
+        justify-content: flex-start;
+      }
+      .landing-fields .field label {
+        position: static;
+        right: auto;
+        top: auto;
+        transform: none;
+        width: auto;
+        min-width: auto;
+        text-align: left;
+        white-space: nowrap;
+      }
+      .landing-fields .field input {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        flex: 1 1 auto;
+      }
+      .landing-ref {
+        margin-left: 0;
+        width: 100%;
+        text-align: right;
+      }
+      .header-rule { width: 1.75rem; flex-basis: 1.75rem; }
     }
 
     @media (max-width: 700px) {
       .preflight-row, .howto-grid { grid-template-columns: 1fr; }
-      .footer-bar { flex-direction: column; }
-      .history-btns {
-        flex-direction: row;
-        order: -1;
-        align-self: stretch;
+      .footer-stack {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "hist"
+          "howto"
+          "dept"
+          "land"
+          "arr";
       }
-      .history-btns button { flex: 1; }
-      .footer-bar .actions { order: -1; align-self: stretch; }
+      .landing-prep {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .landing-prep h2 {
+        width: auto;
+        flex: none;
+        white-space: normal;
+      }
+      .landing-ref {
+        margin-left: 0;
+        text-align: right;
+      }
     }
   </style>
 </head>
@@ -607,13 +796,19 @@
 
   <div class="app">
     <header>
-      <h1>NAVLOG NOTE <span class="ref">ref OM-A 8.3.2.6 &amp; 8.1.10.2</span></h1>
+      <div class="phase-rule header-rule" aria-hidden="true"></div>
+      <h1>NAVLOG NOTE</h1>
       <div class="header-clear">
         <button type="button" class="secondary" id="btnClear" title="Clears all entered fields">Clear</button>
       </div>
+      <div class="phase-rule header-rule" aria-hidden="true"></div>
     </header>
 
     <form id="flightForm" autocomplete="off" spellcheck="false">
+      <div class="preflight-banner">
+        <p class="oma-ref">ref OM-A 8.3.2.6</p>
+        <p class="view-hint">Best viewed iPad landscape</p>
+      </div>
       <div class="grid">
         <section class="card span-all">
           <h2>Preflight</h2>
@@ -632,7 +827,7 @@
         <section class="card card-clearance">
           <h2>PDC / Clearance</h2>
           <div class="field narrow-input">
-            <label for="atis">Atis code:</label>
+            <label for="atis">DEPT ATIS:</label>
             <input id="atis" name="atis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
           </div>
           <div class="field time-input">
@@ -668,10 +863,10 @@
             <input id="tom" name="tom" type="text" inputmode="decimal" placeholder="000.0 MT" />
           </div>
           <p class="section-title">DSPERFO:</p>
-          <p class="dsperfo-hint">
-            Longpress “Calculated - 00:00:00z” in DSPERFO and
+          <div class="dsperfo-row">
+            <p class="dsperfo-hint">Longpress “Calculated - 00:00:00z” and</p>
             <button type="button" id="btnPasteDsperfo" class="paste-here-btn">PASTE HERE</button>
-          </p>
+          </div>
           <div class="field time-input-long">
             <label for="calcAt">* Calculated at:</label>
             <input id="calcAt" name="calcAt" type="text" inputmode="numeric" maxlength="8" placeholder="HH:MM:SS" />
@@ -718,39 +913,49 @@
       </div>
     </form>
 
-    <div class="footer-bar">
-      <div class="history-btns" role="group" aria-label="Copy history">
-        <button type="button" id="btnH1" disabled title="Restore latest copied entry">H1</button>
-        <button type="button" id="btnH2" disabled title="Restore previous copied entry">H2</button>
+    <div class="footer-stack">
+      <div class="history-col">
+        <button type="button" id="btnRestore" disabled title="Restore last cleared or copied form values">Restore History</button>
+        <div class="phase-rule" aria-hidden="true"></div>
       </div>
       <section class="howto" aria-label="Offline iPad instructions">
-        <div class="howto-grid">
-          <div class="howto-col">
-            <h2>Best viewed iPad landscape</h2>
-            <ol>
-              <li><strong>SAVE OFFLINE on your iPad:</strong></li>
-              <li>Tap
-                <span class="help-ios-share" aria-hidden="true" title="Share">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
-                </span>
-                <span class="sr-only">Share</span>
-                → <strong>Add to Home Screen</strong>.
-              </li>
-            </ol>
+        <div class="howto-grid" role="list">
+          <p class="howto-item" role="listitem"><span class="n">1.</span><span><strong>SAVE SITE OFFLINE on your iPad:</strong></span></p>
+          <p class="howto-item" role="listitem"><span class="n">3.</span><span>Open the Home Screen icon anytime — works offline like a mini app.</span></p>
+          <p class="howto-item" role="listitem"><span class="n">2.</span><span>Tap
+            <span class="help-ios-share" aria-hidden="true" title="Share">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
+            </span>
+            <span class="sr-only">Share</span>
+            → <strong>Add to Home Screen</strong>.
+          </span></p>
+          <p class="howto-item" role="listitem"><span class="n">4.</span><span>Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</span></p>
+        </div>
+        <p class="howto-version">v2.4</p>
+      </section>
+      <div class="dept-col">
+        <button type="button" id="btnCopy">copy DEPT text</button>
+        <div class="phase-rule" aria-hidden="true"></div>
+      </div>
+      <section class="landing-prep" aria-label="Landing preparation">
+        <h2>landing preparation</h2>
+        <div class="row-3 landing-fields" role="group" aria-label="Arrival ATIS and landing distance">
+          <div class="field landing-spacer" aria-hidden="true">
+            <label>L:</label>
+            <input type="text" tabindex="-1" disabled value="" />
           </div>
-          <div class="howto-col">
-            <ol start="3">
-              <li>Open the Home Screen icon anytime — works offline like a mini app.</li>
-              <li>Fill the form, tap <strong>Copy all text</strong>, then paste into your OFP app.</li>
-              <li>Online update? Tap <strong>Reload</strong> on the banner (or reopen the app).</li>
-            </ol>
+          <div class="field">
+            <label for="arrAtis">ARR ATIS:</label>
+            <input id="arrAtis" name="arrAtis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
+          </div>
+          <div class="field ldis-input">
+            <label for="ldis">LDIS:</label>
+            <input id="ldis" name="ldis" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000 M" title="Landing distance in metres (4 digits)" />
           </div>
         </div>
-        <p class="howto-version">v2.3</p>
+        <p class="landing-ref">8.3.2.6 (c)(7),(8)</p>
       </section>
-      <div class="actions">
-        <button type="button" id="btnCopy">Copy all text</button>
-      </div>
+      <button type="button" id="btnCopyArr">copy ARR text</button>
     </div>
   </div>
 
@@ -758,8 +963,9 @@
 
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
-    const HISTORY_KEY = "flight-plan-form-history-v1";
-    const APP_VERSION = "2.3";
+    const HISTORY_KEY = "flight-plan-form-history-v2";
+    const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
+    const APP_VERSION = "2.4";
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -768,7 +974,8 @@
     const USAGE_HIT_PREFIX = "navlog-note-usage-hit-";
     const FIELD_IDS = [
       "security", "rvsmCheck", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
-      "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps"
+      "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps",
+      "arrAtis", "ldis"
     ];
     const DEFAULTS = {
       security: "performed", rvsmCheck: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A"
@@ -778,6 +985,11 @@
     const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
     const onlyDigits = (n, v) => digitsOnly(v).slice(0, n);
     const formatPdc = (v) => String(v || "").toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 8);
+    function formatLdis(value, { finalize = false } = {}) {
+      const d = digitsOnly(value).slice(0, 4);
+      if (!d) return "";
+      return finalize ? d + " M" : d;
+    }
 
     /** Values wiped by focus-to-clear; used so Clear/Copy still snapshot the prior entry. */
     const preFocusById = Object.create(null);
@@ -1042,44 +1254,40 @@
     function loadHistory() {
       try {
         const raw = localStorage.getItem(HISTORY_KEY);
-        if (!raw) return { h1: null, h2: null };
-        const data = JSON.parse(raw);
-        return { h1: data.h1 || null, h2: data.h2 || null };
+        if (raw) {
+          const data = JSON.parse(raw);
+          return data.snap || null;
+        }
+        const legacy = localStorage.getItem(HISTORY_KEY_LEGACY);
+        if (!legacy) return null;
+        const old = JSON.parse(legacy);
+        return old.h1 || old.h2 || null;
       } catch (_) {
-        return { h1: null, h2: null };
+        return null;
       }
     }
 
-    function saveHistory(hist) {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(hist));
-      updateHistoryButtons();
+    function updateHistoryButton(hasSnap) {
+      $("btnRestore").disabled = !(hasSnap === undefined ? loadHistory() : hasSnap);
     }
 
-    function updateHistoryButtons() {
-      const hist = loadHistory();
-      [["btnH1", hist.h1], ["btnH2", hist.h2]].forEach(([id, snap]) => {
-        const btn = $(id);
-        const has = !!snap;
-        btn.disabled = !has;
-        btn.classList.toggle("has-data", has);
-      });
+    function saveHistory(snap) {
+      const next = snap || null;
+      localStorage.setItem(HISTORY_KEY, JSON.stringify({ snap: next }));
+      updateHistoryButton(!!next);
     }
 
-    function pushCopyHistory() {
-      const hist = loadHistory();
-      const snap = getValues();
-      hist.h2 = hist.h1;
-      hist.h1 = snap;
-      saveHistory(hist);
+    function pushHistory() {
+      saveHistory(getValues());
     }
 
-    function restoreHistory(slot) {
-      const hist = loadHistory();
-      const snap = slot === 1 ? hist.h1 : hist.h2;
+    function restoreHistory() {
+      const snap = loadHistory();
       if (!snap) return;
       setValues(snap);
       save();
-      showToast(slot === 1 ? "Restored H1" : "Restored H2");
+      checkRvsmDiff();
+      showToast("History restored");
     }
 
     function outValue(value, { time = false, weight = false } = {}) {
@@ -1106,7 +1314,7 @@
         "___________________________________", "",
         `PDC/ACARS ref: ${outValue(v.pdc)}`, "",
         `CTOT:  ${outValue(v.ctot, { time: true })}`, "",
-        `Atis code: ${outValue(v.atis)}`, "",
+        `DEPT ATIS: ${outValue(v.atis)}`, "",
         "Departure clearance:", "",
         `* Runway and SID: ${outValue(v.rwySid)}`, "",
         `* Climb to:  ${outValue(v.climbTo)}`, "",
@@ -1134,9 +1342,7 @@
       setTimeout(() => t.classList.remove("show"), 1600);
     }
 
-    async function copyAll() {
-      pushCopyHistory();
-      const text = buildOutput();
+    async function writeClipboard(text) {
       try {
         await navigator.clipboard.writeText(text);
       } catch (_) {
@@ -1149,24 +1355,42 @@
         document.execCommand("copy");
         document.body.removeChild(ta);
       }
-      const btn = $("btnCopy");
+    }
+
+    function flashCopyBtn(btn, label) {
       btn.classList.add("copied");
       btn.textContent = "Copied!";
       showToast("Copied to clipboard");
       setTimeout(() => {
         btn.classList.remove("copied");
-        btn.textContent = "Copy all text";
+        btn.textContent = label;
       }, 1400);
     }
 
+    function buildArrOutput() {
+      const v = getValues();
+      const atis = String(v.arrAtis || "").trim();
+      const ldisDigits = digitsOnly(v.ldis).slice(0, 4);
+      const ldisOut = ldisDigits ? ldisDigits + " M" : "";
+      return `ARR ATIS: ${atis}\nLDIS: ${ldisOut}`;
+    }
+
+    async function copyAll() {
+      pushHistory();
+      await writeClipboard(buildOutput());
+      flashCopyBtn($("btnCopy"), "copy DEPT text");
+    }
+
+    async function copyArr() {
+      pushHistory();
+      await writeClipboard(buildArrOutput());
+      flashCopyBtn($("btnCopyArr"), "copy ARR text");
+    }
+
     function clearForm() {
-      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore from H1 or H2.")) return;
+      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.")) return;
       // Snapshot first (getValues recovers focus-cleared active field via preFocusById).
-      const snap = getValues();
-      const hist = loadHistory();
-      hist.h2 = hist.h1;
-      hist.h1 = snap;
-      saveHistory(hist);
+      pushHistory();
       suppressFocusClear = true;
       for (const id of FIELD_IDS) {
         if ($(id)) $(id).value = DEFAULTS[id] ?? "";
@@ -1314,6 +1538,10 @@
     bindFormatter("pdc", formatPdc);
     bindClock("ctot", 4, { onFocusClear: "N/A" });
     bindFormatter("atis", oneLetter);
+    bindFormatter("arrAtis", oneLetter);
+    bindFormatter("ldis", (v) => formatLdis(v, { finalize: false }), {
+      finalize: (v) => formatLdis(v, { finalize: true })
+    });
     bindRunway("rwySid", { allowSid: true });
     bindFormatter("climbTo", formatClimbTo);
     bindSquawk();
@@ -1368,9 +1596,9 @@
     $("mnpsNA").addEventListener("click", () => { setMnps("N/A"); save(); });
     $("mnpsPerformed").addEventListener("click", () => { setMnps("PERFORMED"); save(); });
     $("btnCopy").addEventListener("click", copyAll);
+    $("btnCopyArr").addEventListener("click", copyArr);
     $("btnClear").addEventListener("click", clearForm);
-    $("btnH1").addEventListener("click", () => restoreHistory(1));
-    $("btnH2").addEventListener("click", () => restoreHistory(2));
+    $("btnRestore").addEventListener("click", restoreHistory);
     $("btnPasteDsperfo").addEventListener("click", pasteDsperfo);
 
     function initServiceWorker() {
@@ -1426,7 +1654,7 @@
     }
 
     load();
-    updateHistoryButtons();
+    updateHistoryButton();
     checkRvsmDiff();
     trackUsageOncePerDay();
     initServiceWorker();
