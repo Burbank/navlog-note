@@ -1,12 +1,12 @@
 /**
- * NAVLOG NOTE v2.10 — offline shell (KLYear-style, no forced navigate flash).
+ * NAVLOG NOTE v2.11 — offline shell (KLYear-style, no forced navigate flash).
  * Online: network-first. Updates via banner Reload.
  * Online Clear also flushes caches and reloads to pick up the latest build.
  */
 (function () {
   'use strict';
 
-  var CACHE = 'navlog-note-v2.10.0';
+  var CACHE = 'navlog-note-v2.11.0';
   var PRECACHE = [
     './',
     './index.html',
@@ -27,6 +27,15 @@
         });
       });
     });
+  }
+
+  function sameOriginClient(event) {
+    if (!event.source || !event.source.url) return true;
+    try {
+      return new URL(event.source.url).origin === self.location.origin;
+    } catch (e) {
+      return false;
+    }
   }
 
   self.addEventListener('install', function (event) {
@@ -52,6 +61,7 @@
   });
 
   self.addEventListener('message', function (event) {
+    if (!sameOriginClient(event)) return;
     if (event.data === 'SKIP_WAITING') self.skipWaiting();
     if (event.data === 'CLEAR_CACHES') {
       event.waitUntil(
