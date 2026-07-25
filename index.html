@@ -1912,13 +1912,17 @@
     }
 
     .pic-name-overlay-hint {
-      margin: 0 0 12px;
+      margin: 0 0 6px;
       font-size: 0.68rem;
       font-weight: 500;
       line-height: 1.3;
       letter-spacing: 0.01em;
       color: var(--muted);
       opacity: 0.85;
+    }
+
+    .pic-name-overlay-hint:last-of-type {
+      margin-bottom: 12px;
     }
 
     html.theme-bright .pic-name-overlay-hint {
@@ -2451,7 +2455,8 @@
         spellcheck="false"
         placeholder="Yeager"
       />
-      <p class="pic-name-overlay-hint">Used when you tick PIC. Long-press [clear] removes this name and checks for an online update of the website.</p>
+      <p class="pic-name-overlay-hint">Used when you tick PIC. Long-press Clear to remove this name and check for an online update of the website.</p>
+      <p class="pic-name-overlay-hint">Logbook shows the 9 most recent added items. These are only lost when the web app is deleted.</p>
       <div class="pic-name-overlay-actions">
         <button type="button" id="picNameOverlayLater">Later</button>
         <button type="button" id="picNameOverlaySave">Save</button>
@@ -2470,7 +2475,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.34";
+    const APP_VERSION = "2.35";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
