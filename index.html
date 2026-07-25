@@ -49,7 +49,10 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     }
 
-    /* Default = iPad landscape; ~15% more vertical room than v2.11 */
+    /*
+     * Vertical shell matched to v2.16 (commit 4309148) — fits iPad landscape.
+     * Log: 9 rows @ row-gap 6px ≈ same band height as v2.16’s 11 rows @ 3px.
+     */
     body {
       padding: max(5px, env(safe-area-inset-top))
                max(8px, env(safe-area-inset-right))
@@ -401,7 +404,7 @@
       align-items: stretch;
     }
 
-    /* Full-width phase rule between landing / ARR and YOUR LOG */
+    /* Full-width phase rule between landing / ARR and YOUR LOG (v2.16 spacing) */
     .log-phase-rule {
       grid-area: logRule;
       height: 2px;
@@ -416,35 +419,43 @@
       margin: 2px 0;
     }
 
-    /* Logbook history table — newest row on top */
+    /*
+     * Logbook history — left edge lines up with YOUR LOG segment above;
+     * ~1 copy-button height clear before side col (checkbox position kept).
+     */
     .log-prev {
       grid-area: flogPrev;
       min-width: 0;
-      padding: 2px 4px 0;
-      margin-bottom: 0;
+      padding: 2px 32px 0 0; /* ≈ min-height of copy LOG buttons */
+      margin: 0;
       align-self: stretch;
+      width: 100%;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
     }
 
     .log-prev-table {
       display: grid;
+      /* DEP DATE flush left; PIC gets extra fr for longer names; mark width unchanged */
       grid-template-columns:
-        minmax(5.5rem, 1.1fr)
-        minmax(2.6rem, 0.55fr)
-        minmax(4.2rem, 0.85fr)
-        minmax(3.2rem, 0.7fr)
-        minmax(3.2rem, 0.7fr)
-        minmax(3.2rem, 0.7fr)
-        minmax(3.2rem, 0.7fr)
-        minmax(2.8rem, 0.6fr)
-        minmax(2.8rem, 0.6fr)
-        minmax(2.2rem, 0.45fr)
-        minmax(3.4rem, 0.9fr)
-        1.05rem; /* mark — after PIC; keep row height unchanged */
-      column-gap: 6px;
-      row-gap: 3px;
-      min-width: 46rem;
+        minmax(5.4rem, 0.95fr)   /* DEP DATE */
+        minmax(2.3rem, 0.42fr)   /* REG */
+        minmax(3.8rem, 0.72fr)   /* ROUTE */
+        minmax(2.9rem, 0.58fr)   /* OFF BLK */
+        minmax(2.9rem, 0.58fr)   /* T/O */
+        minmax(2.9rem, 0.58fr)   /* LDG */
+        minmax(2.9rem, 0.58fr)   /* ON BLK */
+        minmax(2.5rem, 0.5fr)    /* BLOCK */
+        minmax(2.5rem, 0.5fr)    /* FLIGHT */
+        minmax(2rem, 0.38fr)     /* ROLE */
+        minmax(5.5rem, 1.55fr)   /* PIC — longer names */
+        1.15rem;                 /* mark */
+      column-gap: 5px;
+      row-gap: 6px; /* safer tick targets; 9 rows ≈ v2.16 height */
+      width: 100%;
+      min-width: 42rem;
+      margin: 0;
       font-size: 0.66rem;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.01em;
@@ -474,6 +485,14 @@
       line-height: 1.3;
       min-height: 1.05em;
       text-align: center;
+    }
+
+    /* Align with left edge of YOUR LOG segment; PIC left for long names */
+    .log-prev-row > span:nth-child(1),
+    .log-prev-head > span:nth-child(1),
+    .log-prev-row > span:nth-child(11),
+    .log-prev-head > span:nth-child(11) {
+      text-align: left;
     }
 
     .log-prev-row > span.c-mark {
@@ -1778,11 +1797,13 @@
     const HISTORY_KEY = "flight-plan-form-history-v2";
     const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
     const LOG_PREV_KEY = "flight-plan-form-log-prev-v1";
-    const LOG_PREV_DISPLAY = 11;
+    const LOG_PREV_DISPLAY = 9; /* v2.16 height budget; was briefly 11 */
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "2.17";
+    /** Pause before sticky red warn while typing (RVSM / transponder). */
+    const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
     const FUEL_MAX_MT = 200;
     const TOM_MAX_MT = 600;
@@ -2646,7 +2667,8 @@
         delete preFocusById[id];
       }
       setMnps(data.mnps || "N/A");
-      checkRvsmDiff();
+      checkRvsmDiff(true);
+      checkSquawkLen(true);
       const active = document.activeElement;
       if (active && active !== document.body && typeof active.blur === "function") {
         try { active.blur(); } catch (_) {}
@@ -2985,7 +3007,8 @@
       applyDepFromTimezone();
       $("logArr").value = "XXX";
       saveNow();
-      checkRvsmDiff();
+      checkRvsmDiff(true);
+      checkSquawkLen(true);
       updateLogCalcs();
       suppressFocusClear = false;
       if (navigator.onLine) {
@@ -3043,6 +3066,31 @@
       return String(value || "").replace(/[^0-7]/g, "").slice(0, 4);
     }
 
+    /** Incomplete squawk (< 4 digits) → subtle red after pause / on blur. */
+    let squawkWarnTimer = 0;
+    function applySquawkLenWarn() {
+      const el = $("transponder");
+      if (!el) return;
+      const d = formatSquawk(el.value);
+      el.classList.toggle("warn-diff", d.length > 0 && d.length < 4);
+    }
+    function checkSquawkLen(immediate = true) {
+      if (squawkWarnTimer) {
+        clearTimeout(squawkWarnTimer);
+        squawkWarnTimer = 0;
+      }
+      if (immediate) {
+        applySquawkLenWarn();
+        return;
+      }
+      // Clear sticky incomplete warn while typing (keep brief flash for digits 8/9).
+      if (!$("transponder")._warnTimer) $("transponder").classList.remove("warn-diff");
+      squawkWarnTimer = setTimeout(() => {
+        squawkWarnTimer = 0;
+        applySquawkLenWarn();
+      }, WARN_PAUSE_MS);
+    }
+
     function bindSquawk() {
       const el = $("transponder");
       el.addEventListener("input", () => {
@@ -3057,10 +3105,12 @@
           try { el.setSelectionRange(pos, pos); } catch (_) {}
         }
         if (hadBad) flashFieldWarn(el);
+        checkSquawkLen(false);
         save();
       });
       el.addEventListener("blur", () => {
         el.value = formatSquawk(el.value);
+        checkSquawkLen(true);
         saveNow();
       });
     }
@@ -3112,7 +3162,10 @@
       return d ? parseInt(d, 10) : null;
     }
 
-    function checkRvsmDiff() {
+    /** Sticky RVSM L/R red — delayed while typing; blur / load use immediate. */
+    let rvsmWarnTimer = 0;
+
+    function applyRvsmDiffWarn() {
       const left = parseAltFt($("rvsmL").value);
       const right = parseAltFt($("rvsmR").value);
       const warnLR = left !== null && right !== null && Math.abs(left - right) > RVSM_MAX_DIFF_FT;
@@ -3121,6 +3174,26 @@
       $("rvsmSby").classList.remove("warn-diff");
       const hint = $("rvsmHint");
       if (hint) hint.classList.toggle("show", warnLR);
+    }
+
+    function checkRvsmDiff(immediate = true) {
+      if (rvsmWarnTimer) {
+        clearTimeout(rvsmWarnTimer);
+        rvsmWarnTimer = 0;
+      }
+      if (immediate) {
+        applyRvsmDiffWarn();
+        return;
+      }
+      // Hide red while digits are still being entered; re-check after pause.
+      $("rvsmL").classList.remove("warn-diff");
+      $("rvsmR").classList.remove("warn-diff");
+      const hint = $("rvsmHint");
+      if (hint) hint.classList.remove("show");
+      rvsmWarnTimer = setTimeout(() => {
+        rvsmWarnTimer = 0;
+        applyRvsmDiffWarn();
+      }, WARN_PAUSE_MS);
     }
 
     bindFormatter("pdc", formatPdc);
@@ -3194,9 +3267,11 @@
       });
     });
     ["rvsmL", "rvsmR"].forEach((id) => {
-      $(id).addEventListener("input", checkRvsmDiff);
-      $(id).addEventListener("blur", checkRvsmDiff);
+      $(id).addEventListener("input", () => checkRvsmDiff(false));
+      $(id).addEventListener("blur", () => checkRvsmDiff(true));
     });
+    // SBY has no L/R cross-check; still clear any stale warn on edit.
+    $("rvsmSby").addEventListener("input", () => $("rvsmSby").classList.remove("warn-diff"));
 
     $("mnpsNA").addEventListener("click", () => { setMnps("N/A"); saveNow(); });
     $("mnpsPerformed").addEventListener("click", () => { setMnps("PERFORMED"); saveNow(); });
@@ -3281,7 +3356,8 @@
     }
     load();
     updateHistoryButton();
-    checkRvsmDiff();
+    checkRvsmDiff(true);
+    checkSquawkLen(true);
     updateLogCalcs();
     requestAnimationFrame(() => {
       alignLogColumns();
