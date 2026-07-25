@@ -1380,9 +1380,9 @@
     /**
      * Departure UTC date for YOUR LOG (timezone-agnostic).
      * Shown once OFF BLOCKS is complete. Uses the UTC calendar day of OFF BLOCKS:
-     * - ON &lt; OFF → Zulu midnight cross → departure was previous UTC day
+     * - ON before OFF → Zulu midnight cross → departure was previous UTC day
      * - else OFF later than current UTC clock → most recent such OFF was yesterday UTC
-     * Works the same in Americas (UTC−) and Asia (e.g. Seoul UTC+9); does not use local calendar.
+     * Works the same in Americas (UTC-) and Asia (e.g. Seoul UTC+9); does not use local calendar.
      */
     function logUtcDate() {
       const off = timeToMinutes($("offBlocks").value);
