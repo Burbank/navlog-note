@@ -69,16 +69,25 @@
       --warn: #8b0000;
       --placeholder: #8a8a8a;
       --soft-accent: transparent;
-      --soft-warn-bg: #ffe5e5;
+      --soft-warn-bg: #ffb8b8;
       --soft-panel: #f0f0f0;
       --date-popover-bg: #ffffff;
       color-scheme: light;
     }
 
-    /* Bright: thicker strokes + heavier type for sunlit cockpit glare */
+    /*
+     * Bright: high contrast for glare, but keep vertical budget.
+     * Landscape: one type step smaller so Edit Marked Line + bottom tips clear.
+     */
     html.theme-bright body {
       -webkit-font-smoothing: antialiased;
-      font-weight: 500;
+      font-weight: 400;
+    }
+
+    @media (orientation: landscape) and (min-width: 901px) {
+      html.theme-bright {
+        font-size: 93.75%; /* ~15px if root 16 — reclaim a few rows of height */
+      }
     }
 
     html.theme-bright .card,
@@ -100,15 +109,17 @@
     html.theme-bright .view-hint {
       opacity: 1;
       color: #000;
-      font-weight: 650;
+      font-weight: 600;
     }
 
     html.theme-bright input[type="text"],
     html.theme-bright select,
     html.theme-bright .flight-log-acft,
-    html.theme-bright .flight-log-apt {
+    html.theme-bright .flight-log-apt,
+    html.theme-bright .flight-log-apt-add,
+    html.theme-bright .flight-log-picname {
       border-width: 2px;
-      font-weight: 650;
+      font-weight: 600;
       color: #000;
       background: #fff;
     }
@@ -118,6 +129,21 @@
       color: var(--placeholder);
       font-weight: 400;
       opacity: 1;
+    }
+
+    /* Beat bright white field bg — pink fill + dark red border for sun glare */
+    html.theme-bright input.warn-diff,
+    html.theme-bright input.log-time-error {
+      background: var(--soft-warn-bg);
+      border-color: var(--warn);
+      box-shadow: inset 0 0 0 1px var(--warn);
+    }
+
+    html.theme-bright input.warn-diff:focus,
+    html.theme-bright input.log-time-error:focus {
+      outline-color: var(--warn);
+      border-color: var(--warn);
+      background: var(--soft-warn-bg);
     }
 
     html.theme-bright .toggle {
@@ -142,11 +168,36 @@
     html.theme-bright .flight-log-days-ago {
       opacity: 1;
       color: #000;
-      font-weight: 700;
+      font-weight: 650;
+    }
+
+    /* Bright landscape: shave a little more from howto / log side stack */
+    @media (orientation: landscape) and (min-width: 901px) {
+      html.theme-bright .howto {
+        padding: 0 5px 1px;
+        border-radius: 6px;
+      }
+      html.theme-bright .howto-item {
+        font-size: 0.55rem;
+        line-height: 1.12;
+        font-weight: 600;
+      }
+      html.theme-bright .log-side-col {
+        gap: 4px;
+      }
+      html.theme-bright .log-prev-table {
+        row-gap: 1px;
+      }
+      html.theme-bright .footer-stack {
+        row-gap: 4px;
+      }
     }
 
     html.theme-bright .rvsm-hint.show {
       color: #8b0000;
+      background: var(--soft-warn-bg);
+      padding: 0 4px;
+      border-radius: 3px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -196,7 +247,8 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        padding: 4px
+        /* A bit more top pad so header buttons clear status-bar / top-edge miss taps */
+        padding: 8px
                  max(8px, env(safe-area-inset-right))
                  max(8px, env(safe-area-inset-bottom))
                  max(8px, env(safe-area-inset-left));
@@ -211,10 +263,10 @@
       .footer-stack {
         align-content: start; /* don’t stretch grid rows into empty viewport space */
       }
-      /* Standalone: don’t stretch howto to Restore/Copy column height */
+      /* Standalone: keep howto on the same band as Restore / copy DEPT */
       .howto.is-standalone {
         align-self: center;
-        padding: 2px 8px;
+        padding: 1px 6px;
       }
       .log-prev,
       .flight-log {
@@ -226,11 +278,12 @@
 
     header {
       display: flex;
-      align-items: center;
+      align-items: flex-end; /* Bright/Clear sit just above the cards, not the top edge */
       justify-content: center;
       flex-wrap: wrap;
       gap: 5px 10px;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
+      min-height: 40px;
       text-align: center;
     }
 
@@ -240,6 +293,7 @@
       font-weight: 650;
       letter-spacing: 0.02em;
       line-height: 1.1;
+      padding-bottom: 4px; /* optical align with taller header buttons */
     }
 
     .header-rule {
@@ -248,13 +302,32 @@
       align-self: center;
     }
 
+    .header-theme,
+    .header-clear {
+      position: relative;
+      z-index: 2;
+    }
+
     .header-clear button,
     .header-theme button {
-      min-height: 28px;
-      padding: 3px 10px;
+      position: relative;
+      min-height: 36px;
+      min-width: 52px;
+      padding: 6px 12px;
       font-size: 0.78rem;
       background: var(--btn);
       color: var(--btn-text);
+    }
+
+    /* Invisible extra hit pad — especially downward toward the form */
+    .header-clear button::after,
+    .header-theme button::after {
+      content: "";
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      bottom: -12px;
+      left: -8px;
     }
 
     button {
@@ -622,7 +695,7 @@
         minmax(2.9rem, 0.58fr)   /* ON BLK */
         minmax(2.5rem, 0.5fr)    /* BLOCK */
         minmax(2.5rem, 0.5fr)    /* FLIGHT */
-        minmax(2rem, 0.38fr)     /* ROLE */
+        minmax(2rem, 0.38fr)     /* TASK */
         minmax(5.5rem, 1.55fr)   /* PIC — longer names */
         1.15rem;                 /* mark */
       column-gap: 5px;
@@ -676,10 +749,10 @@
       overflow: visible;
     }
 
-    /* Compact mark box — must not grow row line-height / min-height */
+    /* Mark box — large enough for fat-finger ticks without stretching row text */
     .log-prev-mark {
-      width: 0.78rem;
-      height: 0.78rem;
+      width: 1.05rem;
+      height: 1.05rem;
       margin: 0;
       padding: 0;
       flex: 0 0 auto;
@@ -697,8 +770,8 @@
       pointer-events: none;
     }
 
-    /* PF cue: tiny box around ROLE letters only (no whole-row highlight) */
-    .role-pf-box {
+    /* PF cue: tiny box around TASK letters only (no whole-row highlight) */
+    .task-pf-box {
       display: inline-block;
       padding: 0 2px;
       border: 1px solid currentColor;
@@ -801,12 +874,6 @@
       text-overflow: ellipsis;
     }
 
-    .app-rec-update {
-      flex: 0 0 auto;
-      text-align: right;
-      white-space: nowrap;
-    }
-
     .app-rec a {
       color: var(--accent);
       text-decoration: none;
@@ -821,18 +888,13 @@
     .dept-col {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      align-self: stretch;
+      gap: 0;
+      align-self: center; /* same vertical band as thinned howto */
       width: 100%;
     }
 
     .history-col { grid-area: hist; }
     .dept-col { grid-area: dept; }
-
-    .history-col .phase-rule,
-    .dept-col .phase-rule {
-      margin-top: auto;
-    }
 
     .history-col #btnRestore,
     .dept-col #btnCopy,
@@ -857,11 +919,11 @@
     .howto {
       grid-area: howto;
       min-width: 0;
-      align-self: stretch;
+      align-self: center; /* sit on same vertical line as Restore / copy DEPT */
       position: relative;
-      padding: 2px 8px 4px;
+      padding: 1px 6px 2px;
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 8px;
       background: var(--panel);
     }
 
@@ -936,16 +998,16 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: auto auto;
-      gap: 4px 10px;
-      align-items: start;
+      gap: 1px 8px;
+      align-items: center;
     }
 
     .howto-item {
       display: block;
       margin: 0;
       color: var(--muted);
-      font-size: 0.65rem;
-      line-height: 1.25;
+      font-size: 0.58rem;
+      line-height: 1.15;
       opacity: 0.85;
     }
 
@@ -1001,8 +1063,9 @@
       opacity: 0.78;
     }
 
+    /* Browser + Home Screen: liability on the right (update tip lives only in standalone howto) */
     .app-rec-liability {
-      display: none;
+      display: block;
       flex: 0 0 auto;
       margin: 0;
       text-align: right;
@@ -1014,20 +1077,12 @@
       opacity: 0.55;
     }
 
-    body.is-standalone-app .app-rec-update {
-      display: none;
-    }
-
-    body.is-standalone-app .app-rec-liability {
-      display: block;
-    }
-
     .howto-version {
       position: absolute;
-      right: 8px;
-      bottom: 4px;
+      right: 6px;
+      bottom: 1px;
       margin: 0;
-      font-size: 0.6rem;
+      font-size: 0.52rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       color: var(--muted);
@@ -1122,31 +1177,12 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Left cluster: date stack | PF | aircraft+PIC — PF & acft share mid height */
-    .flight-log-start {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 8px 10px;
-      min-width: 0;
-      margin-right: 4px; /* nudge times/DEP slightly right */
-    }
-
-    .flight-log-lead {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: center;
-      gap: 2px;
-      min-width: 5.5rem;
-    }
-
     /* Custom calendar popover — works in Cursor browser, iPad Safari, desktop */
     button.flight-log-date-hit {
       position: relative;
-      display: none;
+      display: block;
+      grid-area: date;
+      align-self: stretch;
       min-width: 5.5rem;
       min-height: 2.6rem;
       margin: 0;
@@ -1166,8 +1202,14 @@
       box-sizing: border-box;
     }
 
-    button.flight-log-date-hit.show {
-      display: block;
+    /* No date yet (e.g. after Clear): keep the box, dim contents */
+    button.flight-log-date-hit.is-empty {
+      opacity: 0.45;
+    }
+
+    button.flight-log-date-hit.is-empty .flight-log-date {
+      color: var(--muted);
+      min-height: 0.85em;
     }
 
     button.flight-log-date-hit:hover,
@@ -1230,17 +1272,18 @@
     html.theme-bright .log-prev-head {
       color: #000;
       opacity: 1;
-      font-weight: 800;
+      font-weight: 700;
       border-bottom: 2px solid #000;
+      padding-bottom: 2px;
     }
 
     html.theme-bright .log-prev-row > span {
       color: #000;
       background: #fff;
-      font-weight: 650;
+      font-weight: 600;
     }
 
-    html.theme-bright .role-pf-box {
+    html.theme-bright .task-pf-box {
       color: #000;
       border-color: #000;
     }
@@ -1380,12 +1423,40 @@
       min-height: 0.9em;
     }
 
+    /*
+     * Two aligned rows (calendar spans left).
+     * Row1: PF · acft · DEP · OFF · ARR · ON · BLOCK
+     * Row2: PIC · name · add · AIR · add · TD · FLIGHT
+     */
+    .flight-log-entry {
+      display: grid;
+      grid-template-columns:
+        minmax(5.5rem, auto)
+        auto
+        7.5rem
+        4.2rem
+        max-content
+        4.2rem
+        max-content
+        minmax(5.5rem, auto);
+      grid-template-areas:
+        "date pf   acft dep  off arr  on block"
+        "date pics picn addd air adda td flight";
+      column-gap: 8px;
+      row-gap: 5px;
+      align-items: center;
+      flex: 1 1 auto;
+      min-width: 42rem;
+      width: 100%;
+    }
+
     .flight-log-pf {
-      flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
       gap: 5px;
       margin: 0;
+      min-height: 28px;
+      padding: 2px 0;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
@@ -1393,8 +1464,10 @@
       font-weight: 700;
       letter-spacing: 0.06em;
       color: var(--muted);
-      align-self: center;
     }
+
+    .flight-log-pf.log-pf { grid-area: pf; }
+    .flight-log-pf.log-pics { grid-area: pics; }
 
     .flight-log-pf input {
       width: 1.15rem;
@@ -1404,19 +1477,8 @@
       flex: 0 0 auto;
     }
 
-    /* Aircraft + PIC stacked — wider PIC; shifts DEP/times right into unused space */
-    .flight-log-meta {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: center;
-      gap: 4px;
-      width: 9.5rem;
-      align-self: center;
-    }
-
     .flight-log-acft {
+      grid-area: acft;
       width: 100%;
       min-height: 28px;
       margin: 0;
@@ -1430,49 +1492,17 @@
       letter-spacing: 0.04em;
     }
 
-    .flight-log-pic {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1px;
-      margin: 0;
-      min-width: 0;
-    }
-
-    .flight-log-pic label {
-      font-size: 0.58rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      line-height: 1.1;
-    }
-
-    .flight-log-pic input {
+    .flight-log-picname {
+      grid-area: picn;
       width: 100%;
       min-width: 0;
       min-height: 28px;
+      margin: 0;
       padding: 3px 6px;
       font-size: 0.78rem;
     }
 
-    /*
-     * DEP/ARR mid-height. BLOCK on ON BLOCKS row; FLIGHT on TOUCHDOWN row.
-     * Fixed tracks so fields cannot collapse onto each other (iPad landscape).
-     */
-    .flight-log-times {
-      display: grid;
-      grid-template-columns: 4.1rem max-content 4.1rem max-content 5.5rem;
-      grid-template-areas:
-        "dep off arr on block"
-        "dep air arr td flight";
-      column-gap: 8px;
-      row-gap: 5px;
-      align-items: center;
-      flex: 1 1 auto;
-      min-width: 34rem;
-    }
-
-    .flight-log-times .field {
+    .flight-log-entry .field {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -1481,14 +1511,16 @@
       min-width: 0;
     }
 
-    .flight-log-times .log-dep { grid-area: dep; }
-    .flight-log-times .log-arr { grid-area: arr; }
-    .flight-log-times .log-off { grid-area: off; }
-    .flight-log-times .log-air { grid-area: air; }
-    .flight-log-times .log-td { grid-area: td; }
-    .flight-log-times .log-on { grid-area: on; }
-    .flight-log-times .log-block { grid-area: block; }
-    .flight-log-times .log-flight { grid-area: flight; }
+    .flight-log-entry .log-dep { grid-area: dep; }
+    .flight-log-entry .log-arr { grid-area: arr; }
+    .flight-log-entry .log-dep-add { grid-area: addd; }
+    .flight-log-entry .log-arr-add { grid-area: adda; }
+    .flight-log-entry .log-off { grid-area: off; }
+    .flight-log-entry .log-air { grid-area: air; }
+    .flight-log-entry .log-td { grid-area: td; }
+    .flight-log-entry .log-on { grid-area: on; }
+    .flight-log-entry .log-block { grid-area: block; }
+    .flight-log-entry .log-flight { grid-area: flight; }
 
     .flight-log-apt {
       width: 100%;
@@ -1505,7 +1537,46 @@
       letter-spacing: 0.03em;
     }
 
-    .flight-log-times .field label {
+    /*
+     * Manual IATA — match DEP/ARR wheel type exactly.
+     * Must beat input[type="text"] { font-size: 16px } or filled text looks huge
+     * while the placeholder (styled separately) still looked correct.
+     */
+    input.flight-log-apt-add[type="text"] {
+      width: 100%;
+      min-width: 0;
+      min-height: 28px;
+      margin: 0;
+      padding: 2px 2px 2px 4px;
+      border: 1px solid var(--field-border);
+      border-radius: 7px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 0.74rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      line-height: 1.15;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0.4;
+      box-sizing: border-box;
+      font-variant-numeric: normal;
+    }
+
+    input.flight-log-apt-add[type="text"]::placeholder {
+      font-size: 0.74rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      text-transform: lowercase;
+      opacity: 1;
+    }
+
+    input.flight-log-apt-add[type="text"]:focus,
+    input.flight-log-apt-add[type="text"]:not(:placeholder-shown) {
+      opacity: 1;
+    }
+
+    .flight-log-entry .field label {
       flex: 0 0 6.4rem;
       width: 6.4rem;
       text-align: right;
@@ -1513,7 +1584,7 @@
       font-size: 0.7rem;
     }
 
-    .flight-log-times .field input {
+    .flight-log-entry .field input {
       flex: 0 0 5.5rem;
       width: 5.5rem;
       min-width: 5.5rem;
@@ -1550,7 +1621,6 @@
 
     .flight-log-sum.log-flight {
       grid-area: flight;
-      /* Nudge right to sit under BLOCK + time column (same left pad as block cell) */
       padding-left: 6px;
       justify-self: start;
     }
@@ -1586,8 +1656,8 @@
     }
 
     input.log-time-error {
-      background: rgba(180, 70, 70, 0.22);
-      border-color: rgba(196, 92, 92, 0.85);
+      background: var(--soft-warn-bg);
+      border-color: var(--warn);
     }
 
     input.log-time-error:focus {
@@ -1679,6 +1749,88 @@
       width: 100%;
       min-height: 36px;
       font-size: 0.85rem;
+    }
+
+    /* First-run / missing identity: your name for PIC legs */
+    .pic-name-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 95;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.55);
+    }
+
+    .pic-name-overlay[hidden] {
+      display: none !important;
+    }
+
+    .pic-name-overlay-box {
+      width: min(22rem, 100%);
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    html.theme-bright .pic-name-overlay-box {
+      border-width: 2px;
+      border-color: #000;
+      background: #fff;
+    }
+
+    .pic-name-overlay-title {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--text);
+    }
+
+    .pic-name-overlay-box input[type="text"] {
+      width: 100%;
+      min-height: 40px;
+      margin: 0 0 12px;
+      padding: 8px 10px;
+      border: 1px solid var(--field-border);
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      box-sizing: border-box;
+    }
+
+    html.theme-bright .pic-name-overlay-box input[type="text"] {
+      border-width: 2px;
+      border-color: #000;
+      color: #000;
+      background: #fff;
+    }
+
+    .pic-name-overlay-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pic-name-overlay-actions button {
+      flex: 1 1 0;
+      min-height: 40px;
+      font-size: 0.85rem;
+    }
+
+    .pic-name-overlay-actions #picNameOverlayLater {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    html.theme-bright .pic-name-overlay-actions #picNameOverlayLater {
+      color: #000;
+      border-color: #000;
     }
 
     .sw-update-banner {
@@ -1847,14 +1999,19 @@
         flex-direction: column;
         align-items: stretch;
       }
-      .flight-log-times {
-        grid-template-columns: 4rem 1fr 4rem 1fr;
-        grid-template-areas:
-          "dep off arr on"
-          "dep air arr td"
-          "block block flight flight";
+      .flight-log-entry {
+        min-width: 0;
+        grid-template-columns:
+          minmax(5rem, auto)
+          auto
+          minmax(5.5rem, 1fr)
+          minmax(3.5rem, 0.7fr)
+          max-content
+          minmax(3.5rem, 0.7fr)
+          max-content
+          minmax(4.5rem, auto);
       }
-      .flight-log-times .field input {
+      .flight-log-entry .field input {
         flex: 1 1 auto;
         width: auto;
         min-width: 0;
@@ -1989,7 +2146,6 @@
     <div class="footer-stack">
       <div class="history-col">
         <button type="button" id="btnRestore" disabled title="Restore last cleared or copied form values">Restore History</button>
-        <div class="phase-rule" aria-hidden="true"></div>
       </div>
       <section class="howto" id="howto" aria-label="Offline iPad instructions">
         <div class="howto-grid" role="list">
@@ -2008,13 +2164,12 @@
           <p class="howto-item" role="listitem">Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</p>
         </div>
         <div class="howto-standalone-panel" id="howtoStandalone" aria-label="Web app notes">
-          <p class="howto-standalone-note">In order to update this web app, it may be necessary to swipe-close it several times to force a refresh.</p>
+          <p class="howto-standalone-note">In order to update this web app to a newer version, it may be necessary to swipe-close it several times to force a refresh.</p>
         </div>
         <p class="howto-version" id="howtoVersion"></p>
       </section>
       <div class="dept-col">
         <button type="button" id="btnCopy">copy DEPT text</button>
-        <div class="phase-rule" aria-hidden="true"></div>
       </div>
       <section class="landing-prep" aria-label="Landing preparation">
         <div class="row-3 landing-fields" role="group" aria-label="Arrival ATIS and landing distance">
@@ -2032,70 +2187,66 @@
       <button type="button" id="btnCopyArr">copy ARR text</button>
       <div class="log-phase-rule" aria-hidden="true"></div>
       <section class="flight-log" aria-label="Your log">
-        <div class="flight-log-start">
-          <div class="flight-log-lead">
-            <button
-              type="button"
-              class="flight-log-date-hit"
-              id="logDateHit"
-              title="Tap to change departure date (UTC)"
-              aria-haspopup="dialog"
-              aria-controls="logDatePopover"
-              aria-expanded="false"
-            >
-              <div class="flight-log-date-stack" id="logDateStack" aria-live="polite">
-                <span class="flight-log-date" id="logDate"></span>
-                <span class="flight-log-date-hint">dept utc</span>
-                <span class="flight-log-days-ago" id="logDaysAgo"></span>
-              </div>
-            </button>
-          </div>
-          <label class="flight-log-pf" for="logPf" title="Pilot flying this leg">
+        <input type="hidden" id="logDeptDate" name="logDeptDate" value="" />
+        <div class="flight-log-entry" role="group" aria-label="Logbook entry">
+          <button
+            type="button"
+            class="flight-log-date-hit"
+            id="logDateHit"
+            title="Tap to change departure date (UTC)"
+            aria-haspopup="dialog"
+            aria-controls="logDatePopover"
+            aria-expanded="false"
+          >
+            <div class="flight-log-date-stack" id="logDateStack" aria-live="polite">
+              <span class="flight-log-date" id="logDate"></span>
+              <span class="flight-log-date-hint">dept utc</span>
+              <span class="flight-log-days-ago" id="logDaysAgo"></span>
+            </div>
+          </button>
+
+          <label class="flight-log-pf log-pf" for="logPf" title="Pilot flying this leg">
             <input id="logPf" name="logPf" type="checkbox" />
             <span>PF</span>
           </label>
-          <div class="flight-log-meta">
-            <label class="sr-only" for="logAcft">Aircraft</label>
-            <select id="logAcft" name="logAcft" class="flight-log-acft" title="Aircraft" tabindex="-1">
-              <option value="CKA">CKA</option>
-              <option value="CKB">CKB</option>
-              <option value="CKC">CKC</option>
-              <option value="MPS">MPS</option>
-            </select>
-            <div class="flight-log-pic">
-              <label for="logPic">PIC</label>
-              <input id="logPic" name="logPic" type="text" maxlength="40" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="name" title="Pilot-in-command name (EASA log)" />
-            </div>
-          </div>
-        </div>
-        <input type="hidden" id="logDeptDate" name="logDeptDate" value="" />
-        <!-- Tab: OFF → AIR → TD → ON (airport/aircraft wheels skipped — touch selectors) -->
-        <div class="flight-log-times" role="group" aria-label="Block and flight times UTC">
-          <label class="sr-only" for="logDep">Departure airport</label>
-          <select id="logDep" name="logDep" class="flight-log-apt log-dep" title="Departure airport" tabindex="-1"></select>
-          <div class="field log-off">
-            <label for="offBlocks">OFF BLOCKS:</label>
-            <input id="offBlocks" name="offBlocks" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Off blocks UTC" />
-          </div>
-          <div class="field log-air">
-            <label for="airborne">AIRBORNE:</label>
-            <input id="airborne" name="airborne" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Airborne UTC" />
-          </div>
-          <div class="field log-td">
-            <label for="touchdown">TOUCHDOWN:</label>
-            <input id="touchdown" name="touchdown" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="Touchdown UTC" />
-          </div>
-          <label class="sr-only" for="logArr">Arrival airport</label>
-          <select id="logArr" name="logArr" class="flight-log-apt log-arr" title="Arrival airport" tabindex="-1"></select>
-          <div class="field log-on">
-            <label for="onBlocks">ON BLOCKS:</label>
-            <input id="onBlocks" name="onBlocks" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" title="On blocks UTC" />
-          </div>
+          <select id="logAcft" name="logAcft" class="flight-log-acft" title="Aircraft" aria-label="Aircraft" tabindex="-1">
+            <option value="CKA">CKA</option>
+            <option value="CKB">CKB</option>
+            <option value="CKC">CKC</option>
+            <option value="MPS">MPS</option>
+          </select>
+          <select id="logDep" name="logDep" class="flight-log-apt log-dep" title="Departure airport" aria-label="Departure airport" tabindex="-1"></select>
+          <select id="logArr" name="logArr" class="flight-log-apt log-arr" title="Arrival airport" aria-label="Arrival airport" tabindex="-1"></select>
           <div class="flight-log-block-cell log-block">
             <span class="flight-log-sum"><span class="flight-log-sum-lab">BLOCK</span><strong id="blockTime">—</strong></span>
             <span class="flight-log-s26" id="logS26" aria-live="polite"></span>
           </div>
+          <!-- DOM order = Tab order: OFF → AIR → TD → ON (grid-areas keep visual layout) -->
+          <div class="field log-off">
+            <label for="offBlocks">OFF BLOCKS:</label>
+            <input id="offBlocks" name="offBlocks" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Off blocks UTC" />
+          </div>
+          <div class="field log-air">
+            <label for="airborne">AIRBORNE:</label>
+            <input id="airborne" name="airborne" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Airborne UTC" />
+          </div>
+          <div class="field log-td">
+            <label for="touchdown">TOUCHDOWN:</label>
+            <input id="touchdown" name="touchdown" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Touchdown UTC" />
+          </div>
+          <div class="field log-on">
+            <label for="onBlocks">ON BLOCKS:</label>
+            <input id="onBlocks" name="onBlocks" type="text" inputmode="numeric" maxlength="5" enterkeyhint="done" placeholder="HH:MM" title="On blocks UTC" />
+          </div>
           <span class="flight-log-sum log-flight"><span class="flight-log-sum-lab">FLIGHT</span><strong id="flightTimeCalc">—</strong></span>
+
+          <label class="flight-log-pf log-pics" for="logPicSelf" title="I was PIC this leg">
+            <input id="logPicSelf" name="logPicSelf" type="checkbox" />
+            <span>PIC</span>
+          </label>
+          <input id="logPic" name="logPic" class="flight-log-picname" type="text" maxlength="40" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="PIC name" title="Pilot-in-command name (EASA log)" />
+          <input id="logDepAdd" class="flight-log-apt-add log-dep-add" type="text" inputmode="text" enterkeyhint="next" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" lang="en" placeholder="add" title="Add departure IATA (3-letter, charter / divert)" aria-label="Add departure airport" />
+          <input id="logArrAdd" class="flight-log-apt-add log-arr-add" type="text" inputmode="text" enterkeyhint="done" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" lang="en" placeholder="add" title="Add arrival IATA (3-letter, charter / divert)" aria-label="Add arrival airport" />
         </div>
       </section>
       <div class="log-copy-col">
@@ -2123,9 +2274,6 @@
           for a calendar overview and
           <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
           for checking today’s EASA limits.
-        </span>
-        <span class="app-rec-update">
-          In order to update this web app, it may be necessary to swipe-close it several times to force a refresh.
         </span>
         <span class="app-rec-liability">Runs locally/offline, sends no data, author assumes no liability.</span>
       </p>
@@ -2161,6 +2309,32 @@
     </div>
   </div>
 
+  <div
+    class="pic-name-overlay"
+    id="picNameOverlay"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="picNameOverlayTitle"
+  >
+    <div class="pic-name-overlay-box">
+      <p id="picNameOverlayTitle" class="pic-name-overlay-title">Your name for PIC legs</p>
+      <input
+        id="picNameOverlayInput"
+        type="text"
+        maxlength="40"
+        autocomplete="name"
+        autocapitalize="words"
+        spellcheck="false"
+        placeholder="Full name"
+      />
+      <div class="pic-name-overlay-actions">
+        <button type="button" id="picNameOverlayLater">Later</button>
+        <button type="button" id="picNameOverlaySave">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" aria-live="polite">Copied</div>
 
   <script>
@@ -2172,8 +2346,10 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.27";
+    const APP_VERSION = "2.28";
     const THEME_KEY = "flight-plan-form-theme-v1";
+    /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
+    const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
@@ -2185,25 +2361,25 @@
     const FIELD_IDS = [
       "security", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
       "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps",
-      "arrAtis", "ldis", "logPf", "logAcft", "logPic", "logDeptDate", "logDep", "logArr",
+      "arrAtis", "ldis", "logPf", "logPicSelf", "logAcft", "logPic", "logDeptDate", "logDep", "logArr",
       "offBlocks", "airborne", "touchdown", "onBlocks"
     ];
     /** Tab / entry order: OFF → AIRBORNE → TOUCHDOWN → ON (wheels use tabindex=-1) */
     const LOG_TIME_IDS = ["offBlocks", "airborne", "touchdown", "onBlocks"];
-    const LOG_FIELD_IDS = ["logPf", "logAcft", "logPic", "logDeptDate", "logDep", "logArr", ...LOG_TIME_IDS];
+    const LOG_FIELD_IDS = ["logPf", "logPicSelf", "logAcft", "logPic", "logDeptDate", "logDep", "logArr", ...LOG_TIME_IDS];
     const LOG_PREV_HEADERS = [
       "DEP DATE", "REG", "ROUTE", "OFF BLK", "T/O", "LDG",
-      "ON BLK", "BLOCK", "FLIGHT", "ROLE", "PIC"
+      "ON BLK", "BLOCK", "FLIGHT", "TASK", "PIC"
     ];
     /** UI table only — mark column after PIC (not included in copy LOG as table). */
     const LOG_PREV_UI_HEADERS = LOG_PREV_HEADERS.concat([""]);
     const DEFAULTS = {
       security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
-      logAcft: "CKA", logPf: "no", logPic: "", logDeptDate: "", logDep: "XXX", logArr: "XXX"
+      logAcft: "CKA", logPf: "no", logPicSelf: "no", logPic: "", logDeptDate: "", logDep: "", logArr: "AMS"
     };
     const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     /** Martinair B747-400 Summer 2026 city pairs — OM-A style block times table */
-    const LOG_AIRPORTS = ["ALA", "AMS", "BOG", "DWC", "GYD", "HHN", "HKG", "ICN", "JNB", "MIA", "NBO", "XXX"];
+    const LOG_AIRPORTS = ["ALA", "AMS", "BOG", "DWC", "GYD", "HHN", "HKG", "ICN", "JNB", "MIA", "NBO"];
     const S26_BLOCK = {
       "ALA-AMS": "8:10", "AMS-DWC": "6:40", "AMS-HHN": "1:05", "AMS-HKG": "11:55",
       "AMS-ICN": "11:45", "AMS-JNB": "10:50", "AMS-MIA": "9:30", "BOG-MIA": "3:45",
@@ -2213,7 +2389,7 @@
     };
     /**
      * FDPFMS-style device timezone → departure airport (network airports only).
-     * Unknown / non-network zones → XXX.
+     * Unknown / non-network zones → AMS fallback.
      */
     const TZ_TO_DEP = {
       "Europe/Amsterdam": "AMS",
@@ -2260,7 +2436,7 @@
           }
         }
       } catch (_) {}
-      return "XXX";
+      return "AMS";
     }
 
     /** Suggest DEP from system timezone (new leg / clear / empty). Manual wheel choice sticks. */
@@ -2434,7 +2610,8 @@
     }
 
     /**
-     * Infer departure UTC day from OFF/ON clocks vs now (timezone-agnostic).
+     * Infer departure UTC day from OFF/ON clocks vs iPad clock → UTC
+     * (manual IATA airports have no timezone; always use device UTC).
      * Used once when a leg is first completed; then stored in logDeptDate for weeks.
      */
     function computeLogUtcDate() {
@@ -2464,30 +2641,59 @@
     /** Max plausible taxi-out / taxi-in when end clock < start (next Zulu day). */
     const LOG_TAXI_WRAP_MAX_MIN = 6 * 60;
 
+    /* Cached hot DOM refs — filled once after script parses the form */
+    const logEls = {
+      off: null, air: null, td: null, on: null,
+      deptDate: null, date: null, daysAgo: null, dateHit: null,
+      block: null, flight: null, s26: null, dep: null, arr: null
+    };
+    const rvsmEls = { l: null, r: null, sby: null, hint: null };
+
+    function cacheHotEls() {
+      logEls.off = $("offBlocks");
+      logEls.air = $("airborne");
+      logEls.td = $("touchdown");
+      logEls.on = $("onBlocks");
+      logEls.deptDate = $("logDeptDate");
+      logEls.date = $("logDate");
+      logEls.daysAgo = $("logDaysAgo");
+      logEls.dateHit = $("logDateHit");
+      logEls.block = $("blockTime");
+      logEls.flight = $("flightTimeCalc");
+      logEls.s26 = $("logS26");
+      logEls.dep = $("logDep");
+      logEls.arr = $("logArr");
+      rvsmEls.l = $("rvsmL");
+      rvsmEls.r = $("rvsmR");
+      rvsmEls.sby = $("rvsmSby");
+      rvsmEls.hint = $("rvsmHint");
+    }
+
     function checkLogTimeErrors() {
-      const off = timeToMinutes($("offBlocks").value);
-      const air = timeToMinutes($("airborne").value);
-      const td = timeToMinutes($("touchdown").value);
-      const on = timeToMinutes($("onBlocks").value);
+      const off = timeToMinutes(logEls.off.value);
+      const air = timeToMinutes(logEls.air.value);
+      const td = timeToMinutes(logEls.td.value);
+      const on = timeToMinutes(logEls.on.value);
       // FDPFMS-style: end < start ⇒ next day unless wrapped duration is absurd.
-      $("airborne").classList.toggle(
+      logEls.air.classList.toggle(
         "log-time-error",
         isLogTimeOrderError(air, off, LOG_TAXI_WRAP_MAX_MIN)
       );
-      $("onBlocks").classList.toggle(
+      logEls.on.classList.toggle(
         "log-time-error",
         isLogTimeOrderError(on, td, LOG_TAXI_WRAP_MAX_MIN)
       );
     }
 
     function s26BlockForPair(dep, arr) {
-      if (!dep || !arr || dep === "XXX" || arr === "XXX") return "";
+      if (!dep || !arr) return "";
       return S26_BLOCK[dep + "-" + arr] || "";
     }
 
     function updateS26Display() {
-      const sched = s26BlockForPair($("logDep").value, $("logArr").value);
-      const el = $("logS26");
+      const sched = s26BlockForPair(logEls.dep.value, logEls.arr.value);
+      const el = logEls.s26;
+      if (!el) return;
       if (sched) {
         el.textContent = "S26 " + sched;
         el.classList.add("show");
@@ -2497,8 +2703,36 @@
       }
     }
 
+    /**
+     * IATA 3-letter: A–Z only, always capitals.
+     * Rolling window — a 4th letter drops the oldest (keeps the newest 3).
+     */
+    function normalizeIata(raw) {
+      const letters = String(raw || "").toUpperCase().replace(/[^A-Z]/g, "");
+      return letters.length > 3 ? letters.slice(-3) : letters;
+    }
+
+    /** Ensure select has this IATA (network or custom charter/divert). */
+    function ensureAirportOption(el, code) {
+      if (!el || !code) return;
+      const c = normalizeIata(code);
+      if (c.length !== 3) return;
+      let found = false;
+      for (const opt of el.options) {
+        if (opt.value === c) { found = true; break; }
+      }
+      if (!found) {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        opt.dataset.custom = "1";
+        el.appendChild(opt);
+      }
+      el.value = c;
+    }
+
     function fillAirportSelect(el, defaultCode) {
-      const cur = el.value;
+      const cur = normalizeIata(el.value || defaultCode);
       el.innerHTML = "";
       LOG_AIRPORTS.forEach((code) => {
         const opt = document.createElement("option");
@@ -2506,31 +2740,119 @@
         opt.textContent = code;
         el.appendChild(opt);
       });
-      if (cur && LOG_AIRPORTS.includes(cur)) el.value = cur;
-      else if (defaultCode && LOG_AIRPORTS.includes(defaultCode)) el.value = defaultCode;
-      else el.value = LOG_AIRPORTS[0] || "";
+      if (cur.length === 3) {
+        ensureAirportOption(el, cur);
+      } else if (defaultCode && LOG_AIRPORTS.includes(defaultCode)) {
+        el.value = defaultCode;
+      } else {
+        el.value = LOG_AIRPORTS[0] || "";
+      }
+    }
+
+    function syncAirportAddField(selectId, addId) {
+      const sel = $(selectId);
+      const add = $(addId);
+      if (!sel || !add) return;
+      const v = normalizeIata(sel.value);
+      if (v.length === 3 && !LOG_AIRPORTS.includes(v)) add.value = v;
+      else if (document.activeElement !== add) add.value = "";
+      add.classList.remove("warn-diff");
+    }
+
+    function applyIataAddWarn(el) {
+      if (!el) return;
+      const d = normalizeIata(el.value);
+      el.classList.toggle("warn-diff", d.length > 0 && d.length < 3);
+    }
+
+    function checkIataAddLen(el, immediate = true) {
+      if (!el) return;
+      if (el._iataWarnTimer) {
+        clearTimeout(el._iataWarnTimer);
+        el._iataWarnTimer = 0;
+      }
+      if (immediate) {
+        applyIataAddWarn(el);
+        return;
+      }
+      el.classList.remove("warn-diff");
+      el._iataWarnTimer = setTimeout(() => {
+        el._iataWarnTimer = 0;
+        applyIataAddWarn(el);
+      }, WARN_PAUSE_MS);
+    }
+
+    function bindAirportAddFields() {
+      const pairs = [
+        { selectId: "logDep", addId: "logDepAdd" },
+        { selectId: "logArr", addId: "logArrAdd" }
+      ];
+      pairs.forEach(({ selectId, addId }) => {
+        const sel = $(selectId);
+        const add = $(addId);
+        if (!sel || !add) return;
+        add.addEventListener("input", () => {
+          const next = normalizeIata(add.value);
+          if (add.value !== next) add.value = next;
+          if (next.length === 3) {
+            ensureAirportOption(sel, next);
+            updateS26Display();
+          }
+          checkIataAddLen(add, false);
+          save();
+        });
+        add.addEventListener("blur", () => {
+          const code = normalizeIata(add.value);
+          add.value = code;
+          if (code.length === 3) {
+            ensureAirportOption(sel, code);
+            add.classList.remove("warn-diff");
+            updateS26Display();
+          } else {
+            applyIataAddWarn(add);
+          }
+          saveNow();
+        });
+        /* Tab: dep-add → arr-add only; arr-add → dismiss keyboard. Enter same. */
+        add.addEventListener("keydown", (e) => {
+          if (e.key !== "Tab" && e.key !== "Enter") return;
+          if (e.key === "Tab" && e.shiftKey) return;
+          e.preventDefault();
+          if (addId === "logDepAdd") {
+            const next = $("logArrAdd");
+            if (next) {
+              try { next.focus(); next.select(); } catch (_) {}
+            }
+          } else {
+            try { add.blur(); } catch (_) {}
+          }
+        });
+        sel.addEventListener("change", () => {
+          syncAirportAddField(selectId, addId);
+          updateS26Display();
+          saveNow();
+        });
+      });
     }
 
     function updateLogCalcs() {
-      const block = subtractTimes($("onBlocks").value, $("offBlocks").value);
-      const flight = subtractTimes($("touchdown").value, $("airborne").value);
+      const block = subtractTimes(logEls.on.value, logEls.off.value);
+      const flight = subtractTimes(logEls.td.value, logEls.air.value);
       // Persist DEPT DATE when first complete — do not recompute on later opens (weeks later).
-      if (timeToMinutes($("offBlocks").value) !== null && !$("logDeptDate").value.trim()) {
-        $("logDeptDate").value = computeLogUtcDate();
+      if (timeToMinutes(logEls.off.value) !== null && !logEls.deptDate.value.trim()) {
+        logEls.deptDate.value = computeLogUtcDate();
         saveNow();
       }
-      const date = $("logDeptDate").value.trim();
-      const ago = logDaysAgoText(date);
-      $("logDate").textContent = date;
-      $("logDaysAgo").textContent = ago;
-      const hit = $("logDateHit");
-      if (hit) {
-        hit.classList.toggle("show", !!date);
+      const date = logEls.deptDate.value.trim();
+      if (logEls.date) logEls.date.textContent = date || "—";
+      if (logEls.daysAgo) logEls.daysAgo.textContent = logDaysAgoText(date);
+      if (logEls.dateHit) {
+        logEls.dateHit.classList.toggle("is-empty", !date);
         if (!date) closeDeptDatePopover();
       }
-      $("blockTime").textContent = block || "—";
-      $("flightTimeCalc").textContent = flight || "—";
-      updateS26Display();
+      if (logEls.block) logEls.block.textContent = block || "—";
+      if (logEls.flight) logEls.flight.textContent = flight || "—";
+      // S26 only changes with airports — updateS26Display() from those handlers.
       checkLogTimeErrors();
     }
 
@@ -2643,6 +2965,10 @@
       hit.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!$("logDeptDate").value.trim()) {
+          showAppAlert("type off blocks first");
+          return;
+        }
         if (!pop.hidden) closeDeptDatePopover();
         else openDeptDatePopover();
       });
@@ -2726,7 +3052,7 @@
       return [
         dash(v.logDeptDate),
         reg,
-        `${v.logDep || "XXX"}→${v.logArr || "XXX"}`,
+        `${v.logDep || "—"}→${v.logArr || "—"}`,
         dash(v.offBlocks),
         dash(v.airborne),
         dash(v.touchdown),
@@ -2741,9 +3067,106 @@
     function logLegKey(v) {
       if (!v) return "";
       return [
-        v.logDeptDate, v.logAcft, v.logDep, v.logArr, v.logPf, v.logPic,
+        v.logDeptDate, v.logAcft, v.logDep, v.logArr, v.logPf, v.logPicSelf, v.logPic,
         v.offBlocks, v.airborne, v.touchdown, v.onBlocks
       ].map((x) => String(x || "").trim()).join("|");
+    }
+
+    function getMyPicName() {
+      try {
+        return String(localStorage.getItem(MY_PIC_NAME_KEY) || "").trim();
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function setMyPicName(name) {
+      const n = String(name || "").trim();
+      if (!n) return false;
+      try {
+        localStorage.setItem(MY_PIC_NAME_KEY, n);
+      } catch (_) {}
+      return true;
+    }
+
+    function showPicNameOverlay() {
+      const box = $("picNameOverlay");
+      const input = $("picNameOverlayInput");
+      if (!box || !input) return;
+      input.value = getMyPicName();
+      box.hidden = false;
+      requestAnimationFrame(() => {
+        try { input.focus(); input.select(); } catch (_) {}
+      });
+    }
+
+    function hidePicNameOverlay() {
+      const box = $("picNameOverlay");
+      if (box) box.hidden = true;
+    }
+
+    function bindPicIdentity() {
+      const selfCb = $("logPicSelf");
+      const nameEl = $("logPic");
+      const overlay = $("picNameOverlay");
+      const input = $("picNameOverlayInput");
+      const saveBtn = $("picNameOverlaySave");
+      const laterBtn = $("picNameOverlayLater");
+      if (!selfCb || !nameEl) return;
+
+      selfCb.addEventListener("change", () => {
+        if (selfCb.checked) {
+          const mine = getMyPicName();
+          if (mine) nameEl.value = mine;
+          else showPicNameOverlay();
+        } else {
+          nameEl.value = "";
+        }
+        saveNow();
+      });
+
+      nameEl.addEventListener("input", () => { save(); });
+      nameEl.addEventListener("blur", () => {
+        if (selfCb.checked) {
+          const n = nameEl.value.trim();
+          if (n) setMyPicName(n);
+        }
+        saveNow();
+      });
+
+      if (saveBtn && input) {
+        const commit = () => {
+          const n = input.value.trim();
+          if (!n) {
+            try { input.focus(); } catch (_) {}
+            return;
+          }
+          setMyPicName(n);
+          hidePicNameOverlay();
+          if (selfCb.checked) {
+            nameEl.value = n;
+            saveNow();
+          }
+        };
+        saveBtn.addEventListener("click", commit);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+        });
+      }
+      if (laterBtn) {
+        laterBtn.addEventListener("click", () => hidePicNameOverlay());
+      }
+      if (overlay) {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) hidePicNameOverlay();
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay && !overlay.hidden) hidePicNameOverlay();
+      });
     }
 
     /** Sort key: DEP DATE (UTC day), then OFF BLOCKS. Missing date → oldest. */
@@ -2771,21 +3194,36 @@
       return sortLogPrevNewestFirst(list).reverse();
     }
 
+    /** In-memory archive — avoid re-parse/re-sort on every render/mark/copy. */
+    let logPrevCache = null;
+
     function loadLogPrev() {
+      if (logPrevCache) return logPrevCache;
       try {
         const raw = localStorage.getItem(LOG_PREV_KEY);
-        if (!raw) return [];
+        if (!raw) {
+          logPrevCache = [];
+          return logPrevCache;
+        }
         const data = JSON.parse(raw);
-        if (!Array.isArray(data)) return [];
-        return sortLogPrevNewestFirst(data.slice(0, LOG_PREV_STORE_MAX));
+        if (!Array.isArray(data)) {
+          logPrevCache = [];
+          return logPrevCache;
+        }
+        logPrevCache = sortLogPrevNewestFirst(data.slice(0, LOG_PREV_STORE_MAX));
+        return logPrevCache;
       } catch (_) {
-        return [];
+        logPrevCache = [];
+        return logPrevCache;
       }
     }
 
     function saveLogPrev(list) {
       const ordered = sortLogPrevNewestFirst(list).slice(0, LOG_PREV_STORE_MAX);
-      localStorage.setItem(LOG_PREV_KEY, JSON.stringify(ordered));
+      logPrevCache = ordered;
+      try {
+        localStorage.setItem(LOG_PREV_KEY, JSON.stringify(ordered));
+      } catch (_) {}
     }
 
     /** PF flights in the last 90 days → each counts as one T/O + one LDG. */
@@ -2821,14 +3259,15 @@
       }));
     }
 
-    /** Render table rows: newest DEP DATE at top. PF = boxed ROLE letters only. */
-    function renderLogPrev() {
+    /** Render table rows: newest DEP DATE at top. PF = boxed TASK letters only. */
+    function renderLogPrev(list) {
       const table = $("logPrevTable");
       if (!table) return;
       syncLogPrevHead();
       table.querySelectorAll(".log-prev-row:not(.log-prev-head)").forEach((el) => el.remove());
-      const list = loadLogPrev();
-      const visible = list.slice(0, LOG_PREV_DISPLAY);
+      const rows = list || loadLogPrev();
+      const visible = rows.slice(0, LOG_PREV_DISPLAY);
+      const frag = document.createDocumentFragment();
       for (let i = 0; i < LOG_PREV_DISPLAY; i++) {
         const v = visible[i];
         const row = document.createElement("div");
@@ -2837,10 +3276,10 @@
         row.dataset.slot = String(i);
         logPrevCells(v, { phReg: false }).forEach((text, col) => {
           const span = document.createElement("span");
-          // ROLE column — tiny box around PF only
+          // TASK column — tiny box around PF only
           if (col === 9 && text === "PF") {
             const box = document.createElement("span");
-            box.className = "role-pf-box";
+            box.className = "task-pf-box";
             box.textContent = "PF";
             span.appendChild(box);
           } else {
@@ -2861,9 +3300,10 @@
           markCell.appendChild(cb);
         }
         row.appendChild(markCell);
-        table.appendChild(row);
+        frag.appendChild(row);
       }
-      updateLogPf90Badge(list);
+      table.appendChild(frag);
+      updateLogPf90Badge(rows);
     }
 
     function snapshotLogLeg() {
@@ -2871,6 +3311,7 @@
       return {
         logAcft: v.logAcft || "",
         logPf: v.logPf === "yes" ? "yes" : "no",
+        logPicSelf: v.logPicSelf === "yes" ? "yes" : "no",
         logPic: (v.logPic || "").trim(),
         logDep: v.logDep || "",
         logArr: v.logArr || "",
@@ -2932,10 +3373,15 @@
       suppressFocusClear = true;
       $("logAcft").value = v.logAcft || DEFAULTS.logAcft || "CKA";
       $("logPf").checked = v.logPf === "yes";
+      $("logPicSelf").checked = v.logPicSelf === "yes";
       $("logPic").value = v.logPic || "";
       $("logDeptDate").value = v.logDeptDate || "";
-      if (v.logDep && LOG_AIRPORTS.includes(v.logDep)) $("logDep").value = v.logDep;
-      if (v.logArr && LOG_AIRPORTS.includes(v.logArr)) $("logArr").value = v.logArr;
+      if (v.logDep) ensureAirportOption($("logDep"), v.logDep);
+      else $("logDep").value = LOG_AIRPORTS[0] || "AMS";
+      if (v.logArr) ensureAirportOption($("logArr"), v.logArr);
+      else $("logArr").value = "AMS";
+      syncAirportAddField("logDep", "logDepAdd");
+      syncAirportAddField("logArr", "logArrAdd");
       $("offBlocks").value = v.offBlocks || "";
       $("airborne").value = v.airborne || "";
       $("touchdown").value = v.touchdown || "";
@@ -2999,23 +3445,31 @@
         else list.unshift(snap);
       }
       saveLogPrev(list);
-      renderLogPrev();
+      renderLogPrev(list);
+      showToast("Line added to log");
     }
 
     /**
-     * Starting a new log: first digit in OFF BLOCKS clears prior leg times/date/PF.
-     * Skipped while Edit Marked Line is active — only the fields the user edits change.
+     * Starting a new log: replacing OFF (type over select-all, or type into empty)
+     * clears prior leg times/date/PF. Skipped while Edit Marked Line is active.
      */
     function bindOffBlocksStartsNewLog() {
       const el = $("offBlocks");
       let prevDigits = digitsOnly(el.value).length;
+      let armNewLeg = false;
       el.addEventListener("focus", () => {
-        // Focus-to-clear empties the field; next digit starts a fresh log leg.
-        prevDigits = 0;
+        prevDigits = digitsOnly(el.value).length;
+        armNewLeg = true;
       });
       el.addEventListener("input", () => {
         const n = digitsOnly(el.value).length;
-        if (prevDigits === 0 && n >= 1 && logEditIndex == null) {
+        // Empty→type, or shortened after select-all replace of a complete OFF.
+        if (
+          armNewLeg &&
+          logEditIndex == null &&
+          n >= 1 &&
+          (prevDigits === 0 || n < prevDigits)
+        ) {
           ["airborne", "touchdown", "onBlocks"].forEach((id) => {
             $(id).value = "";
             delete preFocusById[id];
@@ -3023,9 +3477,12 @@
           });
           $("logDeptDate").value = "";
           $("logPf").checked = false;
+          $("logPicSelf").checked = false;
           // Keep DEP and ARR (manual airport picks stick across a new OFF entry).
           updateS26Display();
+          armNewLeg = false;
         }
+        if (n >= 4) armNewLeg = false;
         prevDigits = n;
         // bindClock already calls updateLogCalcs on input
       });
@@ -3223,6 +3680,7 @@
     }
 
     let saveTimer = 0;
+    let lastSavedJson = "";
     /** Persist form now (blur, Clear, Restore, leaving the page). */
     function saveNow() {
       if (saveTimer) {
@@ -3230,7 +3688,10 @@
         saveTimer = 0;
       }
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(getValues()));
+        const json = JSON.stringify(getValues());
+        if (json === lastSavedJson) return;
+        localStorage.setItem(STORAGE_KEY, json);
+        lastSavedJson = json;
       } catch (_) {}
     }
     /** Debounced persist while typing — cuts per-keystroke localStorage writes. */
@@ -3242,11 +3703,21 @@
     function load() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) setValues(JSON.parse(raw));
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data.logDep === "XXX") data.logDep = "";
+          if (data.logArr === "XXX") data.logArr = "";
+          setValues(data);
+          if (data.logDep) ensureAirportOption($("logDep"), data.logDep);
+          if (data.logArr) ensureAirportOption($("logArr"), data.logArr);
+          else $("logArr").value = "AMS";
+        }
       } catch (_) {}
       // Keep saved / manual DEP; only auto-detect when empty.
       if (!$("logDep").value) applyDepFromTimezone();
-      if (!$("logArr").value) $("logArr").value = "XXX";
+      if (!$("logArr").value) $("logArr").value = "AMS";
+      syncAirportAddField("logDep", "logDepAdd");
+      syncAirportAddField("logArr", "logArrAdd");
       renderLogPrev();
     }
 
@@ -3403,6 +3874,7 @@
       const lines = [
         `ACFT: ${acftRegistration(v.logAcft)}`,
         `PIC: ${(v.logPic || "").trim()}`,
+        `Acting as PIC: ${v.logPicSelf === "yes" ? "yes" : "no"}`,
         `Pilot Flying: ${v.logPf === "yes" ? "yes" : "no"}`,
         `DEP: ${v.logDep || ""}`,
         `ARR: ${v.logArr || ""}`
@@ -3419,8 +3891,8 @@
       return lines.join("\n");
     }
 
-    function allLogRowsOldestFirst() {
-      return sortLogPrevOldestFirst(loadLogPrev()).map((v) =>
+    function allLogRowsOldestFirst(list) {
+      return sortLogPrevOldestFirst(list || loadLogPrev()).map((v) =>
         logPrevCells(v, { phReg: true }).map((c) => String(c).replace(/\|/g, "/"))
       );
     }
@@ -3440,9 +3912,9 @@
      * collapse the gaps to a single space (regular spaces often get crushed on paste).
      * HTML table copy is unchanged. Oldest flight first.
      */
-    function buildAllLogText() {
+    function buildAllLogText(rowsIn) {
       const NBSP = "\u00A0";
-      const rows = allLogRowsOldestFirst().map((r) => r.map(asciiPlainCell));
+      const rows = (rowsIn || allLogRowsOldestFirst()).map((r) => r.map(asciiPlainCell));
       // Typical widths after ASCII: MIA->AMS (8), PH-CKA (6), HH:MM (5); PIC varies.
       const minW = [11, 6, 8, 7, 5, 5, 6, 6, 6, 4, 8];
       const widths = LOG_PREV_HEADERS.map((h, i) =>
@@ -3461,8 +3933,8 @@
      * HTML table for rich paste (Apple Notes / Mail keep real columns).
      * Centered cells, min column width (nowrap + width:1%), shortened time headers.
      */
-    function buildAllLogHtml() {
-      const rows = allLogRowsOldestFirst();
+    function buildAllLogHtml(rowsIn) {
+      const rows = rowsIn || allLogRowsOldestFirst();
       const esc = (s) =>
         String(s)
           .replace(/&/g, "&amp;")
@@ -3510,7 +3982,8 @@
     }
 
     async function copyAllLogText() {
-      await writeClipboard(buildAllLogText(), buildAllLogHtml());
+      const rows = allLogRowsOldestFirst();
+      await writeClipboard(buildAllLogText(rows), buildAllLogHtml(rows));
       flashCopyBtn($("btnCopyAllLog"), "copy LOG as table");
     }
 
@@ -3518,7 +3991,7 @@
      * CSV for LogTen Pro import (File → Import / column mapping).
      * Headers match common LogTen labels (Out/Off/On/In = OOOI).
      * Date: dd-MMM-yyyy; times HH:MM (Zulu); Aircraft ID = PH-…; oldest first.
-     * PIC time left blank (not assumed). PF → Day Takeoffs + Day Landings = 1.
+     * PIC time = block when logPicSelf; else blank. PF → Day Takeoffs + Day Landings = 1.
      * @see https://github.com/Coradine/logten-api (flight_* field names)
      */
     const LOGTEN_CSV_HEADERS = [
@@ -3554,6 +4027,7 @@
         if (!v) continue;
         const block = subtractTimes(v.onBlocks, v.offBlocks) || "";
         const isPf = v.logPf === "yes";
+        const isPicSelf = v.logPicSelf === "yes";
         const regRaw = String(v.logAcft || "").trim().toUpperCase().replace(/^PH-/, "");
         const reg = acftRegistration(regRaw) || "";
         lines.push(
@@ -3568,7 +4042,7 @@
             String(v.touchdown || "").trim(),
             String(v.onBlocks || "").trim(),
             block,
-            "", // PIC time — never assumed from PF
+            isPicSelf ? block : "", // PIC time only when checkbox ticked
             String(v.logPic || "").trim(),
             isPf ? "1" : "0", // exporting pilot flew the takeoff
             isPf ? "1" : "0", // exporting pilot flew the landing
@@ -3605,7 +4079,7 @@
       if (logEditIndex != null && marked.has(logEditIndex)) logEditIndex = null;
       const next = list.filter((_, i) => !marked.has(i));
       saveLogPrev(next);
-      renderLogPrev();
+      renderLogPrev(next);
       const n = marked.size;
       showToast(n === 1 ? "1 marked line cleared" : n + " marked lines cleared");
     }
@@ -3626,7 +4100,9 @@
       }
       setMnps("N/A");
       applyDepFromTimezone();
-      $("logArr").value = "XXX";
+      $("logArr").value = "AMS";
+      if ($("logDepAdd")) $("logDepAdd").value = "";
+      if ($("logArrAdd")) $("logArrAdd").value = "";
       saveNow();
       checkRvsmDiff(true);
       checkSquawkLen(true);
@@ -3787,14 +4263,13 @@
     let rvsmWarnTimer = 0;
 
     function applyRvsmDiffWarn() {
-      const left = parseAltFt($("rvsmL").value);
-      const right = parseAltFt($("rvsmR").value);
+      const left = parseAltFt(rvsmEls.l.value);
+      const right = parseAltFt(rvsmEls.r.value);
       const warnLR = left !== null && right !== null && Math.abs(left - right) > RVSM_MAX_DIFF_FT;
-      $("rvsmL").classList.toggle("warn-diff", warnLR);
-      $("rvsmR").classList.toggle("warn-diff", warnLR);
-      $("rvsmSby").classList.remove("warn-diff");
-      const hint = $("rvsmHint");
-      if (hint) hint.classList.toggle("show", warnLR);
+      rvsmEls.l.classList.toggle("warn-diff", warnLR);
+      rvsmEls.r.classList.toggle("warn-diff", warnLR);
+      if (rvsmEls.sby) rvsmEls.sby.classList.remove("warn-diff");
+      if (rvsmEls.hint) rvsmEls.hint.classList.toggle("show", warnLR);
     }
 
     function checkRvsmDiff(immediate = true) {
@@ -3807,15 +4282,16 @@
         return;
       }
       // Hide red while digits are still being entered; re-check after pause.
-      $("rvsmL").classList.remove("warn-diff");
-      $("rvsmR").classList.remove("warn-diff");
-      const hint = $("rvsmHint");
-      if (hint) hint.classList.remove("show");
+      rvsmEls.l.classList.remove("warn-diff");
+      rvsmEls.r.classList.remove("warn-diff");
+      if (rvsmEls.hint) rvsmEls.hint.classList.remove("show");
       rvsmWarnTimer = setTimeout(() => {
         rvsmWarnTimer = 0;
         applyRvsmDiffWarn();
       }, WARN_PAUSE_MS);
     }
+
+    cacheHotEls();
 
     bindFormatter("pdc", formatPdc);
     bindClock("ctot", 4, { onFocusClear: "N/A" });
@@ -3852,11 +4328,16 @@
       });
     }
 
-    /** Tap/focus any field → clear for fresh entry (defaults restored on blur when empty). */
+    /**
+     * Tap/focus most fields → clear for fresh entry (defaults restored on blur when empty).
+     * Log OOOI times: select-all instead (accidental tap won’t wipe the time).
+     */
     function bindClearOnFocus() {
+      const logTimeSet = new Set(LOG_TIME_IDS);
       for (const id of FIELD_IDS) {
-        if (id === "mnps" || id === "logAcft" || id === "logPf" || id === "logPic" ||
-            id === "logDeptDate" || id === "logDep" || id === "logArr") continue;
+        if (id === "mnps" || id === "logAcft" || id === "logPf" || id === "logPicSelf" ||
+            id === "logPic" || id === "logDeptDate" || id === "logDep" || id === "logArr" ||
+            id === "logDepAdd" || id === "logArrAdd" || logTimeSet.has(id)) continue;
         const el = $(id);
         if (!el || el.type === "checkbox" || el.type === "hidden" || el.tagName === "SELECT") continue;
         el.addEventListener("focus", () => {
@@ -3870,23 +4351,28 @@
           el._editedSinceFocus = true;
         });
       }
+      LOG_TIME_IDS.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("focus", () => {
+          if (suppressFocusClear) return;
+          el.classList.remove("warn-diff", "log-time-error");
+          requestAnimationFrame(() => {
+            try { el.select(); } catch (_) {}
+          });
+        });
+      });
     }
     fillAirportSelect($("logDep"), detectDepAirport());
-    fillAirportSelect($("logArr"), "XXX");
+    fillAirportSelect($("logArr"), "AMS");
     bindClearOnFocus();
     bindOffBlocksStartsNewLog();
     bindOnBlocksArchivesLog();
     bindDeptDatePicker();
+    bindAirportAddFields();
     $("logAcft").addEventListener("change", () => { saveNow(); });
     $("logPf").addEventListener("change", () => { saveNow(); });
-    $("logPic").addEventListener("input", save);
-    $("logPic").addEventListener("blur", saveNow);
-    ["logDep", "logArr"].forEach((id) => {
-      $(id).addEventListener("change", () => {
-        updateS26Display();
-        saveNow();
-      });
-    });
+    bindPicIdentity();
     ["rvsmL", "rvsmR"].forEach((id) => {
       $(id).addEventListener("input", () => checkRvsmDiff(false));
       $(id).addEventListener("blur", () => checkRvsmDiff(true));
@@ -4044,10 +4530,14 @@
     applyTheme(loadThemePref());
     initHowtoMode();
     load();
+    try { lastSavedJson = JSON.stringify(getValues()); } catch (_) {}
     updateHistoryButton();
     checkRvsmDiff(true);
     checkSquawkLen(true);
     updateLogCalcs();
+    if (!getMyPicName()) {
+      requestAnimationFrame(() => showPicNameOverlay());
+    }
     requestAnimationFrame(() => {
       alignLogColumns();
       requestAnimationFrame(alignLogColumns);
