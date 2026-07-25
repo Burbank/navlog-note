@@ -1,12 +1,12 @@
 /**
- * NAVLOG NOTE v2.33 — offline shell (KLYear-style, no forced navigate flash).
+ * QUICKLOG v2.34 — offline shell (KLYear-style, no forced navigate flash).
  * Online: network-first. Updates via banner Reload.
  * Long-press Clear flushes caches and reloads to pick up the latest build.
  */
 (function () {
   'use strict';
 
-  var CACHE = 'navlog-note-v2.33.0';
+  var CACHE = 'navlog-note-v2.34.0';
   var PRECACHE = [
     './',
     './index.html',

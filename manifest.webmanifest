@@ -1,7 +1,7 @@
 {
-  "name": "NAVLOG NOTE",
-  "short_name": "NAVLOG NOTE",
-  "description": "OFP preflight NAVLOG note — OM-A 8.3.2.6 & 8.1.10.2",
+  "name": "QUICKLOG",
+  "short_name": "QUICKLOG",
+  "description": "OFP preflight + quick log — OM-A 8.3.2.6 & 8.1.10.2",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

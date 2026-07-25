@@ -6,14 +6,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <!-- opaque status bar: webview starts below it (avoids large safe-area top gap on iPad PWA) -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-  <meta name="apple-mobile-web-app-title" content="NAVLOG NOTE" />
+  <meta name="apple-mobile-web-app-title" content="QUICKLOG" />
   <meta name="theme-color" content="#1a2332" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=11" />
   <link rel="icon" type="image/png" href="favicon.png?v=11" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=11" />
-  <title>NAVLOG NOTE</title>
+  <title>QUICKLOG</title>
   <script>
     try {
       if (localStorage.getItem("flight-plan-form-theme-v1") === "bright") {
@@ -1134,9 +1134,9 @@
       display: none;
       flex-direction: column;
       justify-content: center;
-      gap: 0;
+      gap: 1px;
       min-height: 0;
-      padding: 0 0 12px;
+      padding: 0 2.8rem 0 0; /* leave room for absolute version on caution row */
       box-sizing: border-box;
     }
 
@@ -1144,17 +1144,22 @@
       display: flex;
     }
 
-    .howto-standalone-note {
+    /* Standalone tips: plain stacked lines (same style; no shaded pill) */
+    .howto-standalone-note,
+    .howto-standalone-caution {
       margin: 0;
-      padding: 3px 7px;
-      border-radius: 7px;
-      background: var(--soft-panel);
+      padding: 0;
+      border-radius: 0;
+      background: none;
       color: var(--muted);
-      font-size: 0.58rem;
+      font-size: 0.52rem;
       font-weight: 500;
-      line-height: 1.25;
+      line-height: 1.2;
       letter-spacing: 0.01em;
       opacity: 0.78;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Browser + Home Screen: liability on the right (update tip lives only in standalone howto) */
@@ -1169,30 +1174,6 @@
       letter-spacing: 0.01em;
       color: var(--muted);
       opacity: 0.55;
-    }
-
-    /* Same bottom band as version — uses existing panel padding, no added height */
-    .howto-standalone-caution {
-      display: none;
-      position: absolute;
-      left: 6px;
-      right: 2.6rem;
-      bottom: 1px;
-      margin: 0;
-      font-size: 0.52rem;
-      font-weight: 600;
-      line-height: 1.15;
-      letter-spacing: 0.01em;
-      color: var(--muted);
-      opacity: 0.7;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      pointer-events: none;
-    }
-
-    .howto.is-standalone .howto-standalone-caution {
-      display: block;
     }
 
     .howto-version {
@@ -2173,7 +2154,7 @@
       <div class="header-theme">
         <button type="button" id="btnTheme" aria-pressed="false" title="Switch to Hi-Contrast Day Theme">Bright</button>
       </div>
-      <h1>NAVLOG NOTE</h1>
+      <h1>QUICKLOG</h1>
       <div class="header-clear">
         <button type="button" id="btnClear" title="Tap: clear fields. Long-press: remove default PIC name and check for online update.">Clear</button>
       </div>
@@ -2306,8 +2287,8 @@
         </div>
         <div class="howto-standalone-panel" id="howtoStandalone" aria-label="Web app notes">
           <p class="howto-standalone-note">Long-press [clear] removes default PIC name and forces online version update check.</p>
+          <p class="howto-standalone-caution">CAUTION: deleting webapp also deletes LOGBOOK entries -&gt; export first. Normally a delete is not necessary.</p>
         </div>
-        <p class="howto-standalone-caution">CAUTION: deleting webapp also deletes LOGBOOK entries -&gt; export first. Normally a delete is not necessary.</p>
         <p class="howto-version" id="howtoVersion"></p>
       </section>
       <div class="dept-col">
@@ -2489,10 +2470,12 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.33";
+    const APP_VERSION = "2.34";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
+    /** Last APP_VERSION the device has acknowledged (for update toast). */
+    const SEEN_VERSION_KEY = "flight-plan-form-seen-version-v1";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
@@ -3252,6 +3235,30 @@
     function hidePicNameOverlay() {
       const box = $("picNameOverlay");
       if (box) box.hidden = true;
+      flushVersionUpdateToast();
+    }
+
+    function isPicNameOverlayOpen() {
+      const box = $("picNameOverlay");
+      return !!(box && !box.hidden);
+    }
+
+    /** Green bottom toast after a real version bump; waits if PIC name overlay is open. */
+    let pendingVersionToast = "";
+    function flushVersionUpdateToast() {
+      if (!pendingVersionToast || isPicNameOverlayOpen()) return;
+      const msg = pendingVersionToast;
+      pendingVersionToast = "";
+      showToast(msg, 3000);
+    }
+
+    function maybeShowVersionUpdateToast() {
+      let prev = "";
+      try { prev = String(localStorage.getItem(SEEN_VERSION_KEY) || ""); } catch (_) {}
+      try { localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION); } catch (_) {}
+      if (!prev || prev === APP_VERSION) return;
+      pendingVersionToast = "Updated to v" + APP_VERSION;
+      flushVersionUpdateToast();
     }
 
     function bindPicIdentity() {
@@ -4237,7 +4244,7 @@
     }
 
     function clearForm() {
-      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.")) return;
+      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.\n\nTo clear the default PIC name and force an online update check, long-press the Clear button.\n\nLogbook shows the 9 most recent added items. These are only lost when the web app is deleted.")) return;
       // Snapshot first (getValues recovers focus-cleared active field via preFocusById).
       pushHistory();
       suppressFocusClear = true;
@@ -4736,8 +4743,10 @@
     checkSquawkLen(true);
     updateLogCalcs();
     if (!getMyPicName()) {
-      requestAnimationFrame(() => showPicNameOverlay());
+      showPicNameOverlay();
     }
+    /* After PIC overlay decision so update toast waits if that modal is open */
+    maybeShowVersionUpdateToast();
     requestAnimationFrame(() => {
       alignLogColumns();
       requestAnimationFrame(alignLogColumns);
