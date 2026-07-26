@@ -173,9 +173,20 @@
 
     /* Bright landscape: reclaim vertical space (2px borders eat height) */
     @media (orientation: landscape) and (min-width: 901px) {
-      html.theme-bright .howto {
+      html.theme-bright .howto:not(.is-standalone) {
         padding: 0 5px 1px;
         border-radius: 6px;
+      }
+      /* Standalone howto: keep same outer height as side buttons; 2px borders leave less inner room */
+      html.theme-bright .howto.is-standalone {
+        padding: 1px 7px;
+        border-radius: 6px;
+      }
+      html.theme-bright .howto.is-standalone .howto-standalone-note,
+      html.theme-bright .howto.is-standalone .howto-standalone-caution {
+        font-size: 0.56rem;
+        line-height: 1.12;
+        font-weight: 500;
       }
       html.theme-bright .howto-item {
         font-size: 0.55rem;
@@ -252,10 +263,20 @@
       .footer-stack {
         align-content: start; /* don’t stretch grid rows into empty viewport space */
       }
-      /* Standalone: keep howto on the same band as Restore / copy DEPT */
+      /* Standalone: howto + Restore / copy DEPT share one row height */
+      body.is-standalone-app .history-col,
+      body.is-standalone-app .dept-col,
       .howto.is-standalone {
-        align-self: center;
-        padding: 1px 6px;
+        align-self: stretch;
+      }
+      body.is-standalone-app .history-col #btnRestore,
+      body.is-standalone-app .dept-col #btnCopy {
+        height: 100%;
+        min-height: 32px;
+      }
+      .howto.is-standalone {
+        min-height: 32px;
+        padding: 2px 8px;
       }
       .log-prev,
       .flight-log {
@@ -756,9 +777,9 @@
       margin-bottom: 1px;
     }
 
-    /* Subtle band on header + every second data line (orientation aid) */
+    /* Header + every second data line (orientation aid) — stronger than v2.30 */
     .log-prev-head > span {
-      background: rgba(0, 161, 228, 0.1);
+      background: rgba(0, 161, 228, 0.2);
       border-radius: 2px;
     }
 
@@ -777,7 +798,7 @@
     }
 
     .log-prev-row.alt > span {
-      background: rgba(0, 161, 228, 0.06);
+      background: rgba(0, 161, 228, 0.14);
       border-radius: 2px;
     }
 
@@ -972,6 +993,28 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel);
+      box-sizing: border-box;
+    }
+
+    /* Web app: match Restore / copy DEPT button height; tips flex-centered inside */
+    .howto.is-standalone {
+      align-self: stretch;
+      min-height: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2px 8px;
+    }
+
+    body.is-standalone-app .history-col,
+    body.is-standalone-app .dept-col {
+      align-self: stretch;
+    }
+
+    body.is-standalone-app .history-col #btnRestore,
+    body.is-standalone-app .dept-col #btnCopy {
+      height: 100%;
+      min-height: 32px;
     }
 
     .footer-stack > #btnCopyArr {
@@ -1135,6 +1178,7 @@
       flex-direction: column;
       justify-content: center;
       gap: 1px;
+      flex: 1 1 auto;
       min-height: 0;
       padding: 0 2.8rem 0 0; /* leave room for absolute version on caution row */
       box-sizing: border-box;
@@ -1144,7 +1188,7 @@
       display: flex;
     }
 
-    /* Standalone tips: plain stacked lines (same style; no shaded pill) */
+    /* Standalone tips: plain stacked lines — sized to fit 32px button-matched box */
     .howto-standalone-note,
     .howto-standalone-caution {
       margin: 0;
@@ -1152,9 +1196,9 @@
       border-radius: 0;
       background: none;
       color: var(--muted);
-      font-size: 0.52rem;
+      font-size: 0.58rem;
       font-weight: 500;
-      line-height: 1.2;
+      line-height: 1.15;
       letter-spacing: 0.01em;
       opacity: 0.78;
       white-space: nowrap;
@@ -1362,7 +1406,7 @@
       font-weight: 700;
     }
 
-    /* Log history: black type for glare; zebra/header bands stay subtle */
+    /* Log history: black type for glare; zebra bands for row tracking */
     html.theme-bright .log-prev-table {
       color: #000;
       background: #fff;
@@ -1376,18 +1420,20 @@
       padding-bottom: 2px;
     }
 
-    html.theme-bright .log-prev-head > span {
-      background: #e4eaf0;
-    }
-
-    html.theme-bright .log-prev-row > span {
+    /* :not(head) — head also has .log-prev-row; transparent was wiping the header band */
+    html.theme-bright .log-prev-row:not(.log-prev-head) > span {
       color: #000;
       background: transparent;
       font-weight: 500;
     }
 
     html.theme-bright .log-prev-row.alt > span {
-      background: #f2f2f2;
+      background: #e2e6eb;
+    }
+
+    html.theme-bright .log-prev-head > span {
+      background: #c5ceda;
+      border-radius: 2px;
     }
 
     html.theme-bright .task-pf-box {
@@ -2351,7 +2397,7 @@
           <p class="howto-item" role="listitem">Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</p>
         </div>
         <div class="howto-standalone-panel" id="howtoStandalone" aria-label="Web app notes">
-          <p class="howto-standalone-note">Hold [clear] 4 seconds to remove default PIC name and force online version update check.</p>
+          <p class="howto-standalone-note">Hold [clear] 4 seconds to edit/clear default PIC name and force online version update check.</p>
           <p class="howto-standalone-caution">CAUTION: deleting webapp also deletes LOGBOOK entries -&gt; export first. Normally a delete is not necessary.</p>
         </div>
         <p class="howto-version" id="howtoVersion"></p>
@@ -2529,6 +2575,7 @@
       <p class="pic-name-overlay-hint">Hold Clear for 4 seconds to remove the PIC name and simultaneously check for an online UPDATE of the website.</p>
       <p class="pic-name-overlay-hint">If you enter a name here, the PIC box will also default be ticked ON. Leave blank for no default PIC.</p>
       <p class="pic-name-overlay-hint">Logbook shows the 9 most recent added items. These are only lost when the web app is deleted, not with UPDATES.</p>
+      <p class="pic-name-overlay-hint">Sometimes it may be necessary to swipe to close the web app several times to be able to get an update when online. This is a known Apple limitation.</p>
       <div class="pic-name-overlay-actions">
         <button type="button" id="picNameOverlaySave">Save</button>
       </div>
@@ -2553,7 +2600,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.42";
+    const APP_VERSION = "2.43";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
