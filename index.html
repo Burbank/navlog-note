@@ -1904,6 +1904,33 @@
       font-size: 0.85rem;
     }
 
+    .app-confirm-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+    }
+
+    .app-confirm-actions button {
+      width: auto;
+      min-width: 5.5rem;
+      min-height: 40px;
+      flex: 0 0 auto;
+      font-size: 0.85rem;
+    }
+
+    .app-confirm-actions #appConfirmCancel {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    html.theme-bright .app-confirm-actions #appConfirmCancel {
+      color: #000;
+      border-color: #000;
+    }
+
     /* First-run / missing identity: your name for PIC legs */
     .pic-name-overlay {
       position: fixed;
@@ -1985,24 +2012,12 @@
 
     .pic-name-overlay-actions {
       display: flex;
-      gap: 8px;
     }
 
     .pic-name-overlay-actions button {
-      flex: 1 1 0;
+      width: 100%;
       min-height: 40px;
       font-size: 0.85rem;
-    }
-
-    .pic-name-overlay-actions #picNameOverlayLater {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--line);
-    }
-
-    html.theme-bright .pic-name-overlay-actions #picNameOverlayLater {
-      color: #000;
-      border-color: #000;
     }
 
     .sw-update-banner {
@@ -2482,6 +2497,16 @@
     </div>
   </div>
 
+  <div class="app-alert" id="appConfirm" hidden role="alertdialog" aria-modal="true" aria-labelledby="appConfirmMsg">
+    <div class="app-alert-box">
+      <p id="appConfirmMsg"></p>
+      <div class="app-confirm-actions">
+        <button type="button" id="appConfirmCancel">Cancel</button>
+        <button type="button" id="appConfirmOk">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div
     class="pic-name-overlay"
     id="picNameOverlay"
@@ -2499,12 +2524,12 @@
         autocomplete="name"
         autocapitalize="words"
         spellcheck="false"
-        placeholder="Yeager"
+        placeholder="Leave blank w/o default PIC"
       />
-      <p class="pic-name-overlay-hint">Used when you tick PIC. Hold Clear for 4 seconds to remove this name and check for an online update of the website.</p>
-      <p class="pic-name-overlay-hint">Logbook shows the 9 most recent added items. These are only lost when the web app is deleted.</p>
+      <p class="pic-name-overlay-hint">Hold Clear for 4 seconds to remove the PIC name and simultaneously check for an online UPDATE of the website.</p>
+      <p class="pic-name-overlay-hint">If you enter a name here, the PIC box will also default be ticked ON. Leave blank for no default PIC.</p>
+      <p class="pic-name-overlay-hint">Logbook shows the 9 most recent added items. These are only lost when the web app is deleted, not with UPDATES.</p>
       <div class="pic-name-overlay-actions">
-        <button type="button" id="picNameOverlayLater">Later</button>
         <button type="button" id="picNameOverlaySave">Save</button>
       </div>
     </div>
@@ -2528,10 +2553,12 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.38";
+    const APP_VERSION = "2.42";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
+    /** User answered PIC overlay (name or blank) — stop re-prompting FOs every launch. */
+    const MY_PIC_NAME_ASKED_KEY = "flight-plan-form-my-pic-name-asked-v1";
     /** Last APP_VERSION the device has acknowledged (for update toast). */
     const SEEN_VERSION_KEY = "flight-plan-form-seen-version-v1";
     /** Pause before sticky red warn while typing (RVSM / transponder). */
@@ -2699,7 +2726,7 @@
       el._warnTimer = setTimeout(() => el.classList.remove("warn-diff"), 1400);
     }
 
-    function bindClock(id, maxDigits, { onFocusClear, onChange } = {}) {
+    function bindClock(id, maxDigits, { onFocusClear, onChange, advanceWhenDigits } = {}) {
       const el = $(id);
       el.addEventListener("input", () => {
         const start = el.selectionStart;
@@ -2718,6 +2745,7 @@
         if (rejected) flashFieldWarn(el);
         save();
         if (onChange) onChange();
+        if (advanceWhenDigits && digits.length >= advanceWhenDigits) focusNextField(el);
       });
       el.addEventListener("blur", () => {
         if (onFocusClear && !digitsOnly(el.value)) el.value = onFocusClear;
@@ -3211,10 +3239,6 @@
         (rvsmR.getBoundingClientRect().left - arr.getBoundingClientRect().left) + "px";
     }
 
-    function logTimesAllEmpty() {
-      return LOG_TIME_IDS.every((id) => !String($(id).value || "").trim());
-    }
-
     /** Full registration for copy / table REG column (Martinair PH-…). */
     function acftRegistration(code) {
       const c = String(code || "").trim().toUpperCase();
@@ -3266,17 +3290,40 @@
       }
     }
 
+    function hasAnsweredPicNamePrompt() {
+      try { return localStorage.getItem(MY_PIC_NAME_ASKED_KEY) === "1"; } catch (_) { return false; }
+    }
+
+    function markPicNamePromptAnswered() {
+      try { localStorage.setItem(MY_PIC_NAME_ASKED_KEY, "1"); } catch (_) {}
+    }
+
     function setMyPicName(name) {
       const n = String(name || "").trim();
       if (!n) return false;
       try {
         localStorage.setItem(MY_PIC_NAME_KEY, n);
+        localStorage.setItem(MY_PIC_NAME_ASKED_KEY, "1");
       } catch (_) {}
       return true;
     }
 
-    function clearMyPicName() {
-      try { localStorage.removeItem(MY_PIC_NAME_KEY); } catch (_) {}
+    function clearMyPicName({ resetPrompt = true } = {}) {
+      try {
+        localStorage.removeItem(MY_PIC_NAME_KEY);
+        if (resetPrompt) localStorage.removeItem(MY_PIC_NAME_ASKED_KEY);
+      } catch (_) {}
+    }
+
+    /** Any saved PIC name means PIC defaults on (captains); no name → leave unticked. */
+    function applyPicDefIfOn() {
+      const mine = getMyPicName();
+      if (!mine) return;
+      const selfCb = $("logPicSelf");
+      const nameEl = $("logPic");
+      if (!selfCb || !nameEl) return;
+      selfCb.checked = true;
+      nameEl.value = mine;
     }
 
     function showPicNameOverlay() {
@@ -3286,7 +3333,12 @@
       input.value = getMyPicName();
       box.hidden = false;
       requestAnimationFrame(() => {
-        try { input.focus(); input.select(); } catch (_) {}
+        try {
+          input.focus();
+          /* Keep existing name selected-out so a small edit does not require retyping */
+          const n = input.value.length;
+          input.setSelectionRange(n, n);
+        } catch (_) {}
       });
     }
 
@@ -3325,7 +3377,6 @@
       const overlay = $("picNameOverlay");
       const input = $("picNameOverlayInput");
       const saveBtn = $("picNameOverlaySave");
-      const laterBtn = $("picNameOverlayLater");
       if (!selfCb || !nameEl) return;
 
       selfCb.addEventListener("change", () => {
@@ -3352,15 +3403,20 @@
         const commit = () => {
           const n = input.value.trim();
           if (!n) {
-            try { input.focus(); } catch (_) {}
+            clearMyPicName({ resetPrompt: false });
+            markPicNamePromptAnswered();
+            if (selfCb.checked) {
+              selfCb.checked = false;
+              nameEl.value = "";
+            }
+            hidePicNameOverlay();
+            saveNow();
             return;
           }
           setMyPicName(n);
+          applyPicDefIfOn();
           hidePicNameOverlay();
-          if (selfCb.checked) {
-            nameEl.value = n;
-            saveNow();
-          }
+          saveNow();
         };
         saveBtn.addEventListener("click", commit);
         input.addEventListener("keydown", (e) => {
@@ -3370,16 +3426,17 @@
           }
         });
       }
-      if (laterBtn) {
-        laterBtn.addEventListener("click", () => hidePicNameOverlay());
-      }
+      const dismissPicPrompt = () => {
+        markPicNamePromptAnswered();
+        hidePicNameOverlay();
+      };
       if (overlay) {
         overlay.addEventListener("click", (e) => {
-          if (e.target === overlay) hidePicNameOverlay();
+          if (e.target === overlay) dismissPicPrompt();
         });
       }
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && overlay && !overlay.hidden) hidePicNameOverlay();
+        if (e.key === "Escape" && overlay && !overlay.hidden) dismissPicPrompt();
       });
     }
 
@@ -3584,6 +3641,44 @@
       });
     }
 
+    /** Custom confirm: Cancel left, OK right (native confirm cannot space buttons). */
+    function showAppConfirm(msg) {
+      const box = $("appConfirm");
+      const text = $("appConfirmMsg");
+      const okBtn = $("appConfirmOk");
+      const cancelBtn = $("appConfirmCancel");
+      if (!box || !text || !okBtn || !cancelBtn) {
+        return Promise.resolve(window.confirm(msg));
+      }
+      text.textContent = msg;
+      box.hidden = false;
+      return new Promise((resolve) => {
+        const finish = (result) => {
+          box.hidden = true;
+          okBtn.removeEventListener("click", onOk);
+          cancelBtn.removeEventListener("click", onCancel);
+          box.removeEventListener("click", onBackdrop);
+          document.removeEventListener("keydown", onKey);
+          resolve(result);
+        };
+        const onOk = () => finish(true);
+        const onCancel = () => finish(false);
+        const onBackdrop = (e) => { if (e.target === box) finish(false); };
+        const onKey = (e) => {
+          if (box.hidden) return;
+          if (e.key === "Escape") {
+            e.preventDefault();
+            finish(false);
+          }
+        };
+        okBtn.addEventListener("click", onOk);
+        cancelBtn.addEventListener("click", onCancel);
+        box.addEventListener("click", onBackdrop);
+        document.addEventListener("keydown", onKey);
+        try { cancelBtn.focus(); } catch (_) {}
+      });
+    }
+
     /** Load one archived leg into YOUR LOG fields for editing. */
     function loadLogLegIntoForm(v) {
       if (!v) return;
@@ -3695,6 +3790,8 @@
           $("logDeptDate").value = "";
           $("logPf").checked = false;
           $("logPicSelf").checked = false;
+          $("logPic").value = "";
+          applyPicDefIfOn();
           // Keep DEP and ARR (manual airport picks stick across a new OFF entry).
           updateS26Display();
           armNewLeg = false;
@@ -3741,6 +3838,14 @@
       let v = String(value || "").toUpperCase().replace(/\s*MT\s*$/i, "").trim().replace(/[^\d.]/g, "");
       const parts = v.split(".");
       if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
+      /* Shape like placeholder 000.0 — up to 3 int digits, 1 decimal */
+      if (v.includes(".")) {
+        const [a, b = ""] = v.split(".");
+        v = a.slice(0, 3) + "." + b.slice(0, 1);
+      } else {
+        const d = digitsOnly(v);
+        v = d.length > 3 ? d.slice(0, 3) + "." + d.slice(3, 4) : d.slice(0, 3);
+      }
       if (!v) return { text: "", rejected: false };
       let rejected = false;
       if (max != null) {
@@ -3752,6 +3857,20 @@
       }
       if (!v) return { text: "", rejected };
       return { text: finalize ? v + " MT" : v, rejected };
+    }
+
+    /** Next text/select field in document order (for auto-advance while typing). */
+    function focusNextField(fromEl) {
+      if (!fromEl) return;
+      const focusables = Array.from(
+        document.querySelectorAll("input[type='text'], input:not([type]), select")
+      ).filter((el) => !el.disabled && el.tabIndex !== -1 && el.offsetParent !== null);
+      const i = focusables.indexOf(fromEl);
+      if (i < 0 || i >= focusables.length - 1) return;
+      const next = focusables[i + 1];
+      requestAnimationFrame(() => {
+        try { next.focus(); } catch (_) {}
+      });
     }
 
     /** Runway heading digits: first digit 0–3 (01–36). Optional L/R/C; SID text if allowSid. */
@@ -4301,8 +4420,11 @@
       showToast(n === 1 ? "1 marked line cleared" : n + " marked lines cleared");
     }
 
-    function clearForm() {
-      if (!window.confirm("Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.\n\nTo clear the default PIC name and force an online update check, hold the Clear button for 4 seconds.\n\nLogbook shows the 9 most recent added items. These are only lost when the web app is deleted.")) return;
+    async function clearForm() {
+      const ok = await showAppConfirm(
+        "Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.\n\nTo clear the default PIC name and force an online update check, hold the Clear button for 4 seconds.\n\nLogbook shows the 9 most recent added items. These are only lost when the web app is deleted."
+      );
+      if (!ok) return;
       // Snapshot first (getValues recovers focus-cleared active field via preFocusById).
       pushHistory();
       suppressFocusClear = true;
@@ -4320,16 +4442,13 @@
       $("logArr").value = "AMS";
       if ($("logDepAdd")) $("logDepAdd").value = "";
       if ($("logArrAdd")) $("logArrAdd").value = "";
+      applyPicDefIfOn();
       saveNow();
       checkRvsmDiff(true);
       checkSquawkLen(true);
       updateLogCalcs();
       suppressFocusClear = false;
-      if (navigator.onLine) {
-        forceLatestIfOnline("Cleared — checking for update…");
-      } else {
-        showToast("Cleared");
-      }
+      showToast("Cleared");
     }
 
     function sleep(ms) {
@@ -4450,7 +4569,7 @@
       });
     }
 
-    function bindFormatter(id, formatter, { onFocusClear, finalize } = {}) {
+    function bindFormatter(id, formatter, { onFocusClear, finalize, advanceWhenLen } = {}) {
       const el = $(id);
       el.addEventListener("input", () => {
         const start = el.selectionStart;
@@ -4462,6 +4581,9 @@
           try { el.setSelectionRange(pos, pos); } catch (_) {}
         }
         save();
+        if (advanceWhenLen && String(el.value || "").length >= advanceWhenLen) {
+          focusNextField(el);
+        }
       });
       el.addEventListener("blur", () => {
         if (onFocusClear && !el.value.trim()) el.value = onFocusClear;
@@ -4516,6 +4638,7 @@
         if (hadBad) flashFieldWarn(el);
         checkSquawkLen(false);
         save();
+        if (formatSquawk(el.value).length >= 4) focusNextField(el);
       });
       el.addEventListener("blur", () => {
         el.value = formatSquawk(el.value);
@@ -4529,15 +4652,21 @@
       el.addEventListener("input", () => {
         const start = el.selectionStart;
         const before = el.value;
-        const { text, rejected } = formatMt(before, { max, finalize: false });
+        const digsPrev = digitsOnly(before).length;
+        let { text, rejected } = formatMt(before, { max, finalize: false });
+        /* After 3rd digit with no decimal yet → insert "." for the tenths place */
+        if (!text.includes(".") && digitsOnly(text).length === 3 && digsPrev < 3) {
+          text = digitsOnly(text) + ".";
+        }
         if (text !== before) {
           el.value = text;
-          const removed = before.length - text.length;
-          const pos = Math.max(0, Math.min(text.length, (start || 0) - Math.max(0, removed)));
-          try { el.setSelectionRange(pos, pos); } catch (_) {}
+          try { el.setSelectionRange(text.length, text.length); } catch (_) {}
+        } else if (el.value !== text) {
+          el.value = text;
         }
         if (rejected) flashFieldWarn(el);
         save();
+        if (digitsOnly(el.value).length >= 4) focusNextField(el);
       });
       el.addEventListener("blur", () => {
         el.value = formatMt(el.value, { max, finalize: true }).text;
@@ -4606,8 +4735,8 @@
     cacheHotEls();
 
     bindFormatter("pdc", formatPdc);
-    bindClock("ctot", 4, { onFocusClear: "N/A" });
-    bindFormatter("atis", oneLetter);
+    bindClock("ctot", 4, { onFocusClear: "N/A", advanceWhenDigits: 4 });
+    bindFormatter("atis", oneLetter, { advanceWhenLen: 1 });
     bindFormatter("arrAtis", oneLetter);
     bindFormatter("ldis", (v) => formatLdis(v, { finalize: false }), {
       finalize: (v) => formatLdis(v, { finalize: true })
@@ -4838,7 +4967,7 @@
     checkRvsmDiff(true);
     checkSquawkLen(true);
     updateLogCalcs();
-    if (!getMyPicName()) {
+    if (!getMyPicName() && !hasAnsweredPicNamePrompt()) {
       showPicNameOverlay();
     }
     /* After PIC overlay decision so update toast waits if that modal is open */
