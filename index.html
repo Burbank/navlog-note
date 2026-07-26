@@ -1918,15 +1918,22 @@
       margin: 0;
     }
 
+    /* Modals sit in the visual viewport so the iPad keyboard does not cover them */
     .app-alert {
       position: fixed;
-      inset: 0;
+      top: var(--vv-top, 0px);
+      left: 0;
+      right: 0;
+      height: var(--vv-height, 100%);
       z-index: 90;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 12px 16px;
       background: rgba(0, 0, 0, 0.55);
+      box-sizing: border-box;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .app-alert[hidden] {
@@ -1935,11 +1942,14 @@
 
     .app-alert-box {
       width: min(22rem, 100%);
+      max-height: calc(var(--vv-height, 100dvh) - 24px);
+      overflow-y: auto;
       padding: 16px 18px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--panel);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      box-sizing: border-box;
     }
 
     .app-alert-box p {
@@ -1986,13 +1996,19 @@
     /* First-run / missing identity: your name for PIC legs */
     .pic-name-overlay {
       position: fixed;
-      inset: 0;
+      top: var(--vv-top, 0px);
+      left: 0;
+      right: 0;
+      height: var(--vv-height, 100%);
       z-index: 95;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 12px 16px;
       background: rgba(0, 0, 0, 0.55);
+      box-sizing: border-box;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .pic-name-overlay[hidden] {
@@ -2001,11 +2017,14 @@
 
     .pic-name-overlay-box {
       width: min(22rem, 100%);
+      max-height: calc(var(--vv-height, 100dvh) - 24px);
+      overflow-y: auto;
       padding: 16px 18px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--panel);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      box-sizing: border-box;
     }
 
     html.theme-bright .pic-name-overlay-box {
@@ -2606,7 +2625,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.44";
+    const APP_VERSION = "2.45";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
@@ -3056,6 +3075,11 @@
         const sel = $(selectId);
         const add = $(addId);
         if (!sel || !add) return;
+        add.addEventListener("focus", () => {
+          if (suppressFocusClear) return;
+          add.value = "";
+          add.classList.remove("warn-diff");
+        });
         add.addEventListener("input", () => {
           const next = normalizeIata(add.value);
           if (add.value !== next) add.value = next;
@@ -3068,12 +3092,14 @@
         });
         add.addEventListener("blur", () => {
           const code = normalizeIata(add.value);
-          add.value = code;
           if (code.length === 3) {
+            add.value = code;
             ensureAirportOption(sel, code);
             add.classList.remove("warn-diff");
             updateS26Display();
           } else {
+            /* Empty / incomplete reselect — restore display from current wheel */
+            syncAirportAddField(selectId, addId);
             applyIataAddWarn(add);
           }
           saveNow();
@@ -3086,7 +3112,7 @@
           if (addId === "logDepAdd") {
             const next = $("logArrAdd");
             if (next) {
-              try { next.focus(); next.select(); } catch (_) {}
+              try { next.focus(); } catch (_) {}
             }
           } else {
             try { add.blur(); } catch (_) {}
@@ -3379,19 +3405,50 @@
       nameEl.value = mine;
     }
 
+    /** Keep modal shells inside the visible viewport (above iPad keyboard). */
+    function syncVisualViewport() {
+      const root = document.documentElement;
+      const vv = window.visualViewport;
+      if (!vv) {
+        root.style.setProperty("--vv-top", "0px");
+        root.style.setProperty("--vv-height", "100%");
+        return;
+      }
+      root.style.setProperty("--vv-top", Math.max(0, vv.offsetTop) + "px");
+      root.style.setProperty("--vv-height", Math.max(0, vv.height) + "px");
+    }
+
+    function bindVisualViewport() {
+      syncVisualViewport();
+      const vv = window.visualViewport;
+      if (!vv) {
+        window.addEventListener("resize", syncVisualViewport);
+        return;
+      }
+      vv.addEventListener("resize", syncVisualViewport);
+      vv.addEventListener("scroll", syncVisualViewport);
+      window.addEventListener("orientationchange", () => {
+        requestAnimationFrame(syncVisualViewport);
+      });
+    }
+
     function showPicNameOverlay() {
       const box = $("picNameOverlay");
       const input = $("picNameOverlayInput");
       if (!box || !input) return;
       input.value = getMyPicName();
+      syncVisualViewport();
       box.hidden = false;
       requestAnimationFrame(() => {
+        syncVisualViewport();
         try {
           input.focus();
           /* Keep existing name selected-out so a small edit does not require retyping */
           const n = input.value.length;
           input.setSelectionRange(n, n);
         } catch (_) {}
+        /* After keyboard animates open, re-sync visible height */
+        setTimeout(syncVisualViewport, 350);
       });
     }
 
@@ -3675,6 +3732,7 @@
         return;
       }
       text.textContent = msg;
+      syncVisualViewport();
       box.hidden = false;
       const ok = $("appAlertOk");
       if (ok) {
@@ -3706,6 +3764,7 @@
         return Promise.resolve(window.confirm(msg));
       }
       text.textContent = msg;
+      syncVisualViewport();
       box.hidden = false;
       return new Promise((resolve) => {
         const finish = (result) => {
@@ -5008,6 +5067,7 @@
       const ver = $("howtoVersion");
       if (ver) ver.textContent = "v" + APP_VERSION;
     }
+    bindVisualViewport();
     applyTheme(loadThemePref());
     initHowtoMode();
     load();
