@@ -1325,7 +1325,8 @@
       position: relative;
       display: block;
       grid-area: date;
-      align-self: stretch;
+      /* Don’t stretch both rows — tall hit target stole taps meant for PF / PIC */
+      align-self: center;
       min-width: 5.5rem;
       min-height: 2.6rem;
       margin: 0;
@@ -1912,6 +1913,11 @@
       opacity: 0.92;
     }
 
+    .update-busy-card .update-busy-sub[hidden] {
+      display: none !important;
+      margin: 0;
+    }
+
     .app-alert {
       position: fixed;
       inset: 0;
@@ -2275,7 +2281,7 @@
     <form id="flightForm" autocomplete="off" spellcheck="false" action="#">
       <div class="preflight-banner">
         <p class="oma-ref">ref OM-A 8.3.2.6</p>
-        <p class="view-hint">Best viewed iPad landscape
+        <p class="view-hint">Best view: iPad landscape
           <span class="help-ios-tab" aria-hidden="true" title="Tab">
             <svg width="15" height="12" viewBox="0 0 20 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M1.5 7.2h9.4V4.6L16.2 8l-5.3 3.4V8.8H1.5V7.2z"/>
@@ -2572,7 +2578,7 @@
         spellcheck="false"
         placeholder="Leave blank w/o default PIC"
       />
-      <p class="pic-name-overlay-hint">Hold Clear for 4 seconds to remove the PIC name and simultaneously check for an online UPDATE of the website.</p>
+      <p class="pic-name-overlay-hint">Hold Clear for 4 seconds to edit or remove the PIC name and simultaneously check for an online UPDATE of the website.</p>
       <p class="pic-name-overlay-hint">If you enter a name here, the PIC box will also default be ticked ON. Leave blank for no default PIC.</p>
       <p class="pic-name-overlay-hint">Logbook shows the 9 most recent added items. These are only lost when the web app is deleted, not with UPDATES.</p>
       <p class="pic-name-overlay-hint">Sometimes it may be necessary to swipe to close the web app several times to be able to get an update when online. This is a known Apple limitation.</p>
@@ -2586,8 +2592,8 @@
 
   <div id="updateBusy" class="update-busy" hidden role="status" aria-live="assertive" aria-busy="true">
     <div class="update-busy-card">
-      <p id="updateBusyTitle">Checking for update…</p>
-      <p class="update-busy-sub" id="updateBusySub">Keep the app open — it has not frozen. If nothing happens after 20 seconds when online, swipe up to close and reopen; this may need to be repeated several times. Known Apple limitation.</p>
+      <p id="updateBusyTitle">Update requested</p>
+      <p class="update-busy-sub" id="updateBusySub" hidden></p>
     </div>
   </div>
 
@@ -2600,7 +2606,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.43";
+    const APP_VERSION = "2.44";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
@@ -3225,9 +3231,9 @@
       hit.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // Empty (dimmed) box: nudge to enter OFF first. Once a date shows, always editable.
+        /* Only the date box shows this nudge — PF / PIC / name / acft / DEP / ARR never gate on OFF */
         if (!$("logDeptDate").value.trim()) {
-          showAppAlert("type off blocks first");
+          showToast("type off blocks first", 2200);
           return;
         }
         if (!pop.hidden) closeDeptDatePopover();
@@ -3429,8 +3435,13 @@
       selfCb.addEventListener("change", () => {
         if (selfCb.checked) {
           const mine = getMyPicName();
-          if (mine) nameEl.value = mine;
-          else showPicNameOverlay();
+          if (mine) {
+            /* Always replace whatever was typed (other PIC, prior leg, etc.) */
+            nameEl.value = mine;
+          } else {
+            nameEl.value = "";
+            showPicNameOverlay();
+          }
         } else {
           nameEl.value = "";
         }
@@ -3439,10 +3450,7 @@
 
       nameEl.addEventListener("input", () => { save(); });
       nameEl.addEventListener("blur", () => {
-        if (selfCb.checked) {
-          const n = nameEl.value.trim();
-          if (n) setMyPicName(n);
-        }
+        /* Do not write logPic back into stored default — only the PIC overlay Save does that */
         saveNow();
       });
 
@@ -4516,18 +4524,17 @@
       const s = $("updateBusySub");
       if (t && title) t.textContent = title;
       if (s) {
-        s.textContent = sub || "Keep the app open — it has not frozen. If nothing happens after 20 seconds when online, swipe up to close and reopen; this may need to be repeated several times. Known Apple limitation.";
+        const text = String(sub || "").trim();
+        s.textContent = text;
+        s.hidden = !text;
       }
       if (box) box.hidden = false;
     }
 
     /** Drop SW caches and reload so Safari / Home Screen app pick up the latest build. */
-    async function forceLatestIfOnline(busyTitle) {
+    async function forceLatestIfOnline() {
       if (!navigator.onLine) return;
-      showUpdateBusy(
-        busyTitle || "Checking for update…",
-        "Keep the app open — it has not frozen. If nothing happens after 20 seconds when online, swipe up to close and reopen; this may need to be repeated several times. Known Apple limitation."
-      );
+      showUpdateBusy("Update requested");
       try {
         if ("caches" in window) {
           const keys = await withTimeout(caches.keys(), 2000);
@@ -4549,12 +4556,7 @@
           }
         }
       } catch (_) {}
-      /* Replace long “checking” copy so a fast update still leaves readable success time */
-      showUpdateBusy(
-        "Update successful — reloading…",
-        "Please wait a moment while QUICKLOG reloads."
-      );
-      await sleep(3000);
+      await sleep(2000);
       const url = new URL(window.location.href);
       url.searchParams.set("r", Date.now().toString(36));
       window.location.replace(url.pathname + url.search + url.hash);
@@ -4585,7 +4587,7 @@
           saveNow();
         }
         if (navigator.onLine) {
-          forceLatestIfOnline("PIC name cleared — checking for update…");
+          forceLatestIfOnline();
         } else {
           showToast("Default PIC name cleared — go online to update");
         }
