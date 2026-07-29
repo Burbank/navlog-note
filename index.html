@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <!-- opaque status bar: webview starts below it (avoids large safe-area top gap on iPad PWA) -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
@@ -19,8 +19,42 @@
       if (localStorage.getItem("flight-plan-form-theme-v1") === "bright") {
         document.documentElement.classList.add("theme-bright");
       }
+      var sa =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      if (sa) {
+        document.documentElement.classList.add("is-standalone-app");
+        localStorage.setItem("flight-plan-form-was-standalone-v1", "1");
+      }
     } catch (e) {}
   </script>
+  <style>
+    /* Critical: lock width before paint — avoids iPad PWA zoom-then-fit flash */
+    html {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+    html.is-standalone-app .install-overlay {
+      display: none !important;
+    }
+    body {
+      width: 100%;
+      max-width: 100vw;
+      margin: 0;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+    @media (orientation: landscape) and (min-width: 901px) {
+      html, body {
+        overflow: hidden;
+        height: 100%;
+        max-height: 100%;
+      }
+    }
+  </style>
   <style>
     :root {
       --bg: #1a2332;
@@ -1209,7 +1243,8 @@
 
     .log-pf90-l1,
     .log-pf90-l2,
-    .log-pf90-l3 {
+    .log-pf90-l3,
+    .log-pf90-l4 {
       display: block;
       width: 100%;
       text-align: center;
@@ -1224,11 +1259,16 @@
     }
 
     .log-pf90-l2,
-    .log-pf90-l3 {
+    .log-pf90-l3,
+    .log-pf90-l4 {
       font-size: 0.55rem;
       font-weight: 600;
       letter-spacing: 0.02em;
       color: var(--muted);
+    }
+
+    .log-pf90-l4[hidden] {
+      display: none !important;
     }
 
     .log-pf90 strong {
@@ -1249,7 +1289,8 @@
     }
 
     html.theme-bright .log-pf90-l2,
-    html.theme-bright .log-pf90-l3 {
+    html.theme-bright .log-pf90-l3,
+    html.theme-bright .log-pf90-l4 {
       color: #222;
       opacity: 1;
     }
@@ -1901,10 +1942,24 @@
       flex: 0 0 auto;
     }
 
-    .flight-log-acft {
+    .flight-log-acft-wrap {
       grid-area: acft;
-      width: var(--log-acft-w);
-      max-width: var(--log-acft-w);
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 4px;
+      width: var(--log-picn-w);
+      max-width: var(--log-picn-w);
+      min-width: 0;
+      box-sizing: border-box;
+      justify-self: start;
+      align-self: center;
+    }
+
+    .flight-log-acft {
+      flex: 1 1 auto;
+      width: auto;
+      max-width: none;
       min-width: 0;
       height: var(--log-ctrl-h);
       min-height: var(--log-ctrl-h);
@@ -1920,8 +1975,38 @@
       letter-spacing: 0.04em;
       text-align: center;
       box-sizing: border-box;
-      justify-self: start;
-      align-self: center;
+    }
+
+    .flight-log-tol {
+      display: none;
+      flex: 1 1 auto;
+      width: auto;
+      max-width: none;
+      min-width: 0;
+      height: var(--log-ctrl-h);
+      min-height: var(--log-ctrl-h);
+      max-height: var(--log-ctrl-h);
+      margin: 0;
+      padding: 2px 3px;
+      border: 1px solid var(--field-border);
+      border-radius: 7px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .flight-log-entry.is-sim .flight-log-tol {
+      display: block;
+    }
+
+    html.theme-bright .flight-log-tol {
+      border-width: 2px;
+      border-color: #000;
+      font-weight: 700;
     }
 
     .flight-log-picname {
@@ -2055,26 +2140,27 @@
     .flight-log-block-cell {
       grid-area: block;
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       flex-wrap: nowrap;
-      align-items: center;
+      align-items: flex-start;
+      justify-content: center;
       align-self: center;
-      gap: 6px 8px;
+      gap: 1px;
       padding-left: 6px;
       min-width: 5.75rem;
       overflow: visible;
     }
 
-    /* Fixed label column so FLIGHT time sits under BLOCK time */
+    /* Fixed label column so FLIGHT time sits under BLOCK time — times/S26 +30% */
     .flight-log-sum {
       display: inline-grid;
       grid-template-columns: 3.6rem max-content;
       column-gap: 0.35em;
       align-items: baseline;
-      font-size: 0.72rem;
+      font-size: 0.936rem; /* was 0.72rem × 1.3 */
       font-weight: 650;
       color: var(--muted);
-      line-height: 1.2;
+      line-height: 1.15;
       white-space: nowrap;
       align-self: center;
       padding-left: 6px;
@@ -2099,28 +2185,33 @@
 
     .flight-log-sum-lab {
       text-align: left;
+      font-size: 0.72rem; /* keep labels closer to original size */
+      font-weight: 650;
     }
 
     .flight-log-sum strong {
       color: var(--text);
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.04em;
+      font-size: 0.936rem;
     }
 
-    /* Same size/weight as "BLOCK" — slightly quieter color */
+    /* Same size as BLOCK/FLIGHT times — sits under BLOCK */
     .flight-log-s26 {
       display: none;
-      font-size: 0.72rem;
+      font-size: 0.936rem;
       font-weight: 650;
       letter-spacing: 0.04em;
       color: var(--muted);
       opacity: 0.85;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
+      line-height: 1.15;
+      padding-left: 0;
     }
 
     .flight-log-s26.show {
-      display: inline;
+      display: block;
     }
 
     input.log-time-error {
@@ -2811,13 +2902,27 @@
             <input id="logPf" name="logPf" type="checkbox" />
             <span>PF</span>
           </label>
-          <select id="logAcft" name="logAcft" class="flight-log-acft" title="Aircraft" aria-label="Aircraft" tabindex="-1">
-            <option value="CKA">CKA</option>
-            <option value="CKB">CKB</option>
-            <option value="CKC">CKC</option>
-            <option value="MPS">MPS</option>
-            <option value="SIM">SIM</option>
-          </select>
+          <div class="flight-log-acft-wrap" id="logAcftWrap">
+            <select id="logAcft" name="logAcft" class="flight-log-acft" title="Aircraft" aria-label="Aircraft" tabindex="-1">
+              <option value="CKA">CKA</option>
+              <option value="CKB">CKB</option>
+              <option value="CKC">CKC</option>
+              <option value="MPS">MPS</option>
+              <option value="SIM">SIM</option>
+            </select>
+            <select id="logTol" name="logTol" class="flight-log-tol" title="Simulator take-offs and landings credited" aria-label="SIM take-off landings" tabindex="-1">
+              <option value="0">0 TOL</option>
+              <option value="1">1 TOL</option>
+              <option value="2">2 TOL</option>
+              <option value="3" selected>3 TOL</option>
+              <option value="4">4 TOL</option>
+              <option value="5">5 TOL</option>
+              <option value="6">6 TOL</option>
+              <option value="7">7 TOL</option>
+              <option value="8">8 TOL</option>
+              <option value="9">9 TOL</option>
+            </select>
+          </div>
           <select id="logDep" name="logDep" class="flight-log-apt log-dep" title="Departure airport" aria-label="Departure airport" tabindex="-1"></select>
           <select id="logArr" name="logArr" class="flight-log-apt log-arr" title="Arrival airport" aria-label="Arrival airport" tabindex="-1"></select>
           <div class="flight-log-block-cell log-block">
@@ -2857,6 +2962,7 @@
           <span class="log-pf90-l1"><strong id="logPf90Count">0</strong> T/O LDG</span>
           <span class="log-pf90-l2">in the last</span>
           <span class="log-pf90-l3">90 days</span>
+          <span class="log-pf90-l4" id="logPf90Sim" hidden>(0 in sim)</span>
         </aside>
         </div>
 
@@ -2975,7 +3081,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "3.1";
+    const APP_VERSION = "3.3";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** iOS clipboard-read succeeded at least once on this origin. */
@@ -2999,7 +3105,7 @@
     const FIELD_IDS = [
       "security", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
       "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps",
-      "arrAtis", "ldis", "logPf", "logPicSelf", "logAcft", "logPic", "logDeptDate", "logDep", "logArr",
+      "arrAtis", "ldis", "logPf", "logPicSelf", "logAcft", "logTol", "logPic", "logDeptDate", "logDep", "logArr",
       "offBlocks", "airborne", "touchdown", "onBlocks"
     ];
     /** Tab / entry order: OFF → AIRBORNE → TOUCHDOWN → ON (wheels use tabindex=-1) */
@@ -3134,8 +3240,39 @@
       return String((v && v.logAcft) || "").trim().toUpperCase().replace(/^PH-/, "") === "SIM";
     }
 
+    function simTolCredits(v) {
+      if (!isSimLeg(v)) return 0;
+      const n = parseInt(String((v && v.logTol) != null ? v.logTol : 3), 10);
+      if (!Number.isFinite(n)) return 3;
+      return Math.max(0, Math.min(9, n));
+    }
+
+    function getSimTolValue() {
+      const el = $("logTol");
+      const n = parseInt(el && el.value != null ? el.value : "3", 10);
+      if (!Number.isFinite(n)) return 3;
+      return Math.max(0, Math.min(9, n));
+    }
+
+    function setSimTolValue(n) {
+      const el = $("logTol");
+      if (!el) return;
+      const v = Math.max(0, Math.min(9, parseInt(n, 10) || 0));
+      el.value = String(v);
+    }
+
+    function syncSimUi() {
+      const entry = document.querySelector(".flight-log-entry");
+      const sim = isSimAcft();
+      if (entry) entry.classList.toggle("is-sim", sim);
+      const tol = $("logTol");
+      if (tol) tol.disabled = !sim;
+    }
+
     /** PIC field template for SIM sessions (TRE/TRI + exam notes). */
     const SIM_PIC_HINT = "| add TRE/TRI name | EXAM kind etc.";
+
+    let simModeLock = false;
 
     function simPicTemplate() {
       const mine = getMyPicName();
@@ -3176,11 +3313,17 @@
       updateS26Display();
     }
 
-    function restoreAirportsAfterSim() {
-      const dep = detectDepAirport();
-      fillAirportSelect($("logDep"), dep);
-      applyArrForDep($("logDep").value || dep);
-      fillAirportSelect($("logArr"), DEP_TO_ARR[$("logDep").value] || DEP_TO_ARR[dep] || "AMS");
+    function restoreAirportsAfterSim(preferDep) {
+      if (preferDep && normalizeIata(preferDep) !== "SIM") {
+        fillAirportSelect($("logDep"), preferDep);
+        applyArrForDep(preferDep);
+        fillAirportSelect($("logArr"), DEP_TO_ARR[preferDep] || "AMS");
+      } else {
+        const dep = detectDepAirport();
+        fillAirportSelect($("logDep"), dep);
+        applyArrForDep($("logDep").value || dep);
+        fillAirportSelect($("logArr"), DEP_TO_ARR[$("logDep").value] || DEP_TO_ARR[dep] || "AMS");
+      }
       syncAirportAddField("logDep", "logDepAdd");
       syncAirportAddField("logArr", "logArrAdd");
       updateS26Display();
@@ -3200,31 +3343,81 @@
     }
 
     function enterSimMode() {
-      ensureSimPf();
-      ensureSimAirports();
-      const air = $("airborne");
-      const td = $("touchdown");
-      if (air) air.value = "N/A";
-      if (td) td.value = "N/A";
-      applySimPicHint();
-      maybeDefaultSimOnBlocks();
-      ensureSimDeptDateAndOpen();
-      updateLogCalcs();
+      if (simModeLock) return;
+      simModeLock = true;
+      try {
+        const acft = $("logAcft");
+        if (acft && acft.value !== "SIM") acft.value = "SIM";
+        setSimTolValue(3);
+        ensureSimPf();
+        ensureSimAirports();
+        const air = $("airborne");
+        const td = $("touchdown");
+        if (air) air.value = "N/A";
+        if (td) td.value = "N/A";
+        applySimPicHint();
+        maybeDefaultSimOnBlocks();
+        ensureSimDeptDateAndOpen();
+        syncSimUi();
+        syncLogAcftPrevValue();
+        updateLogCalcs();
+      } finally {
+        simModeLock = false;
+      }
     }
 
-    function leaveSimMode() {
-      ["airborne", "touchdown"].forEach((id) => {
-        const el = $(id);
-        if (el && /^n\/?a$/i.test(String(el.value || "").trim())) el.value = "";
-      });
-      restoreAirportsAfterSim();
-      const nameEl = $("logPic");
-      const cur = nameEl ? String(nameEl.value || "").trim() : "";
-      if (!cur || cur === SIM_PIC_HINT || cur.endsWith(SIM_PIC_HINT)) {
-        if (nameEl) nameEl.value = "";
-        applyPicDefIfOn();
+    function leaveSimMode(opts) {
+      if (simModeLock) return;
+      simModeLock = true;
+      try {
+        ["airborne", "touchdown"].forEach((id) => {
+          const el = $(id);
+          if (el && /^n\/?a$/i.test(String(el.value || "").trim())) el.value = "";
+        });
+        restoreAirportsAfterSim(opts && opts.preferDep);
+        const nameEl = $("logPic");
+        const cur = nameEl ? String(nameEl.value || "").trim() : "";
+        if (!cur || cur === SIM_PIC_HINT || cur.endsWith(SIM_PIC_HINT)) {
+          if (nameEl) nameEl.value = "";
+          applyPicDefIfOn();
+        }
+        setSimTolValue(3);
+        syncSimUi();
+        syncLogAcftPrevValue();
+        updateLogCalcs();
+      } finally {
+        simModeLock = false;
       }
-      updateLogCalcs();
+    }
+
+    /** Airport wheel / add-field chose SIM → enter sim logger; left SIM → exit. */
+    function onAirportCodeMaybeSim(code, source) {
+      const c = normalizeIata(code);
+      if (c === "SIM") {
+        if (!isSimAcft()) enterSimMode();
+        else ensureSimAirports();
+        return;
+      }
+      if (isSimAcft() && c && c !== "SIM") {
+        const prior = loadLogPrev().find((v) => {
+          const a = v && String(v.logAcft || "").trim().toUpperCase();
+          return a && a !== "SIM";
+        });
+        const nextAcft = prior ? String(prior.logAcft).trim().toUpperCase() : (DEFAULTS.logAcft || "CKA");
+        const el = $("logAcft");
+        if (el) el.value = nextAcft;
+        leaveSimMode({ preferDep: source === "dep" ? c : undefined });
+        if (source === "dep") {
+          ensureAirportOption($("logDep"), c);
+          applyArrForDep(c);
+        } else if (source === "arr") {
+          ensureAirportOption($("logArr"), c);
+        }
+        syncAirportAddField("logDep", "logDepAdd");
+        syncAirportAddField("logArr", "logArrAdd");
+        updateS26Display();
+        syncLogAcftPrevValue();
+      }
     }
 
     const $ = (id) => document.getElementById(id);
@@ -3606,6 +3799,7 @@
           if (add.value !== next) add.value = next;
           if (next.length === 3) {
             ensureAirportOption(sel, next);
+            onAirportCodeMaybeSim(next, selectId === "logDep" ? "dep" : "arr");
             updateS26Display();
           }
           checkIataAddLen(add, false);
@@ -3616,6 +3810,7 @@
           if (code.length === 3) {
             add.value = code;
             ensureAirportOption(sel, code);
+            onAirportCodeMaybeSim(code, selectId === "logDep" ? "dep" : "arr");
             add.classList.remove("warn-diff");
             updateS26Display();
           } else {
@@ -3629,6 +3824,7 @@
         sel.addEventListener("change", () => {
           syncAirportAddField(selectId, addId);
           if (selectId === "logDep") applyArrForDep(sel.value);
+          onAirportCodeMaybeSim(sel.value, selectId === "logDep" ? "dep" : "arr");
           updateS26Display();
           saveNow();
         });
@@ -4114,7 +4310,7 @@
       } catch (_) {}
     }
 
-    /** PF flights in the last 90 days → each counts as one T/O + one LDG (SIM = ×3). */
+    /** PF flights in the last 90 days → each counts as one T/O + one LDG (SIM uses TOL). */
     function countPfToLdgLast90Days(list) {
       const rows = list || loadLogPrev();
       const now = new Date();
@@ -4127,14 +4323,43 @@
         if (!dep) continue;
         const t = dep.getTime();
         if (t < cutoff || t > today) continue;
-        n += isSimLeg(v) ? 3 : 1;
+        n += isSimLeg(v) ? simTolCredits(v) : 1;
+      }
+      return n;
+    }
+
+    function countSimTolLast90Days(list) {
+      const rows = list || loadLogPrev();
+      const now = new Date();
+      const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const cutoff = today - LOG_PF_WINDOW_DAYS * 86400000;
+      let n = 0;
+      for (const v of rows) {
+        if (!v || !isSimLeg(v) || v.logPf !== "yes") continue;
+        const dep = parseLogDeptDate(v.logDeptDate);
+        if (!dep) continue;
+        const t = dep.getTime();
+        if (t < cutoff || t > today) continue;
+        n += simTolCredits(v);
       }
       return n;
     }
 
     function updateLogPf90Badge(list) {
+      const rows = list || loadLogPrev();
       const el = $("logPf90Count");
-      if (el) el.textContent = String(countPfToLdgLast90Days(list));
+      if (el) el.textContent = String(countPfToLdgLast90Days(rows));
+      const simEl = $("logPf90Sim");
+      if (simEl) {
+        const simN = countSimTolLast90Days(rows);
+        if (simN > 0) {
+          simEl.hidden = false;
+          simEl.textContent = "(" + simN + " in sim)";
+        } else {
+          simEl.hidden = true;
+          simEl.textContent = "(0 in sim)";
+        }
+      }
     }
 
     function syncLogPrevHead() {
@@ -4205,6 +4430,7 @@
 
     function snapshotLogLeg() {
       const v = getValues();
+      const sim = String(v.logAcft || "").trim().toUpperCase() === "SIM";
       return {
         logAcft: v.logAcft || "",
         logPf: v.logPf === "yes" ? "yes" : "no",
@@ -4213,6 +4439,7 @@
         logDep: v.logDep || "",
         logArr: v.logArr || "",
         logDeptDate: (v.logDeptDate || "").trim(),
+        logTol: sim ? getSimTolValue() : undefined,
         offBlocks: v.offBlocks || "",
         airborne: v.airborne || "",
         touchdown: v.touchdown || "",
@@ -4331,6 +4558,8 @@
       $("logPicSelf").checked = v.logPicSelf === "yes";
       $("logPic").value = v.logPic || "";
       $("logDeptDate").value = v.logDeptDate || "";
+      if (isSimLeg(v)) setSimTolValue(simTolCredits(v));
+      else setSimTolValue(3);
       if (v.logDep) ensureAirportOption($("logDep"), v.logDep);
       else $("logDep").value = LOG_AIRPORTS[0] || "AMS";
       if (v.logArr) ensureAirportOption($("logArr"), v.logArr);
@@ -4349,6 +4578,7 @@
           el.classList.remove("log-time-error", "warn-diff");
         }
       });
+      syncSimUi();
       saveNow();
       updateLogCalcs();
       syncLogAcftPrevValue();
@@ -4394,6 +4624,7 @@
       if (isSimLeg(snap) || isSimAcft()) {
         ensureSimPf();
         snap.logPf = "yes";
+        snap.logTol = getSimTolValue();
       }
       const list = loadLogPrev();
       if (logEditIndex != null && logEditIndex >= 0 && logEditIndex < list.length) {
@@ -4407,7 +4638,13 @@
       saveLogPrev(list);
       renderLogPrev(list);
       if (isSimLeg(snap)) {
-        showToast("3 takeoffs and landings have been added to your log and RECENCY", 4500);
+        const tol = simTolCredits(snap);
+        showToast(
+          tol === 1
+            ? "1 takeoff and landing has been added to your log and RECENCY"
+            : tol + " takeoffs and landings have been added to your log and RECENCY",
+          4500
+        );
       } else {
         showToast("Line added to log");
       }
@@ -5194,7 +5431,7 @@
         const regRaw = String(v.logAcft || "").trim().toUpperCase().replace(/^PH-/, "");
         const isSim = isSimLeg(v);
         const reg = isSim ? "SIM" : (acftRegistration(regRaw) || "");
-        const toLdg = isPf ? (isSim ? "3" : "1") : "0";
+        const toLdg = isPf ? (isSim ? String(simTolCredits(v)) : "1") : "0";
         const airRaw = String(v.airborne || "").trim();
         const tdRaw = String(v.touchdown || "").trim();
         const airOut = /^n\/?a$/i.test(airRaw) ? "N/A" : airRaw;
@@ -5663,12 +5900,21 @@
     }
     $("logAcft").addEventListener("change", () => {
       const now = String(($("logAcft") && $("logAcft").value) || "");
-      if (now === "SIM") enterSimMode();
-      else if (logAcftPrevValue === "SIM") leaveSimMode();
+      if (now === "SIM") {
+        setSimTolValue(3);
+        enterSimMode();
+      } else if (logAcftPrevValue === "SIM") {
+        leaveSimMode();
+      }
+      syncSimUi();
       logAcftPrevValue = now;
       saveNow();
     });
     syncLogAcftPrevValue();
+    syncSimUi();
+    if ($("logTol")) {
+      $("logTol").addEventListener("change", () => { saveNow(); });
+    }
     $("logPf").addEventListener("change", () => {
       if (isSimAcft()) ensureSimPf();
       saveNow();
@@ -5792,19 +6038,29 @@
     }
 
     function shouldShowInstallOverlay() {
-      if (!isAppleTouchDevice() || isStandaloneDisplay()) return false;
-      try { return localStorage.getItem(INSTALL_OVERLAY_SEEN_KEY) !== "1"; } catch (_) { return true; }
+      if (isStandaloneDisplay()) return false;
+      if (document.documentElement.classList.contains("is-standalone-app")) return false;
+      if (!isAppleTouchDevice()) return false;
+      try {
+        if (localStorage.getItem(INSTALL_OVERLAY_SEEN_KEY) === "1") return false;
+        if (localStorage.getItem("flight-plan-form-was-standalone-v1") === "1") return false;
+      } catch (_) {}
+      return true;
     }
 
     function initInstallAndStandalone() {
       const overlay = $("installOverlay");
-      const standalone = isAppleTouchDevice() && isStandaloneDisplay();
+      const standalone = isStandaloneDisplay();
       document.documentElement.classList.toggle("is-standalone-app", standalone);
       document.body.classList.toggle("is-standalone-app", standalone);
+      if (standalone) {
+        try { localStorage.setItem("flight-plan-form-was-standalone-v1", "1"); } catch (_) {}
+      }
       if (overlay) {
         const show = shouldShowInstallOverlay();
         overlay.hidden = !show;
         overlay.classList.toggle("is-pulsing", show);
+        if (!show) overlay.classList.remove("is-pulsing");
       }
     }
 

@@ -1,124 +1,111 @@
-/**
- * QUICKLOG v3.1 — offline-first shell.
- * Navigations serve cache immediately (avoids iOS “offline” interstitial).
- * Other same-origin GETs: network, then cache. Hold Clear 4s flushes caches.
- */
-(function () {
-  'use strict';
+/* QUICKLOG service worker — MyNatTrack-style cache-first shell (offline-friendly). */
+const CACHE = "navlog-note-v3.3.0";
 
-  var CACHE = 'navlog-note-v3.1.0';
-  var PRECACHE = [
-    './',
-    './index.html',
-    './manifest.webmanifest',
-    './favicon.png',
-    './favicon-32.png',
-    './apple-touch-icon.png'
-  ];
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./favicon.png",
+  "./favicon-32.png",
+  "./apple-touch-icon.png"
+];
 
-  function cacheFallback(request) {
-    return caches.open(CACHE).then(function (cache) {
-      return cache.match(request).then(function (cached) {
-        if (cached) return cached;
-        return cache.match(request, { ignoreSearch: true }).then(function (byPath) {
-          if (byPath) return byPath;
-          if (request.mode === 'navigate') return cache.match('./index.html');
-          return Response.error();
-        });
-      });
-    });
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) =>
+        cache.addAll(ASSETS.map((url) => new Request(url, { cache: "reload" })))
+      )
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+function sameOriginClient(event) {
+  if (!event.source || !event.source.url) return true;
+  try {
+    return new URL(event.source.url).origin === self.location.origin;
+  } catch (e) {
+    return false;
   }
+}
 
-  function putInCache(request, response) {
-    if (!response || !response.ok) return;
-    var copy = response.clone();
-    caches.open(CACHE).then(function (cache) {
-      cache.put(request, copy);
-    }).catch(function () {});
-  }
-
-  function sameOriginClient(event) {
-    if (!event.source || !event.source.url) return true;
-    try {
-      return new URL(event.source.url).origin === self.location.origin;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  self.addEventListener('install', function (event) {
+self.addEventListener("message", (event) => {
+  if (!sameOriginClient(event)) return;
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
+  if (event.data === "CLEAR_CACHES") {
     event.waitUntil(
-      caches.open(CACHE).then(function (cache) {
-        return cache.addAll(PRECACHE);
-      }).then(function () {
-        return self.skipWaiting();
-      })
+      caches.keys().then((keys) =>
+        Promise.all(keys.map((key) => caches.delete(key)))
+      )
     );
-  });
+  }
+});
 
-  self.addEventListener('activate', function (event) {
-    event.waitUntil(
-      caches.keys().then(function (keys) {
-        return Promise.all(keys.map(function (key) {
-          if (key !== CACHE) return caches.delete(key);
-        })).then(function () {
-          return self.clients.claim();
-        });
-      })
-    );
-  });
+/** Fetch and refresh cache; never throws to the page. */
+function networkUpdate(request) {
+  return fetch(request)
+    .then((response) => {
+      if (response && response.status === 200 && response.type === "basic") {
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    })
+    .catch(() => null);
+}
 
-  self.addEventListener('message', function (event) {
-    if (!sameOriginClient(event)) return;
-    if (event.data === 'SKIP_WAITING') self.skipWaiting();
-    if (event.data === 'CLEAR_CACHES') {
-      event.waitUntil(
-        caches.keys().then(function (keys) {
-          return Promise.all(keys.map(function (key) { return caches.delete(key); }));
-        })
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch (e) {
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
+
+  // App shell / static: cache-first so iPad offline open never hits Safari’s
+  // “offline” interstitial. When online, refresh the cache in the background.
+  const cacheKey = request.mode === "navigate" ? "./index.html" : request;
+
+  event.respondWith(
+    caches.match(cacheKey).then((cached) => {
+      const online =
+        typeof self.navigator === "undefined" ||
+        self.navigator.onLine !== false;
+
+      if (cached) {
+        if (online) {
+          event.waitUntil(
+            networkUpdate(request.mode === "navigate" ? request : request)
+          );
+        }
+        return cached;
+      }
+
+      return networkUpdate(request).then(
+        (response) =>
+          response ||
+          caches.match("./index.html").then(
+            (shell) =>
+              shell ||
+              new Response("QUICKLOG offline — open once while online to cache.", {
+                status: 503,
+                headers: { "Content-Type": "text/plain; charset=utf-8" }
+              })
+          )
       );
-    }
-  });
-
-  self.addEventListener('fetch', function (event) {
-    var request = event.request;
-    if (request.method !== 'GET') return;
-    var url;
-    try { url = new URL(request.url); } catch (e) { return; }
-    if (url.origin !== self.location.origin) return;
-
-    /* Document loads: cache first so iPad PWA never waits on a failed network. */
-    if (request.mode === 'navigate') {
-      event.respondWith(
-        caches.open(CACHE).then(function (cache) {
-          return cache.match('./index.html').then(function (cached) {
-            var network = fetch(request).then(function (response) {
-              if (response && response.ok) {
-                cache.put('./index.html', response.clone());
-                cache.put(request, response.clone());
-              }
-              return response;
-            }).catch(function () { return null; });
-            if (cached) {
-              network.catch(function () {});
-              return cached;
-            }
-            return network.then(function (response) {
-              return response || cacheFallback(request);
-            });
-          });
-        })
-      );
-      return;
-    }
-
-    event.respondWith(
-      fetch(request).then(function (response) {
-        putInCache(request, response);
-        return response;
-      }).catch(function () {
-        return cacheFallback(request);
-      })
-    );
-  });
-})();
+    })
+  );
+});
