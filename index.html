@@ -2975,7 +2975,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.9";
+    const APP_VERSION = "3.0";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** iOS clipboard-read succeeded at least once on this origin. */
@@ -3194,9 +3194,13 @@
       openDeptDatePopover();
     }
 
-    function enterSimMode() {
+    function ensureSimPf() {
       const pf = $("logPf");
-      if (pf) pf.checked = true;
+      if (pf && isSimAcft()) pf.checked = true;
+    }
+
+    function enterSimMode() {
+      ensureSimPf();
       ensureSimAirports();
       const air = $("airborne");
       const td = $("touchdown");
@@ -4387,6 +4391,10 @@
       const snap = snapshotLogLeg();
       // Need at least a completed OFF or ON to keep a useful history row.
       if (digitsOnly(snap.offBlocks).length < 4 && digitsOnly(snap.onBlocks).length < 4) return;
+      if (isSimLeg(snap) || isSimAcft()) {
+        ensureSimPf();
+        snap.logPf = "yes";
+      }
       const list = loadLogPrev();
       if (logEditIndex != null && logEditIndex >= 0 && logEditIndex < list.length) {
         list[logEditIndex] = snap;
@@ -4398,7 +4406,11 @@
       }
       saveLogPrev(list);
       renderLogPrev(list);
-      showToast("Line added to log");
+      if (isSimLeg(snap)) {
+        showToast("3 takeoffs and landings have been added to your log and RECENCY", 4500);
+      } else {
+        showToast("Line added to log");
+      }
     }
 
     let copyAddLoggedTimer = 0;
@@ -4452,6 +4464,7 @@
             // User is still logging a SIM session — keep SIM presets.
             $("logAcft").value = "SIM";
             syncLogAcftPrevValue();
+            ensureSimPf();
             const air = $("airborne");
             const td = $("touchdown");
             if (air) air.value = "N/A";
@@ -5656,7 +5669,10 @@
       saveNow();
     });
     syncLogAcftPrevValue();
-    $("logPf").addEventListener("change", () => { saveNow(); });
+    $("logPf").addEventListener("change", () => {
+      if (isSimAcft()) ensureSimPf();
+      saveNow();
+    });
     bindPicIdentity();
     ["rvsmL", "rvsmR"].forEach((id) => {
       $(id).addEventListener("input", () => checkRvsmDiff(false));
