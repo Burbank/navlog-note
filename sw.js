@@ -1,12 +1,12 @@
 /**
- * QUICKLOG v3.0 — offline shell (KLYear-style, no forced navigate flash).
- * Online: network-first. Updates via banner Reload.
- * Hold Clear 4s flushes caches and reloads to pick up the latest build.
+ * QUICKLOG v3.1 — offline-first shell.
+ * Navigations serve cache immediately (avoids iOS “offline” interstitial).
+ * Other same-origin GETs: network, then cache. Hold Clear 4s flushes caches.
  */
 (function () {
   'use strict';
 
-  var CACHE = 'navlog-note-v3.0.0';
+  var CACHE = 'navlog-note-v3.1.0';
   var PRECACHE = [
     './',
     './index.html',
@@ -27,6 +27,14 @@
         });
       });
     });
+  }
+
+  function putInCache(request, response) {
+    if (!response || !response.ok) return;
+    var copy = response.clone();
+    caches.open(CACHE).then(function (cache) {
+      cache.put(request, copy);
+    }).catch(function () {});
   }
 
   function sameOriginClient(event) {
@@ -79,14 +87,34 @@
     try { url = new URL(request.url); } catch (e) { return; }
     if (url.origin !== self.location.origin) return;
 
+    /* Document loads: cache first so iPad PWA never waits on a failed network. */
+    if (request.mode === 'navigate') {
+      event.respondWith(
+        caches.open(CACHE).then(function (cache) {
+          return cache.match('./index.html').then(function (cached) {
+            var network = fetch(request).then(function (response) {
+              if (response && response.ok) {
+                cache.put('./index.html', response.clone());
+                cache.put(request, response.clone());
+              }
+              return response;
+            }).catch(function () { return null; });
+            if (cached) {
+              network.catch(function () {});
+              return cached;
+            }
+            return network.then(function (response) {
+              return response || cacheFallback(request);
+            });
+          });
+        })
+      );
+      return;
+    }
+
     event.respondWith(
       fetch(request).then(function (response) {
-        if (response && response.ok) {
-          var copy = response.clone();
-          caches.open(CACHE).then(function (cache) {
-            cache.put(request, copy);
-          }).catch(function () {});
-        }
+        putInCache(request, response);
         return response;
       }).catch(function () {
         return cacheFallback(request);

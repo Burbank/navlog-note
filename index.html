@@ -2616,7 +2616,7 @@
 </head>
 <body>
   <div id="sw-update-banner" class="sw-update-banner hidden" role="status" aria-live="polite">
-    <p class="sw-update-text">New version ready. Open once online after an update, then reload.</p>
+    <p class="sw-update-text">New version ready. Reload when convenient (works offline either way).</p>
     <button type="button" id="sw-update-reload">Reload</button>
   </div>
 
@@ -2975,7 +2975,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "3.0";
+    const APP_VERSION = "3.1";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** iOS clipboard-read succeeded at least once on this origin. */
@@ -5742,7 +5742,9 @@
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").then((reg) => {
           if (reg.waiting) showUpdateBanner(reg.waiting);
-          try { reg.update(); } catch (_) {}
+          if (navigator.onLine) {
+            try { reg.update(); } catch (_) {}
+          }
           reg.addEventListener("updatefound", () => {
             const installing = reg.installing;
             if (!installing) return;
@@ -5757,6 +5759,7 @@
 
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState !== "visible") return;
+        if (!navigator.onLine) return;
         navigator.serviceWorker.getRegistration("./sw.js").then((reg) => {
           if (!reg) return;
           try { reg.update(); } catch (_) {}
