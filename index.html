@@ -163,17 +163,26 @@
 
     /* Beat bright white field bg — pink fill + dark red border for sun glare */
     html.theme-bright input.warn-diff,
-    html.theme-bright input.log-time-error {
+    html.theme-bright input.log-time-error,
+    html.theme-bright input.log-incomplete,
+    html.theme-bright select.log-incomplete {
       background: var(--soft-warn-bg);
       border-color: var(--warn);
       box-shadow: inset 0 0 0 1px var(--warn);
     }
 
     html.theme-bright input.warn-diff:focus,
-    html.theme-bright input.log-time-error:focus {
+    html.theme-bright input.log-time-error:focus,
+    html.theme-bright input.log-incomplete:focus,
+    html.theme-bright select.log-incomplete:focus {
       outline-color: var(--warn);
       border-color: var(--warn);
       background: var(--soft-warn-bg);
+    }
+
+    html.theme-bright button.flight-log-date-hit.log-incomplete {
+      background: var(--soft-warn-bg);
+      border-color: var(--warn);
     }
 
     html.theme-bright .toggle {
@@ -682,6 +691,15 @@
       color: var(--btn-text);
       background: var(--btn);
       cursor: pointer;
+      /* Long-press = button action, never iOS text select / callout */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-user-drag: none;
+    }
+
+    button::selection {
+      background: transparent;
     }
 
     button:active { background: var(--btn-press); transform: scale(0.98); }
@@ -2224,6 +2242,35 @@
       border-color: var(--warn);
     }
 
+    /* Incomplete log fields when ADD TO LOG is blocked (first press) */
+    input.log-incomplete,
+    select.log-incomplete {
+      background: var(--soft-warn-bg);
+      border-color: var(--warn);
+      box-shadow: inset 0 0 0 1px var(--warn);
+    }
+
+    input.log-incomplete:focus,
+    select.log-incomplete:focus {
+      outline-color: var(--warn);
+      border-color: var(--warn);
+      background: var(--soft-warn-bg);
+    }
+
+    button.flight-log-date-hit.log-incomplete {
+      background: var(--soft-warn-bg);
+      border-color: var(--warn);
+      box-shadow: inset 0 0 0 1px var(--warn);
+      opacity: 1;
+    }
+
+    .log-btn-bar button.is-incomplete-warn {
+      background: var(--warn);
+      color: #fff;
+      opacity: 1;
+      filter: none;
+    }
+
     .help-ios-share {
       display: inline-flex;
       vertical-align: -0.2em;
@@ -2972,7 +3019,7 @@
         <button type="button" id="btnCopyAllLog">COPY LOG AS TABLE</button>
         <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">COPY LOG AS CSV</button>
         <p class="log-data-note">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
-        <button type="button" id="btnCopyLog">COPY/ADD EDIT TO LOG</button>
+        <button type="button" id="btnCopyLog" title="Add current YOUR LOG line to the table and copy text">ADD TO LOG</button>
       </div>
 
       <div class="log-prev" id="logPrev" aria-label="Previous log summaries" aria-live="polite">
@@ -3081,7 +3128,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "3.3";
+    const APP_VERSION = "3.4";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** iOS clipboard-read succeeded at least once on this origin. */
@@ -3212,23 +3259,18 @@
       let acft = last && last.logAcft ? String(last.logAcft).trim().toUpperCase() : "";
       const lastWasSim = acft === "SIM";
       if (lastWasSim) {
-        const prior = rows.find((v) => {
-          const c = v && String(v.logAcft || "").trim().toUpperCase();
-          return c && c !== "SIM";
-        });
-        acft = prior ? String(prior.logAcft).trim().toUpperCase() : (DEFAULTS.logAcft || "CKA");
-      }
-      if (acft) {
+        exitSimToDefaultAircraft();
+      } else if (acft) {
         const el = $("logAcft");
         if (el) el.value = acft;
+        syncLogAcftPrevValue();
+        syncSimUi();
       }
       if (last) {
         $("logPf").checked = last.logPf !== "yes";
       } else {
         $("logPf").checked = false;
       }
-      if (lastWasSim) restoreAirportsAfterSim();
-      syncLogAcftPrevValue();
     }
 
     function isSimAcft() {
@@ -3266,7 +3308,52 @@
       const sim = isSimAcft();
       if (entry) entry.classList.toggle("is-sim", sim);
       const tol = $("logTol");
-      if (tol) tol.disabled = !sim;
+      if (tol) {
+        tol.disabled = !sim;
+        if (!sim) {
+          /* Hide is CSS (.is-sim); keep value ready for next SIM session */
+          tol.setAttribute("aria-hidden", "true");
+        } else {
+          tol.removeAttribute("aria-hidden");
+        }
+      }
+    }
+
+    let ignoreSimAirportTrigger = false;
+
+    /** Leave SIM chrome and return the YOUR LOG segment to normal line-aircraft inputs (CKA). */
+    function exitSimToDefaultAircraft() {
+      ignoreSimAirportTrigger = true;
+      simModeLock = false;
+      try {
+        const el = $("logAcft");
+        if (el) el.value = DEFAULTS.logAcft || "CKA";
+        ["airborne", "touchdown"].forEach((id) => {
+          const t = $(id);
+          if (t && /^n\/?a$/i.test(String(t.value || "").trim())) t.value = "";
+        });
+        restoreAirportsAfterSim();
+        const nameEl = $("logPic");
+        const cur = nameEl ? String(nameEl.value || "").trim() : "";
+        if (!cur || cur === SIM_PIC_HINT || cur.endsWith(SIM_PIC_HINT)) {
+          if (nameEl) nameEl.value = "";
+          applyPicDefIfOn();
+        }
+        setSimTolValue(3);
+        const entry = document.querySelector(".flight-log-entry");
+        if (entry) entry.classList.remove("is-sim");
+        const tol = $("logTol");
+        if (tol) {
+          tol.disabled = true;
+          tol.setAttribute("aria-hidden", "true");
+        }
+        syncLogAcftPrevValue();
+        syncSimUi();
+        updateLogCalcs();
+      } finally {
+        ignoreSimAirportTrigger = false;
+        simModeLock = false;
+      }
     }
 
     /** PIC field template for SIM sessions (TRE/TRI + exam notes). */
@@ -3308,22 +3395,6 @@
     function ensureSimAirports() {
       ensureAirportOption($("logDep"), "SIM");
       ensureAirportOption($("logArr"), "SIM");
-      syncAirportAddField("logDep", "logDepAdd");
-      syncAirportAddField("logArr", "logArrAdd");
-      updateS26Display();
-    }
-
-    function restoreAirportsAfterSim(preferDep) {
-      if (preferDep && normalizeIata(preferDep) !== "SIM") {
-        fillAirportSelect($("logDep"), preferDep);
-        applyArrForDep(preferDep);
-        fillAirportSelect($("logArr"), DEP_TO_ARR[preferDep] || "AMS");
-      } else {
-        const dep = detectDepAirport();
-        fillAirportSelect($("logDep"), dep);
-        applyArrForDep($("logDep").value || dep);
-        fillAirportSelect($("logArr"), DEP_TO_ARR[$("logDep").value] || DEP_TO_ARR[dep] || "AMS");
-      }
       syncAirportAddField("logDep", "logDepAdd");
       syncAirportAddField("logArr", "logArrAdd");
       updateS26Display();
@@ -3392,6 +3463,7 @@
 
     /** Airport wheel / add-field chose SIM → enter sim logger; left SIM → exit. */
     function onAirportCodeMaybeSim(code, source) {
+      if (ignoreSimAirportTrigger) return;
       const c = normalizeIata(code);
       if (c === "SIM") {
         if (!isSimAcft()) enterSimMode();
@@ -3468,6 +3540,43 @@
       return d.slice(0, 2) + ":" + d.slice(2, 4) + ":" + d.slice(4, 6);
     }
 
+    /**
+     * Tab/Enter (or blur) after only HH → treat as whole hour HH:00[:00].
+     * Returns true if the value was padded.
+     */
+    function finalizeClockWholeHour(el, maxDigits) {
+      if (!el) return false;
+      const max = maxDigits != null ? maxDigits : (el._clockMaxDigits || 4);
+      const raw = String(el.value || "").trim();
+      if (/^n\/?a$/i.test(raw)) return false;
+      const { digits } = acceptClockDigits(raw, max);
+      if (digits.length !== 2) return false;
+      const padded = digits + "00" + (max >= 6 ? "00" : "");
+      const next = formatClockDigits(acceptClockDigits(padded, max).digits);
+      if (next !== el.value) el.value = next;
+      return true;
+    }
+
+    /** Pad HH→HH:00 before leaving a clock field (Tab/Enter/next/blur). */
+    function prepareLeaveClockField(el) {
+      if (!el || typeof el._clockMaxDigits !== "number") return false;
+      if (!finalizeClockWholeHour(el, el._clockMaxDigits)) return false;
+      saveNow();
+      if (typeof el._onClockChange === "function") {
+        try { el._onClockChange(); } catch (_) {}
+      }
+      return true;
+    }
+
+    function isClockAdvanceKey(e) {
+      if (!e) return false;
+      if (e.key === "Enter" || e.key === "Tab") return true;
+      /* iOS / some keyboards */
+      if (e.key === "Go" || e.key === "Done" || e.key === "Next") return true;
+      if (e.keyCode === 13 || e.which === 13) return true;
+      return false;
+    }
+
     /** Place caret after N digits in a formatted HH:MM[:SS] string. */
     function caretPosAfterDigits(formatted, digitCount) {
       if (digitCount <= 0) return 0;
@@ -3489,10 +3598,14 @@
 
     function bindClock(id, maxDigits, { onFocusClear, onChange, advanceWhenDigits } = {}) {
       const el = $(id);
+      if (!el) return;
+      el._clockMaxDigits = maxDigits;
+      el._onClockChange = onChange;
       el.addEventListener("input", () => {
         const start = el.selectionStart;
         let before = el.value;
-        if (onFocusClear && /n\/?a/i.test(before)) {
+        /* Strip N/A so typing into a SIM AIR/TD field works */
+        if (/n\/?a/i.test(before)) {
           before = before.replace(/n\/?a/gi, "");
         }
         const digitsBeforeCaret = digitsOnly(before.slice(0, start || 0)).length;
@@ -3508,9 +3621,27 @@
         if (onChange) onChange();
         if (advanceWhenDigits && digits.length >= advanceWhenDigits) focusNextField(el);
       });
+      /* Capture so HH:00 runs even if another handler stops the event */
+      el.addEventListener("keydown", (e) => {
+        if (!isClockAdvanceKey(e)) return;
+        prepareLeaveClockField(el);
+      }, true);
       el.addEventListener("blur", () => {
-        if (onFocusClear && !digitsOnly(el.value)) el.value = onFocusClear;
-        else el.value = formatClockDigits(acceptClockDigits(el.value, maxDigits).digits);
+        const raw = String(el.value || "").trim();
+        if (/^n\/?a$/i.test(raw)) {
+          el.value = "N/A";
+        } else if (onFocusClear && !digitsOnly(el.value)) {
+          el.value = onFocusClear;
+        } else if (
+          isSimAcft() &&
+          (id === "airborne" || id === "touchdown") &&
+          !digitsOnly(el.value)
+        ) {
+          el.value = "N/A";
+        } else {
+          prepareLeaveClockField(el);
+          el.value = formatClockDigits(acceptClockDigits(el.value, maxDigits).digits);
+        }
         saveNow();
         if (onChange) onChange();
       });
@@ -3730,7 +3861,10 @@
     }
 
     function fillAirportSelect(el, defaultCode) {
-      const cur = normalizeIata(el.value || defaultCode);
+      let cur = normalizeIata(el.value || defaultCode);
+      /* Never sticky-preserve SIM when rebuilding the wheel for a real default */
+      if (cur === "SIM") cur = normalizeIata(defaultCode);
+      if (cur === "SIM" || !cur) cur = normalizeIata(defaultCode) || "AMS";
       el.innerHTML = "";
       LOG_AIRPORTS.forEach((code) => {
         const opt = document.createElement("option");
@@ -3738,13 +3872,48 @@
         opt.textContent = code;
         el.appendChild(opt);
       });
-      if (cur.length === 3) {
+      if (cur.length === 3 && cur !== "SIM") {
         ensureAirportOption(el, cur);
       } else if (defaultCode && LOG_AIRPORTS.includes(defaultCode)) {
         el.value = defaultCode;
       } else {
         el.value = LOG_AIRPORTS[0] || "";
       }
+    }
+
+    /** Rebuild DEP/ARR to real airports after SIM (do not keep SIM sticky). */
+    function restoreAirportsAfterSim(preferDep) {
+      const rawDep =
+        preferDep && normalizeIata(preferDep) !== "SIM"
+          ? normalizeIata(preferDep)
+          : detectDepAirport();
+      const depTarget = !rawDep || rawDep === "SIM" ? "AMS" : rawDep;
+      const arrTarget = (() => {
+        const a = DEP_TO_ARR[depTarget] || "AMS";
+        return a === "SIM" ? "AMS" : a;
+      })();
+      const depEl = $("logDep");
+      const arrEl = $("logArr");
+      const rebuild = (el, code) => {
+        if (!el) return;
+        el.innerHTML = "";
+        LOG_AIRPORTS.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c;
+          opt.textContent = c;
+          el.appendChild(opt);
+        });
+        ensureAirportOption(el, code);
+        el.value = code;
+        Array.from(el.querySelectorAll("option")).forEach((opt) => {
+          if (normalizeIata(opt.value) === "SIM") opt.remove();
+        });
+      };
+      rebuild(depEl, depTarget);
+      rebuild(arrEl, arrTarget);
+      syncAirportAddField("logDep", "logDepAdd");
+      syncAirportAddField("logArr", "logArrAdd");
+      updateS26Display();
     }
 
     function syncAirportAddField(selectId, addId) {
@@ -4060,6 +4229,85 @@
         v.logDeptDate, v.logAcft, v.logDep, v.logArr, v.logPf, v.logPicSelf, v.logPic,
         v.offBlocks, v.airborne, v.touchdown, v.onBlocks
       ].map((x) => String(x || "").trim()).join("|");
+    }
+
+    /** Match for update: same UTC date + aircraft + route + OFF (ON/AIR/TD may change). */
+    function logLegIdentityKey(v) {
+      if (!v) return "";
+      const off = digitsOnly(v.offBlocks);
+      return [
+        String(v.logDeptDate || "").trim(),
+        String(v.logAcft || "").trim().toUpperCase(),
+        String(v.logDep || "").trim().toUpperCase(),
+        String(v.logArr || "").trim().toUpperCase(),
+        off.length >= 4 ? off.slice(0, 4) : ""
+      ].join("|");
+    }
+
+    function isNaClock(value) {
+      return /^n\/?a$/i.test(String(value || "").trim());
+    }
+
+    /** Missing fields for a complete log line (SIM: AIR/TD may be N/A). */
+    function getIncompleteLogFields(snap) {
+      const missing = [];
+      const sim = isSimLeg(snap) || isSimAcft();
+      if (!String(snap.logDeptDate || "").trim()) {
+        missing.push({ id: "logDateHit", label: "DEP DATE" });
+      }
+      if (!String(snap.logAcft || "").trim()) {
+        missing.push({ id: "logAcft", label: "ACFT" });
+      }
+      if (!String(snap.logDep || "").trim()) {
+        missing.push({ id: "logDep", label: "DEP" });
+      }
+      if (!String(snap.logArr || "").trim()) {
+        missing.push({ id: "logArr", label: "ARR" });
+      }
+      if (digitsOnly(snap.offBlocks).length < 4) {
+        missing.push({ id: "offBlocks", label: "OFF BLOCKS" });
+      }
+      if (!sim) {
+        if (digitsOnly(snap.airborne).length < 4 && !isNaClock(snap.airborne)) {
+          missing.push({ id: "airborne", label: "AIRBORNE" });
+        }
+        if (digitsOnly(snap.touchdown).length < 4 && !isNaClock(snap.touchdown)) {
+          missing.push({ id: "touchdown", label: "TOUCHDOWN" });
+        }
+      }
+      if (digitsOnly(snap.onBlocks).length < 4) {
+        missing.push({ id: "onBlocks", label: "ON BLOCKS" });
+      }
+      return missing;
+    }
+
+    function clearLogIncompleteHighlights() {
+      document.querySelectorAll(".log-incomplete").forEach((el) => {
+        el.classList.remove("log-incomplete");
+      });
+      const btn = $("btnCopyLog");
+      if (btn) btn.classList.remove("is-incomplete-warn");
+    }
+
+    function markLogIncompleteFields(missing) {
+      clearLogIncompleteHighlights();
+      (missing || []).forEach((m) => {
+        const el = $(m.id);
+        if (el) el.classList.add("log-incomplete");
+      });
+      const btn = $("btnCopyLog");
+      if (btn) btn.classList.add("is-incomplete-warn");
+    }
+
+    function copyAddButtonLabel() {
+      return logEditIndex != null ? "ADD EDITS TO LOG" : "ADD TO LOG";
+    }
+
+    function syncCopyAddButtonLabel() {
+      const btn = $("btnCopyLog");
+      if (!btn || btn.disabled) return;
+      if (btn.classList.contains("copied")) return;
+      btn.textContent = copyAddButtonLabel();
     }
 
     function getMyPicName() {
@@ -4609,60 +4857,122 @@
       }
       logEditIndex = idx;
       loadLogLegIntoForm(v);
-      showToast("Line loaded — edit, then COPY/ADD EDIT TO LOG", 3200);
+      syncCopyAddButtonLabel();
+      showToast("Line loaded — edit, then ADD EDITS TO LOG", 3200);
     }
 
     /**
      * Write current YOUR LOG segment into the history table.
-     * If editing a marked line, replace that row; else replace identical key or insert.
+     * If editing a marked line, replace that row; else replace same date+acft+route+OFF, else insert.
      * Storage/UI order is always by DEP DATE (newest calendar date first).
+     * @returns {{ ok: boolean, reason?: string, missing?: array, snap?: object, updated?: boolean, archiveMsg?: string }}
      */
-    function pushLogPrevFromCurrent() {
+    function pushLogPrevFromCurrent({ force = false } = {}) {
       const snap = snapshotLogLeg();
-      // Need at least a completed OFF or ON to keep a useful history row.
-      if (digitsOnly(snap.offBlocks).length < 4 && digitsOnly(snap.onBlocks).length < 4) return;
+      // Infer UTC date into the snap (and field) when still blank — same as copy text.
+      if (!String(snap.logDeptDate || "").trim()) {
+        const inferred = computeLogUtcDate();
+        if (inferred) {
+          snap.logDeptDate = inferred;
+          if ($("logDeptDate")) $("logDeptDate").value = inferred;
+        }
+      }
+      if (digitsOnly(snap.offBlocks).length < 4 && digitsOnly(snap.onBlocks).length < 4) {
+        return {
+          ok: false,
+          reason: "empty",
+          missing: getIncompleteLogFields(snap)
+        };
+      }
+      const missing = getIncompleteLogFields(snap);
+      if (missing.length && !force) {
+        return { ok: false, reason: "incomplete", missing, snap };
+      }
       if (isSimLeg(snap) || isSimAcft()) {
         ensureSimPf();
         snap.logPf = "yes";
         snap.logTol = getSimTolValue();
       }
       const list = loadLogPrev();
+      let updated = false;
       if (logEditIndex != null && logEditIndex >= 0 && logEditIndex < list.length) {
         list[logEditIndex] = snap;
         logEditIndex = null;
+        updated = true;
       } else {
-        const existing = list.findIndex((v) => v && logLegKey(v) === logLegKey(snap));
-        if (existing >= 0) list[existing] = snap;
-        else list.unshift(snap);
+        const idKey = logLegIdentityKey(snap);
+        let existing = -1;
+        if (idKey && digitsOnly(snap.offBlocks).length >= 4) {
+          existing = list.findIndex((v) => v && logLegIdentityKey(v) === idKey);
+        }
+        if (existing < 0) {
+          existing = list.findIndex((v) => v && logLegKey(v) === logLegKey(snap));
+        }
+        if (existing >= 0) {
+          list[existing] = snap;
+          updated = true;
+        } else {
+          list.unshift(snap);
+        }
       }
       saveLogPrev(list);
       renderLogPrev(list);
+      let archiveMsg;
       if (isSimLeg(snap)) {
         const tol = simTolCredits(snap);
-        showToast(
+        archiveMsg =
           tol === 1
             ? "1 takeoff and landing has been added to your log and RECENCY"
-            : tol + " takeoffs and landings have been added to your log and RECENCY",
-          4500
-        );
+            : tol + " takeoffs and landings have been added to your log and RECENCY";
       } else {
-        showToast("Line added to log");
+        archiveMsg = updated ? "Line updated in log" : "Line added to log";
       }
+      return { ok: true, snap, updated, archiveMsg };
     }
 
     let copyAddLoggedTimer = 0;
-    /** Gray out COPY/ADD EDIT TO LOG briefly so the pilot sees the leg was registered. */
+    let logAddForceArmed = false;
+
+    /** Gray out ADD TO LOG briefly so the pilot sees the leg was registered. */
     function pulseCopyAddLogged() {
       const btn = $("btnCopyLog");
       if (!btn) return;
       if (copyAddLoggedTimer) clearTimeout(copyAddLoggedTimer);
+      btn.classList.remove("is-incomplete-warn");
       btn.classList.add("is-logged");
       btn.disabled = true;
       copyAddLoggedTimer = setTimeout(() => {
         copyAddLoggedTimer = 0;
         btn.classList.remove("is-logged");
         btn.disabled = false;
+        syncCopyAddButtonLabel();
       }, 3000);
+    }
+
+    /** After a successful archive: clear OOOI + date so the form is ready for the next leg. */
+    function clearLogTimesAfterArchive({ fromSim = false } = {}) {
+      const wasSim = fromSim || isSimAcft();
+      suppressFocusClear = true;
+      LOG_TIME_IDS.forEach((id) => {
+        const t = $(id);
+        if (!t) return;
+        t.value = "";
+        delete preFocusById[id];
+        t._editedSinceFocus = false;
+        t.classList.remove("log-time-error", "warn-diff", "log-incomplete");
+      });
+      if ($("logDeptDate")) $("logDeptDate").value = "";
+      if (wasSim) {
+        exitSimToDefaultAircraft();
+        const last = loadLogPrev()[0];
+        if (last) $("logPf").checked = last.logPf !== "yes";
+        else $("logPf").checked = false;
+      } else {
+        applyNextLegDefaults();
+      }
+      updateLogCalcs();
+      saveNow();
+      suppressFocusClear = false;
     }
 
     /**
@@ -4714,43 +5024,14 @@
           }
           // Keep DEP and ARR (manual airport picks stick across a new OFF entry).
           updateS26Display();
+          logAddForceArmed = false;
+          clearLogIncompleteHighlights();
+          syncCopyAddButtonLabel();
           armNewLeg = false;
         }
         if (n >= 4) armNewLeg = false;
         prevDigits = n;
         // bindClock already calls updateLogCalcs on input
-      });
-    }
-
-    /** When ON BLOCKS first becomes a complete HH:MM, archive that segment, then clear times/date for the next leg. */
-    function bindOnBlocksArchivesLog() {
-      const el = $("onBlocks");
-      let wasComplete = digitsOnly(el.value).length >= 4;
-      el.addEventListener("focus", () => {
-        wasComplete = false; // focus-to-clear; re-entry can archive again
-      });
-      el.addEventListener("input", () => {
-        const complete = digitsOnly(el.value).length >= 4;
-        if (!wasComplete && complete) {
-          pushLogPrevFromCurrent();
-          pulseCopyAddLogged();
-          suppressFocusClear = true;
-          LOG_TIME_IDS.forEach((id) => {
-            const t = $(id);
-            if (!t) return;
-            t.value = "";
-            delete preFocusById[id];
-            t._editedSinceFocus = false;
-            t.classList.remove("log-time-error", "warn-diff");
-          });
-          if ($("logDeptDate")) $("logDeptDate").value = "";
-          applyNextLegDefaults();
-          updateLogCalcs();
-          saveNow();
-          try { el.blur(); } catch (_) {}
-          suppressFocusClear = false;
-        }
-        wasComplete = complete;
       });
     }
 
@@ -4831,33 +5112,40 @@
     }
 
     function dismissKeyboard(el) {
+      prepareLeaveClockField(el);
       try { if (el) el.blur(); } catch (_) {}
+    }
+
+    function shouldSkipLogTopicField(id) {
+      return isSimAcft() && (id === "airborne" || id === "touchdown");
     }
 
     /** Next text field in the active topic, or dismiss keyboard at topic end. */
     function focusNextField(fromEl) {
+      prepareLeaveClockField(fromEl);
       const found = findTopicChain(fromEl);
       if (!found) {
         dismissKeyboard(fromEl);
         return;
       }
       const { chain, index } = found;
-      if (index >= chain.length - 1) {
-        dismissKeyboard(fromEl);
-        return;
+      for (let i = index + 1; i < chain.length; i++) {
+        if (shouldSkipLogTopicField(chain[i])) continue;
+        if (focusFieldById(chain[i])) return;
       }
-      if (!focusFieldById(chain[index + 1])) dismissKeyboard(fromEl);
+      dismissKeyboard(fromEl);
     }
 
     function focusPrevField(fromEl) {
+      prepareLeaveClockField(fromEl);
       const found = findTopicChain(fromEl);
       if (!found) return;
       const { chain, index } = found;
-      if (index <= 0) {
-        dismissKeyboard(fromEl);
-        return;
+      for (let i = index - 1; i >= 0; i--) {
+        if (shouldSkipLogTopicField(chain[i])) continue;
+        if (focusFieldById(chain[i])) return;
       }
-      if (!focusFieldById(chain[index - 1])) dismissKeyboard(fromEl);
+      dismissKeyboard(fromEl);
     }
 
     function bindTopicKeyboardNav() {
@@ -4868,8 +5156,9 @@
           const isLast = i === chain.length - 1;
           el.setAttribute("enterkeyhint", isLast ? "done" : "next");
           el.addEventListener("keydown", (e) => {
-            if (e.key !== "Enter" && e.key !== "Tab") return;
+            if (!isClockAdvanceKey(e)) return;
             e.preventDefault();
+            /* prepareLeaveClockField runs inside focusNext/Prev */
             if (e.key === "Tab" && e.shiftKey) focusPrevField(el);
             else focusNextField(el);
           });
@@ -5234,14 +5523,56 @@
       }
     }
 
-    function flashCopyBtn(btn, label) {
+    function flashCopyBtn(btn, label, toastMsg) {
       btn.classList.add("copied");
       btn.textContent = "Copied!";
-      showToast("Copied to clipboard");
+      showToast(toastMsg || "Copied to clipboard", toastMsg && toastMsg.length > 40 ? 4500 : 2200);
       setTimeout(() => {
         btn.classList.remove("copied");
         btn.textContent = label;
       }, 1400);
+    }
+
+    async function copyLog() {
+      pushHistory();
+      clearLogIncompleteHighlights();
+      const result = pushLogPrevFromCurrent({ force: logAddForceArmed });
+
+      if (!result.ok && result.reason === "empty") {
+        markLogIncompleteFields(result.missing || []);
+        logAddForceArmed = false;
+        showAppAlert("Need OFF or ON time to add a log line.");
+        await writeClipboard(buildLogOutput());
+        flashCopyBtn($("btnCopyLog"), copyAddButtonLabel(), "Copied to clipboard");
+        return;
+      }
+
+      if (!result.ok && result.reason === "incomplete") {
+        markLogIncompleteFields(result.missing || []);
+        logAddForceArmed = true;
+        const names = (result.missing || []).map((m) => m.label).join(", ");
+        showAppAlert(
+          "Log line incomplete (" + names + ").\n\n" +
+          "Fill the highlighted fields, or press " + copyAddButtonLabel() + " again to save anyway."
+        );
+        await writeClipboard(buildLogOutput());
+        flashCopyBtn($("btnCopyLog"), copyAddButtonLabel(), "Copied to clipboard");
+        return;
+      }
+
+      logAddForceArmed = false;
+      clearLogIncompleteHighlights();
+      const clipText = buildLogOutput();
+      const fromSim = !!(result.snap && isSimLeg(result.snap));
+      clearLogTimesAfterArchive({ fromSim });
+      syncCopyAddButtonLabel();
+      pulseCopyAddLogged();
+      await writeClipboard(clipText);
+      flashCopyBtn(
+        $("btnCopyLog"),
+        copyAddButtonLabel(),
+        (result.archiveMsg || "Line added to log") + " · Copied to clipboard"
+      );
     }
 
     function buildArrOutput() {
@@ -5374,13 +5705,6 @@
       flashCopyBtn($("btnCopyArr"), "COPY ARR TEXT");
     }
 
-    async function copyLog() {
-      pushHistory();
-      pushLogPrevFromCurrent();
-      await writeClipboard(buildLogOutput());
-      flashCopyBtn($("btnCopyLog"), "COPY/ADD EDIT TO LOG");
-    }
-
     async function copyAllLogText() {
       const rows = allLogRowsOldestFirst();
       await writeClipboard(buildAllLogText(rows), buildAllLogHtml(rows));
@@ -5505,6 +5829,9 @@
           onConfirm() {
             pushHistory();
             suppressFocusClear = true;
+            logEditIndex = null;
+            logAddForceArmed = false;
+            clearLogIncompleteHighlights();
             for (const id of FIELD_IDS) {
               const el = $(id);
               if (!el) continue;
@@ -5512,7 +5839,7 @@
               else el.value = DEFAULTS[id] ?? "";
               delete preFocusById[id];
               el._editedSinceFocus = false;
-              el.classList.remove("warn-diff", "log-time-error");
+              el.classList.remove("warn-diff", "log-time-error", "log-incomplete");
             }
             setMnps("N/A");
             applyDepFromTimezone();
@@ -5524,6 +5851,7 @@
             checkRvsmDiff(true);
             checkSquawkLen(true);
             updateLogCalcs();
+            syncCopyAddButtonLabel();
             showToast("Cleared");
             suppressFocusClear = false;
             const atis = $("atis");
@@ -5636,6 +5964,7 @@
       btn.addEventListener("pointerleave", end);
       btn.addEventListener("pointercancel", end);
       btn.addEventListener("contextmenu", (e) => e.preventDefault());
+      btn.addEventListener("selectstart", (e) => e.preventDefault());
       btn.addEventListener("click", (e) => {
         if (longFired) {
           e.preventDefault();
@@ -5891,7 +6220,6 @@
     }
     bindClearOnFocus();
     bindOffBlocksStartsNewLog();
-    bindOnBlocksArchivesLog();
     bindDeptDatePicker();
     bindAirportAddFields();
     let logAcftPrevValue = "";
@@ -5933,6 +6261,7 @@
     $("btnCopy").addEventListener("click", copyAll);
     $("btnCopyArr").addEventListener("click", copyArr);
     $("btnCopyLog").addEventListener("click", copyLog);
+    syncCopyAddButtonLabel();
     $("btnCopyAllLog").addEventListener("click", copyAllLogText);
     $("btnCopyLogCsv").addEventListener("click", copyLogCsv);
     $("btnClearMarkedLog").addEventListener("click", clearMarkedLogLines);
