@@ -49,7 +49,7 @@
       color-scheme: dark;
     }
 
-    /* Temporary Hi-Contrast Day Theme — cockpit daylight readability experiment */
+    /* Hi-Contrast Day Theme — cockpit daylight readability */
     html.theme-bright {
       --bg: #ffffff;
       --panel: #ffffff;
@@ -90,18 +90,15 @@
     }
 
     html.theme-bright .card,
-    html.theme-bright .howto,
     html.theme-bright .flight-log,
     html.theme-bright .landing-prep {
       border-width: 2px;
     }
 
     html.theme-bright label,
-    html.theme-bright .howto-item,
     html.theme-bright .app-rec,
     html.theme-bright .app-rec-liability,
     html.theme-bright .log-data-note,
-    html.theme-bright .preflight-banner,
     html.theme-bright .dsperfo-hint,
     html.theme-bright .landing-ref,
     html.theme-bright .oma-ref,
@@ -160,8 +157,6 @@
     }
 
     html.theme-bright .rvsm-hint,
-    html.theme-bright .howto-version,
-    html.theme-bright .howto-standalone-caution,
     html.theme-bright .flight-log-date,
     html.theme-bright .flight-log-sum strong,
     html.theme-bright .flight-log-date-hint,
@@ -173,40 +168,22 @@
 
     /* Bright landscape: reclaim vertical space (2px borders eat height) */
     @media (orientation: landscape) and (min-width: 901px) {
-      html.theme-bright .howto:not(.is-standalone) {
-        padding: 0 5px 1px;
-        border-radius: 6px;
-      }
-      /* Standalone howto: keep same outer height as side buttons; 2px borders leave less inner room */
-      html.theme-bright .howto.is-standalone {
-        padding: 1px 7px;
-        border-radius: 6px;
-      }
-      html.theme-bright .howto.is-standalone .howto-standalone-note,
-      html.theme-bright .howto.is-standalone .howto-standalone-caution {
-        font-size: 0.56rem;
-        line-height: 1.12;
-        font-weight: 500;
-      }
-      html.theme-bright .howto-item {
-        font-size: 0.55rem;
-        line-height: 1.12;
-        font-weight: 500;
-      }
       html.theme-bright .card-clearance,
-      html.theme-bright .card-fuel {
+      html.theme-bright .card-fuel,
+      html.theme-bright .card-rvsm,
+      html.theme-bright .card-quicklog-title,
+      html.theme-bright .card-utc-clock,
+      html.theme-bright .card-bright,
+      html.theme-bright .card-toolbar-actions {
         padding: 4px 10px 5px;
       }
-      html.theme-bright .log-side-col {
+      html.theme-bright .log-btn-bar {
         gap: 4px;
       }
       html.theme-bright .log-prev-table {
         row-gap: 1px;
       }
-      html.theme-bright .footer-stack {
-        row-gap: 3px;
-      }
-      html.theme-bright .grid {
+      html.theme-bright .main-grid {
         gap: 5px;
       }
     }
@@ -224,6 +201,8 @@
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
       overscroll-behavior: none;
+      max-width: 100vw;
+      overflow-x: hidden;
     }
 
     html, body {
@@ -235,10 +214,7 @@
       overscroll-behavior: none;
     }
 
-    /*
-     * Vertical shell matched to v2.16 (commit 4309148) — fits iPad landscape.
-     * Log: 9 rows @ row-gap 2px — reclaim bottom tips line on A2903 landscape.
-     */
+    /* Vertical shell — fits iPad landscape (A2903). */
     body {
       padding: max(4px, env(safe-area-inset-top))
                max(8px, env(safe-area-inset-right))
@@ -247,66 +223,102 @@
     }
 
     /*
-     * iPad landscape / wide shell.
-     * Browser tab: stay scrollable so the full form remains usable without
-     * installing as a Home Screen web app.
-     * Installed web app only: pin the document (no page rubber-band / scroll).
+     * iPad landscape / wide shell — fixed to the viewport (Safari tab and Home Screen).
+     * Only the log history table may scroll inside its own row.
      */
     @media (orientation: landscape) and (min-width: 901px) {
+      html {
+        height: 100%;
+        max-width: 100vw;
+        overflow: hidden;
+      }
       body {
-        /* A bit more top pad so header buttons clear status-bar / top-edge miss taps */
-        padding: 5px
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        max-width: 100vw;
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        /* Minimal top pad — title sits on performance block */
+        padding: 3px
                  max(8px, env(safe-area-inset-right))
                  max(6px, env(safe-area-inset-bottom))
                  max(8px, env(safe-area-inset-left));
+        box-sizing: border-box;
       }
-      .footer-stack {
-        align-content: start; /* don’t stretch grid rows into empty viewport space */
+      .main-grid {
+        align-content: start;
       }
-      /* Standalone: howto + Restore / copy DEPT share one row height */
-      body.is-standalone-app .history-col,
-      body.is-standalone-app .dept-col,
-      .howto.is-standalone {
-        align-self: stretch;
-      }
-      body.is-standalone-app .history-col #btnRestore,
-      body.is-standalone-app .dept-col #btnCopy {
+      body.is-standalone-app .card-copy-compact button {
         height: 100%;
-        min-height: 32px;
+        min-height: 28px;
       }
-      .howto.is-standalone {
-        min-height: 32px;
-        padding: 2px 8px;
+      body.is-standalone-app .card-copy-dept.card-copy-compact button {
+        height: auto;
       }
       .log-prev,
       .flight-log {
         overscroll-behavior: contain;
       }
 
-      html.is-standalone-app {
-        height: 100%;
-        overflow: hidden;
-      }
-      body.is-standalone-app {
-        position: fixed;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        max-height: 100%;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-      body.is-standalone-app .app {
+      .app {
         flex: 1 1 auto;
         min-height: 0;
         width: 100%;
+        max-width: min(100%, 1180px); /* never wider than iPad landscape */
+        margin: 0 auto;
         overflow: hidden;
         overscroll-behavior: none;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+      }
+      #flightForm {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .main-grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        grid-template-rows: auto auto auto auto auto auto 1fr auto;
+        align-content: stretch;
+      }
+      .log-prev {
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        align-self: stretch;
+      }
+      body.is-standalone-app .log-prev-table,
+      .log-prev-table {
+        min-height: 100%;
+      }
+      body.is-standalone-app .log-prev-table {
+        font-size: 0.8rem;
+        row-gap: 5px;
+      }
+      body.is-standalone-app .log-prev-row > span {
+        min-height: 1.45em;
+        line-height: 1.4;
+        padding: 3px 0;
+      }
+      body.is-standalone-app .log-prev-mark {
+        width: 1.35rem;
+        height: 1.35rem;
+      }
+      .app-rec {
+        flex-shrink: 0;
+        padding-top: 2px;
       }
     }
 
-    /* display-mode backup (in case class init is late); still web-app only */
+    /* display-mode backup (in case class init is late) */
     @media (orientation: landscape) and (min-width: 901px) and (display-mode: standalone) {
       html {
         height: 100%;
@@ -326,65 +338,300 @@
         flex: 1 1 auto;
         min-height: 0;
         width: 100%;
+        max-width: min(100%, 1180px);
+        margin: 0 auto;
         overflow: hidden;
         overscroll-behavior: none;
       }
     }
 
-    .app { max-width: 1180px; margin: 0 auto; }
+    .app {
+      max-width: min(100%, 1180px);
+      width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
 
-    header {
+    h1.quicklog-title {
+      margin: 0;
+      padding: 0;
+      font-size: 1.06rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+      text-align: center;
+      color: var(--text);
+    }
+
+    .card-quicklog-title {
       display: flex;
-      align-items: flex-end; /* Bright/Clear sit just above the cards, not the top edge */
+      align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
-      gap: 5px 10px;
-      margin-bottom: 4px;
-      min-height: 40px;
+      padding: 4px 8px;
+      margin-bottom: 0;
+    }
+
+    .quicklog-title-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .quicklog-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .quicklog-title-rule {
+      flex: 1 1 0;
+      min-width: 1.25rem;
+      height: 2px;
+      border-radius: 999px;
+    }
+
+    .card-quicklog-title .quicklog-title-rule:first-of-type {
+      background: linear-gradient(
+        90deg,
+        rgba(0, 161, 228, 0.15),
+        rgba(0, 161, 228, 0.9)
+      );
+    }
+
+    .card-quicklog-title .quicklog-title-rule:last-of-type {
+      background: linear-gradient(
+        90deg,
+        rgba(0, 161, 228, 0.9),
+        rgba(0, 161, 228, 0.15)
+      );
+    }
+
+    h1.quicklog-title {
+      flex: 0 0 auto;
+    }
+
+    .card-quicklog-title .oma-ref,
+    .card-quicklog-title .view-hint {
+      margin: 0;
+      max-width: 100%;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: 1.15;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-quicklog-title .view-hint {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex-wrap: nowrap;
+    }
+
+    /* Left toolbar: UTC clock + Bright as two equal segments (like Clear | Hist) */
+    .toolbar-left-pair {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .toolbar-left-pair > .card {
+      flex: 1 1 0;
+      min-width: 0;
+      margin: 0;
+    }
+
+    .card-utc-clock {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+    }
+
+    .utc-clock {
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      line-height: 1;
+      white-space: nowrap;
       text-align: center;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 0.95rem;
+    .utc-clock-day,
+    .utc-clock-sec,
+    .utc-clock-sep {
+      font-size: 0.68rem; /* match Bright / Clear / Hist button type */
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      opacity: 0.85;
+    }
+
+    .utc-clock-hm {
+      font-size: 1.06rem; /* match QUICKLOG title */
       font-weight: 650;
-      letter-spacing: 0.02em;
-      line-height: 1.1;
-      padding-bottom: 4px; /* optical align with taller header buttons */
+      letter-spacing: 0.06em;
+      margin: 0 1px;
     }
 
-    .header-rule {
-      width: 2.25rem;
-      flex: 0 0 2.25rem;
-      align-self: center;
+    html.theme-bright .utc-clock {
+      color: #000;
     }
 
-    .header-theme,
-    .header-clear {
-      position: relative;
-      z-index: 2;
+    html.theme-bright .utc-clock-day,
+    html.theme-bright .utc-clock-sec,
+    html.theme-bright .utc-clock-sep {
+      opacity: 1;
     }
 
-    .header-clear button,
-    .header-theme button {
-      position: relative;
-      min-height: 36px;
-      min-width: 52px;
-      padding: 6px 12px;
-      font-size: 0.78rem;
+    .card-bright {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+    }
+
+    .card-bright button {
+      width: 100%;
+      min-height: 28px;
+      padding: 4px 6px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
       background: var(--btn);
       color: var(--btn-text);
     }
 
-    /* Invisible extra hit pad — especially downward toward the form */
-    .header-clear button::after,
-    .header-theme button::after {
-      content: "";
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      bottom: -12px;
-      left: -8px;
+    .card-toolbar-actions {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 4px;
+    }
+
+    .card-toolbar-actions button:disabled,
+    .card-toolbar-actions #btnRestore:disabled {
+      opacity: 0.35;
+      cursor: default;
+      transform: none;
+    }
+
+    .card-toolbar-actions button {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 28px;
+      padding: 4px 5px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--btn);
+      color: var(--btn-text);
+    }
+
+    .card-toolbar-actions button::after {
+      content: none;
+    }
+
+    /* 3 equal cols for form; log section spans full width below */
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+      gap: 5px;
+      align-items: stretch;
+      margin-top: 0;
+    }
+
+    .main-grid > .toolbar-left-pair { grid-column: 1; grid-row: 1; }
+    .main-grid > .card-quicklog-title { grid-column: 2; grid-row: 1; }
+    .main-grid > .card-toolbar-actions { grid-column: 3; grid-row: 1; }
+
+    .main-grid > .card-clearance { grid-column: 1; grid-row: 2; align-self: start; }
+    .main-grid > .card-fuel {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+    }
+    .main-grid > .col3-action-stack { grid-column: 3; grid-row: 2; align-self: start; }
+
+    .main-grid > .landing-prep { grid-column: 1 / 3; grid-row: 3; }
+    .main-grid > .card-copy-arr { grid-column: 3; grid-row: 3; align-self: stretch; }
+
+    .col3-action-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .card-copy-compact {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+    }
+
+    .card-copy-compact button {
+      width: 100%;
+      min-height: 28px;
+      padding: 4px 6px;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+
+    /* Taller segment, button pinned top — fat-finger gap before copy ARR */
+    .card-copy-dept.card-copy-compact {
+      align-items: flex-start;
+      justify-content: flex-start;
+      min-height: 3.35rem;
+      padding-bottom: 14px;
+    }
+
+    .card-copy-segment {
+      display: flex;
+      align-items: stretch;
+      padding: 4px 6px;
+      margin-bottom: 0;
+    }
+
+
+    .card-copy-segment button:disabled,
+    .card-copy-compact button:disabled {
+      opacity: 0.35;
+      cursor: default;
+      transform: none;
+    }
+
+    body.is-standalone-app .card-copy-compact {
+      flex: 1 1 auto;
+    }
+
+    body.is-standalone-app .card-copy-compact button {
+      height: 100%;
+      min-height: 28px;
     }
 
     button {
@@ -396,6 +643,8 @@
       min-height: 40px;
       font-size: 0.95rem;
       font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
       color: var(--btn-text);
       background: var(--btn);
       cursor: pointer;
@@ -404,11 +653,6 @@
     button:active { background: var(--btn-press); transform: scale(0.98); }
     button.copied { background: var(--ok); }
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px;
-    }
 
     .card {
       background: var(--panel);
@@ -417,15 +661,6 @@
       padding: 7px 10px;
     }
 
-    .card.span-all {
-      grid-column: 1 / -1;
-      padding: 4px 10px 5px;
-    }
-
-    /* Title sits tight above; content band nudged slightly down */
-    .card.span-all > .rvsm-alt-row {
-      margin-top: 1px;
-    }
 
     .section-title {
       margin: 2px 0 1px;
@@ -442,38 +677,83 @@
       margin-bottom: 2px;
     }
 
-    .field.narrow-input input { max-width: 11ch; }
+    /* Clearance card — shared widths */
+    .field.compact-input input { max-width: 16ch; }
+    .field.squawk-input input {
+      max-width: 7ch;
+      letter-spacing: 0.05em;
+    }
     .field.climb-input input { max-width: 16ch; }
-    .field.time-input input,
-    .field.time-input-long input { max-width: 16ch; letter-spacing: 0.04em; }
-    .field.mt-input input { max-width: 14ch; }
-
-    /* Clearance + Fuel / Perf — tight padding (A2903 bottom tips budget) */
-    .card-clearance,
+    .field.time-input input { max-width: 10ch; letter-spacing: 0.04em; }
+    /* Fuel / perf card — all controls match Calculated at (HH:MM:SS) width */
     .card-fuel {
+      --fuel-control-w: 14ch;
+    }
+    .card-fuel .field input,
+    .card-fuel .field input[type="text"],
+    .card-fuel #calcAt,
+    .card-fuel #fuel,
+    .card-fuel #tom,
+    .card-fuel #rwy,
+    .card-fuel #intersection {
+      width: var(--fuel-control-w) !important;
+      max-width: var(--fuel-control-w) !important;
+      min-width: var(--fuel-control-w) !important;
+      justify-self: end;
+      box-sizing: border-box;
+    }
+
+    /* Clearance + Fuel / Perf + RVSM + title/bright — tight padding */
+    .card-clearance,
+    .card-fuel,
+    .card-rvsm,
+    .card-quicklog-title,
+    .card-utc-clock,
+    .card-bright,
+    .card-toolbar-actions {
       padding: 5px 10px 6px;
     }
 
     .card-clearance .field,
-    .card-fuel .field {
+    .card-fuel .field,
+    .card-rvsm .field {
       margin-bottom: 4px;
       gap: 5px;
     }
 
     .card-clearance .field:last-child,
-    .card-fuel .field:last-child {
+    .card-fuel .field:last-child,
+    .card-rvsm .field:last-child {
       margin-bottom: 0;
     }
 
     .card-clearance input[type="text"],
-    .card-fuel input[type="text"] {
+    .card-fuel input[type="text"],
+    .card-rvsm input[type="text"] {
       min-height: 30px;
       padding: 4px 8px;
     }
 
-    .card.span-all input[type="text"] {
-      min-height: 28px;
-      padding: 3px 8px;
+    /* Clearance — shared label + input column (PDC matches security width) */
+    .card-clearance .field {
+      grid-template-columns: 8.75rem minmax(0, 1fr);
+    }
+
+    .card-clearance .field.compact-input input,
+    .card-clearance .field:not(.squawk-input):not(.time-input) input {
+      width: 16ch;
+      max-width: 16ch;
+      min-width: 16ch;
+      justify-self: end;
+      box-sizing: border-box;
+    }
+
+    .card-clearance .field.squawk-input input {
+      justify-self: end;
+    }
+
+    .card-clearance .field.time-input input {
+      justify-self: end;
     }
 
     .card-fuel .section-title {
@@ -481,13 +761,42 @@
       font-size: 0.74rem;
     }
 
-    .card-fuel .dsperfo-row {
-      margin-bottom: 6px;
+    .card-fuel .dsperfo-paste-row {
+      margin-bottom: 4px;
+      grid-template-columns: minmax(0, 1fr) var(--fuel-control-w);
     }
 
-    /* Longer labels in Fuel / Perf — keep input column aligned */
+    .card-fuel .field.dsperfo-paste-row .dsperfo-hint {
+      grid-column: 1;
+      min-width: 0;
+      align-self: center;
+    }
+
+    .card-fuel .field.dsperfo-paste-row .paste-here-btn {
+      grid-column: 2;
+      justify-self: end;
+      width: var(--fuel-control-w) !important;
+      max-width: var(--fuel-control-w) !important;
+      min-width: var(--fuel-control-w) !important;
+      box-sizing: border-box;
+    }
+
+    .card-fuel .dsperfo-hint {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    /* Longer labels in Fuel / Perf — keep input column aligned in narrow card */
     .card-fuel .field {
-      grid-template-columns: 14rem 1fr;
+      grid-template-columns: 10.5rem minmax(0, 1fr);
+    }
+
+    .card-fuel label {
+      font-size: 0.76rem;
     }
 
     label {
@@ -564,24 +873,61 @@
       box-sizing: border-box;
     }
 
-    .rvsm-alt-row {
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: center;
-      gap: 6px 10px;
-      margin-bottom: 0;
+
+    /* RVSM / MNPS — third column, fields stacked vertically */
+    .card-rvsm .rvsm-section-title {
+      margin: 0 0 4px;
+      font-size: 0.74rem;
+      font-weight: 650;
+      line-height: 1.15;
+      color: var(--muted);
     }
 
-    .rvsm-alt-title {
-      flex: 0 0 auto;
-      width: auto;
-      margin: 0;
-      font-size: 0.78rem;
-      color: var(--muted);
-      white-space: nowrap;
-      position: relative;
-      top: 1px;
+    .card-rvsm .rvsm-hint {
+      display: none;
+      margin: 0 0 4px;
+      padding: 0 2px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      color: var(--warn);
     }
+
+    .card-rvsm .rvsm-hint.show {
+      display: block;
+    }
+
+    .card-rvsm .field.rvsm-vfield {
+      grid-template-columns: 3.25rem minmax(0, 1fr);
+    }
+
+    .card-rvsm .field.rvsm-vfield input {
+      width: 7.5rem;
+      max-width: 7.5rem;
+      min-width: 7.5rem;
+      justify-self: end;
+      box-sizing: border-box;
+    }
+
+    .card-rvsm .field.mnps-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+      align-items: stretch;
+      margin-top: 2px;
+    }
+
+    .card-rvsm .field.mnps-row label {
+      font-size: 0.72rem;
+      line-height: 1.15;
+    }
+
+    .card-rvsm .field.mnps-row .toggle {
+      width: 100%;
+      max-width: 100%;
+    }
+
 
     /* Compact L/R>200′ alert — sits between title and L; never grows card height */
     .rvsm-hint {
@@ -603,16 +949,6 @@
       display: inline;
     }
 
-    .rvsm-alt-row .row-3 {
-      flex: 0 0 auto;
-      width: auto;
-    }
-
-    .rvsm-alt-row .mnps-row {
-      margin: 0 0 0 auto;
-      flex: 0 1 auto;
-      min-width: 0;
-    }
 
     .field.mnps-row {
       display: flex;
@@ -634,37 +970,33 @@
       flex: 0 0 auto;
     }
 
-    .dsperfo-row {
-      display: grid;
-      grid-template-columns: 14rem 1fr;
-      gap: 6px;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .dsperfo-hint {
-      margin: 0;
-      font-size: 0.64rem;
-      color: var(--muted);
-      line-height: 1.2;
-    }
 
     .paste-here-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      justify-self: start;
+      justify-self: end;
+      width: var(--fuel-control-w, 14ch);
+      max-width: var(--fuel-control-w, 14ch);
+      min-width: var(--fuel-control-w, 14ch);
+      box-sizing: border-box;
       margin: 0;
-      padding: 4px 10px;
-      min-height: 28px;
+      padding: 4px 6px;
+      min-height: 30px;
       font-size: 0.66rem;
       font-weight: 700;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
       color: #fff;
       background: var(--btn);
       border: none;
       border-radius: 7px;
       cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .paste-here-btn:active {
@@ -692,25 +1024,15 @@
 
     .toggle button.active { background: var(--btn); color: #fff; }
 
-    .footer-stack {
-      display: grid;
-      grid-template-columns: 8.5rem minmax(0, 1fr) 8.5rem;
-      grid-template-areas:
-        "hist howto dept"
-        "land land arr"
-        "logRule logRule logRule"
-        "flog flog flogCopy"
-        "flogPrev flogPrev flogPf90"
-        "appRec appRec appRec";
-      column-gap: 8px;
-      row-gap: 5px;
-      margin-top: 4px;
-      align-items: stretch;
-    }
+    /* Global button labels — CAPS only (also set on base button rule) */
 
-    /* Full-width phase rule between landing / ARR and YOUR LOG (v2.16 spacing) */
+    .main-grid > .log-phase-rule { grid-column: 1 / -1; grid-row: 4; }
+    .main-grid > .log-entry-row { grid-column: 1 / -1; grid-row: 5; }
+    .main-grid > .log-btn-bar { grid-column: 1 / -1; grid-row: 6; }
+    .main-grid > .log-prev { grid-column: 1 / -1; grid-row: 7; }
+    .main-grid > .app-rec { grid-column: 1 / -1; grid-row: 8; }
+
     .log-phase-rule {
-      grid-area: logRule;
       height: 2px;
       width: 100%;
       border-radius: 999px;
@@ -728,42 +1050,40 @@
      * ~1 copy-button height clear before side col (checkbox position kept).
      */
     .log-prev {
-      grid-area: flogPrev;
       min-width: 0;
-      padding: 0 32px 0 0; /* ≈ min-height of copy LOG buttons */
+      padding: 0 10px 0 12px;
       margin: 0;
       align-self: stretch;
       width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: hidden;
       box-sizing: border-box;
     }
 
     .log-prev-table {
       display: grid;
-      /* DEP DATE flush left; PIC gets extra fr for longer names; mark width unchanged */
       grid-template-columns:
-        minmax(5.4rem, 0.95fr)   /* DEP DATE */
-        minmax(2.3rem, 0.42fr)   /* REG */
-        minmax(3.8rem, 0.72fr)   /* ROUTE */
-        minmax(2.9rem, 0.58fr)   /* OFF BLK */
-        minmax(2.9rem, 0.58fr)   /* T/O */
-        minmax(2.9rem, 0.58fr)   /* LDG */
-        minmax(2.9rem, 0.58fr)   /* ON BLK */
-        minmax(2.5rem, 0.5fr)    /* BLOCK */
-        minmax(2.5rem, 0.5fr)    /* FLIGHT */
-        minmax(2rem, 0.38fr)     /* TASK */
-        minmax(5.5rem, 1.55fr)   /* PIC — longer names */
-        1.15rem;                 /* mark */
+        minmax(5.2rem, 0.9fr)
+        minmax(2.3rem, 0.42fr)
+        minmax(3.8rem, 0.72fr)
+        minmax(2.9rem, 0.58fr)
+        minmax(2.9rem, 0.58fr)
+        minmax(2.9rem, 0.58fr)
+        minmax(2.9rem, 0.58fr)
+        minmax(2.5rem, 0.5fr)
+        minmax(2.5rem, 0.5fr)
+        minmax(2rem, 0.38fr)
+        minmax(4.5rem, 1.2fr)
+        1.5rem;
       column-gap: 5px;
-      row-gap: 2px; /* v2.25: tighter than v2.23 so bottom tips line clears */
+      row-gap: 4px;
       width: 100%;
-      min-width: 42rem;
+      min-width: 0;
       margin: 0;
-      font-size: 0.66rem;
+      font-size: 0.74rem;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.01em;
       color: var(--muted);
+      box-sizing: border-box;
     }
 
     .log-prev-head {
@@ -777,7 +1097,7 @@
       margin-bottom: 1px;
     }
 
-    /* Header + every second data line (orientation aid) — stronger than v2.30 */
+    /* Header + every second data line (orientation aid) */
     .log-prev-head > span {
       background: rgba(0, 161, 228, 0.2);
       border-radius: 2px;
@@ -792,8 +1112,9 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      line-height: 1.3;
-      min-height: 1.05em;
+      line-height: 1.35;
+      min-height: 1.35em;
+      padding: 2px 0;
       text-align: center;
     }
 
@@ -819,8 +1140,8 @@
 
     /* Mark box — large enough for fat-finger ticks without stretching row text */
     .log-prev-mark {
-      width: 1.05rem;
-      height: 1.05rem;
+      width: 1.35rem;
+      height: 1.35rem;
       margin: 0;
       padding: 0;
       flex: 0 0 auto;
@@ -849,76 +1170,176 @@
       color: var(--text);
     }
 
-    /* Right column beside history: copy table/CSV + note + clear/edit */
-    .log-side-col {
-      grid-area: flogPf90;
-      display: flex;
-      flex-direction: column;
+    /* Entry + narrow PF 90-day counter (≈ CTOT input width) */
+    .log-entry-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) max-content;
+      gap: 5px;
       align-items: stretch;
-      gap: 6px;
-      align-self: start;
       width: 100%;
-      margin-top: 2px;
+      min-width: 0;
+    }
+
+    .log-entry-row > .flight-log {
+      min-width: 0;
     }
 
     .log-pf90 {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 100%;
-      min-height: 32px;
-      padding: 4px 6px;
+      gap: 2px;
+      /* Match CTOT: inputs use Arial, so 10ch ≈ CTOT box */
+      font-family: Arial, Helvetica, sans-serif;
+      width: 10ch;
+      min-width: 10ch;
+      max-width: 10ch;
+      margin: 0;
+      padding: 5px 3px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel);
-      font-size: 0.64rem;
-      font-weight: 650;
-      letter-spacing: 0.01em;
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.2;
-      font-variant-numeric: tabular-nums;
       box-sizing: border-box;
+      text-align: center;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    .log-pf90-l1,
+    .log-pf90-l2,
+    .log-pf90-l3 {
+      display: block;
+      width: 100%;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .log-pf90-l1 {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--text);
+    }
+
+    .log-pf90-l2,
+    .log-pf90-l3 {
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--muted);
     }
 
     .log-pf90 strong {
       color: var(--text);
-      font-weight: 700;
+      font-weight: 800;
     }
 
-    .log-side-col #btnClearMarkedLog,
-    .log-side-col #btnEditMarkedLog {
+    html.theme-bright .log-pf90 {
+      border-width: 2px;
+      border-color: #000;
+      background: #fff;
+      color: #000;
+    }
+
+    html.theme-bright .log-pf90-l1,
+    html.theme-bright .log-pf90 strong {
+      color: #000;
+    }
+
+    html.theme-bright .log-pf90-l2,
+    html.theme-bright .log-pf90-l3 {
+      color: #222;
+      opacity: 1;
+    }
+
+    /* Four actions + backup note + copy/add */
+    .log-btn-bar {
+      display: grid;
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr))
+        minmax(6.5rem, 0.85fr)
+        minmax(0, 1fr);
+      gap: 5px;
+      width: 100%;
+      align-items: stretch;
+    }
+
+    .log-btn-bar button {
+      width: 100%;
+      min-height: 34px;
+      padding: 5px 6px;
+      font-size: 0.64rem;
+      font-weight: 600;
+      line-height: 1.15;
+      white-space: normal;
+      text-align: center;
+    }
+
+    .log-btn-bar button.is-logged,
+    .log-btn-bar button.is-logged:disabled {
+      opacity: 0.4;
+      filter: grayscale(0.35);
+      cursor: default;
+      transform: none;
+      pointer-events: none;
+    }
+
+    .log-btn-bar .log-btn-muted {
       background: transparent;
       color: var(--muted);
       border: 1px solid var(--line);
-      font-weight: 600;
     }
 
-    .log-side-col #btnClearMarkedLog:active {
-      background: rgba(196, 92, 92, 0.25);
-      color: var(--text);
-      border-color: var(--warn);
-    }
-
-    .log-side-col #btnEditMarkedLog:active {
-      background: rgba(0, 161, 228, 0.22);
+    .log-btn-bar .log-btn-muted:active {
+      background: rgba(0, 161, 228, 0.15);
       color: var(--text);
       border-color: var(--accent);
     }
 
-    .log-data-note {
+    .log-btn-bar .log-btn-warn:active {
+      background: rgba(196, 92, 92, 0.25);
+      border-color: var(--warn);
+    }
+
+    html.theme-bright .log-btn-bar .log-btn-muted {
+      background: #fff;
+      border: 2px solid #000;
+      color: #000;
+      font-weight: 700;
+    }
+
+    .log-btn-bar .log-data-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: stretch;
       margin: 0;
-      font-size: 0.62rem;
-      font-weight: 500;
-      letter-spacing: 0.02em;
+      padding: 2px 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      font-size: 0.52rem;
+      font-weight: 550;
+      letter-spacing: 0.01em;
       color: var(--muted);
-      opacity: 0.7;
+      opacity: 0.85;
       text-align: center;
-      line-height: 1.25;
+      line-height: 1.2;
+      box-sizing: border-box;
+    }
+
+    html.theme-bright .log-btn-bar .log-data-note {
+      border-width: 2px;
+      border-color: #000;
+      background: #fff;
+      color: #000;
+      opacity: 1;
+      font-weight: 500;
     }
 
     .app-rec {
-      grid-area: appRec;
       display: flex;
       align-items: baseline;
       justify-content: space-between;
@@ -952,170 +1373,70 @@
       opacity: 0.85;
     }
 
-    .history-col,
-    .dept-col {
+    .card-copy-compact #btnCopy,
+    .card-copy-compact #btnCopyArr {
+      min-height: 28px;
+      font-size: 0.68rem;
+      padding: 4px 6px;
+    }
+
+    /* Browser tab (iPad): install overlay pulses until added to Home Screen */
+    .install-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
       display: flex;
-      flex-direction: column;
-      gap: 0;
-      align-self: center; /* same vertical band as thinned howto */
-      width: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px max(20px, env(safe-area-inset-bottom));
+      background: rgba(0, 0, 0, 0.62);
     }
 
-    .history-col { grid-area: hist; }
-    .dept-col { grid-area: dept; }
-
-    .history-col #btnRestore,
-    .dept-col #btnCopy,
-    .footer-stack > #btnCopyArr,
-    .log-copy-col #btnCopyLog,
-    .log-side-col #btnCopyAllLog,
-    .log-side-col #btnCopyLogCsv,
-    .log-side-col #btnClearMarkedLog,
-    .log-side-col #btnEditMarkedLog {
-      width: 100%;
-      min-height: 32px;
-      font-size: 0.74rem;
-      padding: 5px 8px;
+    .install-overlay[hidden] {
+      display: none !important;
     }
 
-    .history-col #btnRestore:disabled {
-      opacity: 0.35;
-      cursor: default;
-      transform: none;
-    }
-
-    .howto {
-      grid-area: howto;
-      min-width: 0;
-      align-self: center; /* sit on same vertical line as Restore / copy DEPT */
-      position: relative;
-      padding: 1px 6px 2px;
+    .install-overlay-box {
+      width: min(100%, 22rem);
+      padding: 14px 16px 12px;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 12px;
       background: var(--panel);
       box-sizing: border-box;
     }
 
-    /* Web app: match Restore / copy DEPT button height; tips flex-centered inside */
-    .howto.is-standalone {
-      align-self: stretch;
-      min-height: 32px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 2px 8px;
-    }
-
-    body.is-standalone-app .history-col,
-    body.is-standalone-app .dept-col {
-      align-self: stretch;
-    }
-
-    body.is-standalone-app .history-col #btnRestore,
-    body.is-standalone-app .dept-col #btnCopy {
-      height: 100%;
-      min-height: 32px;
-    }
-
-    .footer-stack > #btnCopyArr {
-      grid-area: arr;
-      align-self: end;
-    }
-
-    /* Beside YOUR LOG: copy/add at top, recency badge at bottom */
-    .log-copy-col {
-      grid-area: flogCopy;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      gap: 8px;
-      align-self: stretch;
-      width: 100%;
-    }
-
-    .log-copy-col #btnCopyLog {
-      margin-top: 0;
-    }
-
-    .log-copy-col .log-pf90 {
-      margin-top: auto;
-    }
-
-    .phase-rule {
-      height: 2px;
-      width: 100%;
-      border-radius: 999px;
-      background: linear-gradient(
-        90deg,
-        rgba(0, 161, 228, 0.15),
-        rgba(0, 161, 228, 0.85),
-        rgba(0, 161, 228, 0.15)
-      );
-      box-shadow: 0 0 0 1px rgba(0, 161, 228, 0.18);
-    }
-
-    .preflight-banner {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 6px 12px;
-      margin: 0;
-    }
-
-    .preflight-banner .oma-ref,
-    .preflight-banner .view-hint {
-      margin: 0;
-      font-size: 0.64rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      line-height: 1.1;
-    }
-
-    .preflight-banner .oma-ref {
-      text-align: left;
-      flex: 0 1 auto;
-    }
-
-    .preflight-banner .view-hint {
-      text-align: right;
-      flex: 0 1 auto;
-      margin-left: auto;
-    }
-
-    .howto-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto;
-      gap: 1px 8px;
-      align-items: center;
-    }
-
-    .howto-item {
-      display: block;
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.58rem;
-      line-height: 1.15;
-      opacity: 0.85;
-    }
-
-    .howto strong {
-      color: var(--muted);
-      font-weight: 650;
-    }
-
-    /* Browser tab (iPad): whole howto panel pulses — hard to miss in Dim + Bright */
-    .howto-save-pulse {
-      display: inline;
-      color: var(--text);
-      font-weight: 750;
-    }
-
-    .howto.is-pulsing {
+    .install-overlay.is-pulsing .install-overlay-box {
       animation: howto-panel-pulse-dim 1.45s ease-in-out infinite;
       will-change: box-shadow, border-color, background-color;
+    }
+
+    html.theme-bright .install-overlay.is-pulsing .install-overlay-box {
+      animation-name: howto-panel-pulse-bright;
+    }
+
+    .install-overlay-pulse {
+      margin: 0 0 8px;
+      font-size: 0.88rem;
+      font-weight: 750;
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    .install-overlay-step {
+      margin: 0 0 6px;
+      font-size: 0.72rem;
+      line-height: 1.25;
+      color: var(--muted);
+    }
+
+    .install-overlay-step:last-of-type {
+      margin-bottom: 10px;
+    }
+
+    .install-overlay-box button {
+      width: 100%;
+      min-height: 36px;
+      font-size: 0.82rem;
     }
 
     @keyframes howto-panel-pulse-dim {
@@ -1133,10 +1454,6 @@
       }
     }
 
-    html.theme-bright .howto.is-pulsing {
-      animation-name: howto-panel-pulse-bright;
-    }
-
     @keyframes howto-panel-pulse-bright {
       0%, 100% {
         border-color: #000;
@@ -1152,61 +1469,7 @@
       }
     }
 
-    html.theme-bright .howto.is-pulsing .howto-item,
-    html.theme-bright .howto.is-pulsing .howto-save-pulse {
-      color: #000;
-      opacity: 1;
-      font-weight: 700;
-    }
-
-    .howto.is-pulsing .howto-save-pulse {
-      color: #fff;
-      text-shadow: 0 0 8px rgba(0, 161, 228, 0.8);
-    }
-
-    html.theme-bright .howto.is-pulsing .howto-save-pulse {
-      color: #003d7a;
-      text-shadow: none;
-    }
-
-    .howto.is-standalone .howto-grid {
-      display: none;
-    }
-
-    .howto-standalone-panel {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      gap: 1px;
-      flex: 1 1 auto;
-      min-height: 0;
-      padding: 0 2.8rem 0 0; /* leave room for absolute version on caution row */
-      box-sizing: border-box;
-    }
-
-    .howto.is-standalone .howto-standalone-panel {
-      display: flex;
-    }
-
-    /* Standalone tips: plain stacked lines — sized to fit 32px button-matched box */
-    .howto-standalone-note,
-    .howto-standalone-caution {
-      margin: 0;
-      padding: 0;
-      border-radius: 0;
-      background: none;
-      color: var(--muted);
-      font-size: 0.58rem;
-      font-weight: 500;
-      line-height: 1.15;
-      letter-spacing: 0.01em;
-      opacity: 0.78;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Browser + Home Screen: liability on the right (update tip lives only in standalone howto) */
+    /* Browser + Home Screen: liability + version on the right */
     .app-rec-liability {
       display: block;
       flex: 0 0 auto;
@@ -1217,25 +1480,22 @@
       font-weight: 500;
       letter-spacing: 0.01em;
       color: var(--muted);
-      opacity: 0.55;
+      opacity: 0.72;
     }
 
-    .howto-version {
-      position: absolute;
-      right: 6px;
-      bottom: 1px;
-      margin: 0;
-      font-size: 0.52rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      opacity: 0.55;
-      white-space: nowrap;
-      pointer-events: none;
+    .app-version {
+      margin-left: 0.4em;
+      font-weight: 750;
+      letter-spacing: 0.05em;
+      color: #fff;
+      opacity: 1;
+    }
+
+    html.theme-bright .app-version {
+      color: #0a1628;
     }
 
     .landing-prep {
-      grid-area: land;
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
@@ -1245,13 +1505,18 @@
       border-radius: 10px;
       background: var(--panel);
       min-width: 0;
+      min-height: 40px;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
-    /* Compact fields; left edges of ARR/OFF/AIR inputs snap to RVSM R via JS */
+    /* Left-aligned in cols 1–2; no RVSM-column snap (that pushed fields off-screen) */
     .landing-fields {
-      flex: 0 0 auto;
+      flex: 0 1 auto;
       width: auto;
+      min-width: 0;
       gap: 14px;
+      margin-left: 0;
     }
 
     .landing-fields .field {
@@ -1303,21 +1568,16 @@
     }
 
     .flight-log {
-      grid-area: flog;
       position: relative;
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: center;
-      gap: 6px 10px;
-      padding: 4px 8px;
+      display: block;
+      padding: 3px 8px;
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--panel);
       min-width: 0;
       margin: 0;
-      overflow-x: auto;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
+      overflow: visible;
+      box-sizing: border-box;
     }
 
     /* Custom calendar popover — works in Cursor browser, iPad Safari, desktop */
@@ -1327,10 +1587,10 @@
       grid-area: date;
       /* Don’t stretch both rows — tall hit target stole taps meant for PF / PIC */
       align-self: center;
-      min-width: 5.5rem;
-      min-height: 2.6rem;
+      min-width: 5rem;
+      min-height: 2.15rem;
       margin: 0;
-      padding: 3px 6px 4px;
+      padding: 2px 5px 3px;
       border: 1px solid var(--field-border);
       border-radius: 7px;
       background: var(--field);
@@ -1399,8 +1659,7 @@
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
     }
 
-    html.theme-bright .log-side-col #btnClearMarkedLog,
-    html.theme-bright .log-side-col #btnEditMarkedLog {
+    html.theme-bright .log-btn-bar .log-btn-muted {
       background: #fff;
       border: 2px solid #000;
       color: #000;
@@ -1581,36 +1840,47 @@
      * Two aligned rows (calendar spans left).
      * Row1: PF · acft · DEP · OFF · ARR · ON · BLOCK
      * Row2: PIC · name · add · AIR · add · TD · FLIGHT
+     * Full-width spread with gaps; PIC name = 20ch; times fit HH:MM.
      */
     .flight-log-entry {
+      --log-ctrl-h: 32px;
+      --log-apt-w: 4.75rem;   /* airport / add width */
+      --log-acft-w: 5.5rem;   /* aircraft selector width */
+      --log-picn-w: 20ch;     /* ≥20 letters */
+      --log-time-w: 8ch;      /* HH:MM + padding (placeholder must not clip) */
       display: grid;
       grid-template-columns:
-        minmax(5.5rem, auto)
-        auto
-        7.5rem
-        4.2rem
+        minmax(5rem, 5.5rem)
+        minmax(3.5rem, 3.9rem)
+        var(--log-picn-w)
+        var(--log-apt-w)
         max-content
-        4.2rem
+        var(--log-apt-w)
         max-content
-        minmax(5.5rem, auto);
+        max-content;
       grid-template-areas:
         "date pf   acft dep  off arr  on block"
         "date pics picn addd air adda td flight";
-      column-gap: 8px;
-      row-gap: 5px;
+      column-gap: clamp(10px, 1.6vw, 22px);
+      row-gap: 3px;
       align-items: center;
-      flex: 1 1 auto;
-      min-width: 42rem;
+      justify-content: space-between;
       width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .flight-log-pf {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 7px;
       margin: 0;
-      min-height: 28px;
-      padding: 2px 0;
+      min-width: 3.5rem;
+      width: 100%;
+      min-height: var(--log-ctrl-h);
+      padding: 2px 6px 2px 2px;
+      box-sizing: border-box;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
@@ -1624,8 +1894,8 @@
     .flight-log-pf.log-pics { grid-area: pics; }
 
     .flight-log-pf input {
-      width: 1.15rem;
-      height: 1.15rem;
+      width: 1.4rem;
+      height: 1.4rem;
       margin: 0;
       accent-color: var(--accent);
       flex: 0 0 auto;
@@ -1633,10 +1903,14 @@
 
     .flight-log-acft {
       grid-area: acft;
-      width: 100%;
-      min-height: 28px;
+      width: var(--log-acft-w);
+      max-width: var(--log-acft-w);
+      min-width: 0;
+      height: var(--log-ctrl-h);
+      min-height: var(--log-ctrl-h);
+      max-height: var(--log-ctrl-h);
       margin: 0;
-      padding: 2px 5px;
+      padding: 2px 4px;
       border: 1px solid var(--field-border);
       border-radius: 7px;
       background: var(--field);
@@ -1644,25 +1918,39 @@
       font-size: 0.8rem;
       font-weight: 650;
       letter-spacing: 0.04em;
+      text-align: center;
+      box-sizing: border-box;
+      justify-self: start;
+      align-self: center;
     }
 
     .flight-log-picname {
       grid-area: picn;
-      width: 100%;
-      min-width: 0;
-      min-height: 28px;
+      width: var(--log-picn-w);
+      min-width: var(--log-picn-w);
+      max-width: var(--log-picn-w);
+      height: var(--log-ctrl-h);
+      min-height: var(--log-ctrl-h);
+      max-height: var(--log-ctrl-h);
       margin: 0;
       padding: 3px 6px;
       font-size: 0.78rem;
+      box-sizing: border-box;
+      justify-self: stretch;
+      align-self: center;
     }
 
     .flight-log-entry .field {
       display: flex;
-      align-items: center;
-      gap: 6px;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 1px;
       margin-bottom: 0;
       grid-template-columns: none;
       min-width: 0;
+      width: max-content;
+      justify-self: end;
     }
 
     .flight-log-entry .log-dep { grid-area: dep; }
@@ -1679,9 +1967,12 @@
     .flight-log-apt {
       width: 100%;
       min-width: 0;
-      min-height: 28px;
+      max-width: 100%;
+      height: var(--log-ctrl-h);
+      min-height: var(--log-ctrl-h);
+      max-height: var(--log-ctrl-h);
       align-self: center;
-      padding: 2px 2px 2px 4px;
+      padding: 2px 2px;
       border: 1px solid var(--field-border);
       border-radius: 7px;
       background: var(--field);
@@ -1689,6 +1980,8 @@
       font-size: 0.74rem;
       font-weight: 650;
       letter-spacing: 0.03em;
+      text-align: center;
+      box-sizing: border-box;
     }
 
     /*
@@ -1699,9 +1992,12 @@
     input.flight-log-apt-add[type="text"] {
       width: 100%;
       min-width: 0;
-      min-height: 28px;
+      max-width: 100%;
+      height: var(--log-ctrl-h);
+      min-height: var(--log-ctrl-h);
+      max-height: var(--log-ctrl-h);
       margin: 0;
-      padding: 2px 2px 2px 4px;
+      padding: 2px 2px;
       border: 1px solid var(--field-border);
       border-radius: 7px;
       background: var(--field);
@@ -1731,31 +2027,42 @@
     }
 
     .flight-log-entry .field label {
-      flex: 0 0 6.4rem;
-      width: 6.4rem;
+      flex: 0 0 auto;
+      width: 100%;
+      max-width: none;
       text-align: right;
       white-space: nowrap;
-      font-size: 0.7rem;
+      font-size: 0.58rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      line-height: 1.1;
     }
 
     .flight-log-entry .field input {
-      flex: 0 0 5.5rem;
-      width: 5.5rem;
-      min-width: 5.5rem;
-      max-width: 5.5rem;
+      flex: 0 0 auto;
+      width: var(--log-time-w);
+      min-width: var(--log-time-w);
+      max-width: var(--log-time-w);
+      height: var(--log-ctrl-h);
+      min-height: var(--log-ctrl-h);
+      max-height: var(--log-ctrl-h);
+      padding: 2px 4px;
       letter-spacing: 0.04em;
+      text-align: center;
+      box-sizing: border-box;
     }
 
     .flight-log-block-cell {
       grid-area: block;
       display: flex;
       flex-direction: row;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       align-self: center;
-      gap: 6px 10px;
+      gap: 6px 8px;
       padding-left: 6px;
-      min-width: 5rem;
+      min-width: 5.75rem;
+      overflow: visible;
     }
 
     /* Fixed label column so FLIGHT time sits under BLOCK time */
@@ -1773,10 +2080,17 @@
       padding-left: 6px;
     }
 
+    .flight-log-entry .log-block,
+    .flight-log-entry .log-flight {
+      min-width: 5.75rem;
+      overflow: visible;
+    }
+
     .flight-log-sum.log-flight {
       grid-area: flight;
       padding-left: 6px;
       justify-self: start;
+      min-width: 5.75rem;
     }
 
     .flight-log-block-cell .flight-log-sum {
@@ -1829,14 +2143,16 @@
     .help-ios-share svg { display: block; }
 
     /* iOS / iPadOS keyboard Tab key glyph (arrow into bar) */
-    .help-ios-tab {
+    .help-ios-tab,
+    .help-ios-enter {
       display: inline-flex;
       vertical-align: -0.18em;
-      margin: 0 0.2em;
+      margin: 0 0.15em;
       color: currentColor;
     }
 
-    .help-ios-tab svg { display: block; }
+    .help-ios-tab svg,
+    .help-ios-enter svg { display: block; }
 
     .sr-only {
       position: absolute;
@@ -2121,64 +2437,84 @@
     }
 
     @media (max-width: 900px), (orientation: portrait) {
-      .grid { grid-template-columns: 1fr; }
+      .main-grid { grid-template-columns: 1fr; }
+      .main-grid > .toolbar-left-pair,
+      .main-grid > .card-quicklog-title,
+      .main-grid > .card-toolbar-actions,
+      .main-grid > .card-clearance,
+      .main-grid > .card-fuel,
+      .main-grid > .col3-action-stack,
+      .main-grid > .card-copy-arr,
+      .main-grid > .landing-prep,
+      .main-grid > .log-phase-rule,
+      .main-grid > .log-entry-row,
+      .main-grid > .log-btn-bar,
+      .main-grid > .log-prev,
+      .main-grid > .app-rec {
+        grid-column: 1;
+        grid-row: auto;
+      }
       body {
         padding: max(12px, env(safe-area-inset-top))
                  max(14px, env(safe-area-inset-right))
                  max(12px, env(safe-area-inset-bottom))
                  max(14px, env(safe-area-inset-left));
       }
-      header {
-        margin-bottom: 12px;
-        flex-direction: column;
-        align-items: stretch;
+      .quicklog-title {
+        font-size: 1.27rem;
+        text-align: center;
+        margin: 0;
       }
-      h1 { font-size: 1.1rem; text-align: left; }
-      .header-theme,
-      .header-clear { align-self: flex-end; }
-      .preflight-banner {
-        flex-wrap: wrap;
-      }
-      .card, .howto { padding: 12px 14px; }
+      .card { padding: 12px 14px; }
       .card-clearance,
-      .card-fuel { padding: 8px 14px; }
-      .card.span-all { padding: 6px 14px 8px; }
+      .card-fuel,
+      .card-rvsm,
+      .card-quicklog-title { padding: 8px 14px; }
       .field,
       .card-fuel .field,
-      .dsperfo-row {
+      .card-clearance .field,
+      .card-rvsm .field,
+      .card-fuel .field.dsperfo-paste-row {
         grid-template-columns: 1fr;
         gap: 4px;
         padding-left: 0;
         margin-bottom: 10px;
       }
       .card-clearance .field,
-      .card-fuel .field {
+      .card-fuel .field,
+      .card-rvsm .field {
         margin-bottom: 8px;
       }
       .card-clearance input[type="text"],
-      .card-fuel input[type="text"] {
+      .card-fuel input[type="text"],
+      .card-rvsm input[type="text"] {
         min-height: 38px;
         padding: 8px 10px;
       }
-      .field.narrow-input input,
+      .field.compact-input input,
+      .field.squawk-input input,
       .field.climb-input input,
       .field.time-input input,
-      .field.time-input-long input,
-      .field.mt-input input {
+      .card-fuel .field input,
+      .card-clearance .field.compact-input input,
+      .card-clearance .field:not(.squawk-input):not(.time-input) input,
+      .card-rvsm .field.rvsm-vfield input,
+      .card-fuel .field.dsperfo-paste-row .paste-here-btn {
         max-width: none;
+        width: 100%;
+        min-width: 0;
+      }
+      .paste-here-btn,
+      .card-fuel .field.dsperfo-paste-row .paste-here-btn {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        justify-self: stretch;
+      }
+      .card-rvsm .field.mnps-row .toggle {
+        width: 100%;
       }
       input[type="text"], .toggle button { min-height: 44px; padding: 10px 12px; }
-      .rvsm-alt-row {
-        flex-direction: column;
-        flex-wrap: nowrap;
-        align-items: stretch;
-        gap: 10px;
-      }
-      .rvsm-alt-row .row-3 {
-        width: 100%;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
       .row-3 .field {
         flex: 1 1 30%;
         min-width: 6.5rem;
@@ -2190,19 +2526,10 @@
         max-width: none;
         flex: 1 1 auto;
       }
-      .rvsm-alt-row .mnps-row {
-        margin-left: 0;
-        width: 100%;
-      }
       .field.mnps-row {
         flex-wrap: wrap;
       }
       .field.mnps-row .toggle { width: 100%; max-width: 16rem; }
-      .howto {
-        flex: 1 1 auto;
-        max-width: none;
-        min-width: 0;
-      }
       .landing-prep {
         flex-wrap: wrap;
       }
@@ -2222,29 +2549,25 @@
         width: 100%;
         text-align: right;
       }
-      .flight-log {
-        flex-wrap: wrap;
+      .log-btn-bar {
+        grid-template-columns: 1fr 1fr;
       }
-      .header-rule { width: 1.75rem; flex-basis: 1.75rem; }
+      .log-btn-bar .log-data-note {
+        grid-column: 1 / -1;
+      }
+      .log-entry-row {
+        grid-template-columns: minmax(0, 1fr) max-content;
+      }
+      .flight-log-entry {
+        min-width: 38rem;
+      }
+      .flight-log {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
     }
 
     @media (max-width: 700px) {
-      .howto-grid { grid-template-columns: 1fr; }
-      .footer-stack {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "hist"
-          "howto"
-          "dept"
-          "land"
-          "arr"
-          "logRule"
-          "flog"
-          "flogCopy"
-          "flogPrev"
-          "flogPf90"
-          "appRec";
-      }
       .landing-prep {
         flex-direction: column;
         align-items: stretch;
@@ -2257,23 +2580,36 @@
         flex-direction: column;
         align-items: stretch;
       }
+      .log-entry-row {
+        grid-template-columns: 1fr;
+      }
+      .log-pf90 {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+        padding: 6px 8px;
+      }
       .flight-log-entry {
         min-width: 0;
+        justify-content: space-between;
         grid-template-columns:
           minmax(5rem, auto)
           auto
-          minmax(5.5rem, 1fr)
-          minmax(3.5rem, 0.7fr)
+          var(--log-picn-w, 20ch)
+          var(--log-apt-w, 4.75rem)
           max-content
-          minmax(3.5rem, 0.7fr)
+          var(--log-apt-w, 4.75rem)
           max-content
           minmax(4.5rem, auto);
       }
       .flight-log-entry .field input {
-        flex: 1 1 auto;
-        width: auto;
-        min-width: 0;
-        max-width: none;
+        width: var(--log-time-w, 8ch);
+        min-width: var(--log-time-w, 8ch);
+        max-width: var(--log-time-w, 8ch);
       }
     }
   </style>
@@ -2284,79 +2620,110 @@
     <button type="button" id="sw-update-reload">Reload</button>
   </div>
 
-  <div class="app">
-    <header>
-      <div class="phase-rule header-rule" aria-hidden="true"></div>
-      <div class="header-theme">
-        <button type="button" id="btnTheme" aria-pressed="false" title="Switch to Hi-Contrast Day Theme">Bright</button>
-      </div>
-      <h1>QUICKLOG</h1>
-      <div class="header-clear">
-        <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update.">Clear</button>
-      </div>
-      <div class="phase-rule header-rule" aria-hidden="true"></div>
-    </header>
+  <div class="install-overlay" id="installOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="installOverlayTitle">
+    <div class="install-overlay-box">
+      <p class="install-overlay-pulse" id="installOverlayTitle">SAVE SITE OFFLINE on your iPad</p>
+      <p class="install-overlay-step">Tap
+        <span class="help-ios-share" aria-hidden="true" title="Share">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
+        </span>
+        Share → <strong>Add to Home Screen</strong>.
+      </p>
+      <p class="install-overlay-step">Open the Home Screen icon anytime — works offline like a mini app.</p>
+      <p class="install-overlay-step">Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</p>
+      <button type="button" id="installOverlayDismiss">OK</button>
+    </div>
+  </div>
 
+  <div class="app">
     <form id="flightForm" autocomplete="off" spellcheck="false" action="#">
-      <div class="preflight-banner">
-        <p class="oma-ref">ref OM-A 8.3.2.6</p>
-        <p class="view-hint">Best view: iPad landscape
-          <span class="help-ios-tab" aria-hidden="true" title="Tab">
-            <svg width="15" height="12" viewBox="0 0 20 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M1.5 7.2h9.4V4.6L16.2 8l-5.3 3.4V8.8H1.5V7.2z"/>
-              <path d="M17.6 2.4v11.2h1.6V2.4h-1.6z"/>
-            </svg>
-          </span><span class="sr-only">Tab</span>
-          selects next field
-        </p>
-      </div>
-      <div class="grid">
+      <div class="main-grid">
+        <div class="toolbar-left-pair" aria-label="UTC clock and theme">
+          <div class="card card-utc-clock" aria-label="UTC clock">
+            <p class="utc-clock" id="utcClock" title="UTC day : hour : minute : second" aria-live="off">
+              <span class="utc-clock-day" id="utcClockDay">00</span><span class="utc-clock-sep">:</span><span class="utc-clock-hm" id="utcClockHm">00:00</span><span class="utc-clock-sep">:</span><span class="utc-clock-sec" id="utcClockSec">00</span>
+            </p>
+          </div>
+          <div class="card card-bright" aria-label="Theme">
+            <button type="button" id="btnTheme" aria-pressed="false" title="Switch to Hi-Contrast Day Theme">BRIGHT</button>
+          </div>
+        </div>
+        <div class="card card-quicklog-title">
+          <div class="quicklog-title-stack">
+            <p class="oma-ref">ref OM-A 8.3.2.6</p>
+            <div class="quicklog-title-row">
+              <span class="quicklog-title-rule" aria-hidden="true"></span>
+              <h1 class="quicklog-title">QUICKLOG</h1>
+              <span class="quicklog-title-rule" aria-hidden="true"></span>
+            </div>
+            <p class="view-hint">Best view: iPad landscape ·
+              <span class="help-ios-tab" aria-hidden="true" title="Tab">
+                <svg width="15" height="12" viewBox="0 0 20 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M1.5 7.2h9.4V4.6L16.2 8l-5.3 3.4V8.8H1.5V7.2z"/>
+                  <path d="M17.6 2.4v11.2h1.6V2.4h-1.6z"/>
+                </svg>
+              </span><span class="sr-only">Tab</span>
+              or
+              <span class="help-ios-enter" aria-hidden="true" title="Enter">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M3 4h2v7.2h9.2l-2.35-2.35 1.4-1.4L18.05 12l-4.8 4.8-1.4-1.4L14.2 13H3V4z"/>
+                </svg>
+              </span><span class="sr-only">Enter</span>
+              select next field
+            </p>
+          </div>
+        </div>
+        <div class="card card-toolbar-actions" aria-label="Clear and history">
+          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update.">CLEAR</button>
+          <button type="button" id="btnRestore" disabled title="Restore last cleared or copied form values">HIST</button>
+        </div>
+
         <section class="card card-clearance">
-          <div class="field">
+          <div class="field compact-input">
             <label for="security">Security check:</label>
             <input id="security" name="security" type="text" value="performed" />
           </div>
-          <div class="field narrow-input">
+          <div class="field squawk-input">
             <label for="atis">DEPT ATIS:</label>
-            <input id="atis" name="atis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
+            <input id="atis" name="atis" type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" pattern="[A-Za-z]" placeholder="A" title="Departure ATIS letter" />
           </div>
-          <div class="field time-input">
+          <div class="field squawk-input time-input">
             <label for="ctot">CTOT:</label>
             <input id="ctot" name="ctot" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" value="N/A" />
           </div>
-          <div class="field">
+          <div class="field compact-input">
             <label for="pdc">PDC/ACARS ref:</label>
             <input id="pdc" name="pdc" type="text" inputmode="numeric" maxlength="8" placeholder="000" autocomplete="off" autocapitalize="characters" spellcheck="false" title="PDC/ACARS ref — digits and letters (up to 8)" />
           </div>
-          <div class="field">
+          <div class="field compact-input">
             <label for="rwySid">* Runway and SID:</label>
             <input id="rwySid" name="rwySid" type="text" inputmode="numeric" autocapitalize="characters" placeholder="24L SID name" />
           </div>
-          <div class="field climb-input">
+          <div class="field compact-input climb-input">
             <label for="climbTo">* Climb to:</label>
-            <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000 or FL000" />
+            <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="00000 or FL000" />
           </div>
-          <div class="field narrow-input">
+          <div class="field squawk-input">
             <label for="transponder">* Transponder:</label>
             <input id="transponder" name="transponder" type="text" inputmode="numeric" pattern="[0-7]*" maxlength="4" placeholder="0000" title="Octal squawk 0000–7777 (digits 0–7 only)" />
           </div>
         </section>
 
         <section class="card card-fuel">
-          <div class="field mt-input">
+          <div class="field">
             <label for="fuel">Fuel when starting engines:</label>
             <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0 MT" />
           </div>
-          <div class="field mt-input">
+          <div class="field">
             <label for="tom">TOM:</label>
             <input id="tom" name="tom" type="text" inputmode="decimal" placeholder="000.0 MT" />
           </div>
           <p class="section-title">DSPERFO:</p>
-          <div class="dsperfo-row">
-            <p class="dsperfo-hint">Longpress “Calculated - 00:00:00z” and</p>
-            <button type="button" id="btnPasteDsperfo" class="paste-here-btn">PASTE HERE</button>
+          <div class="field dsperfo-paste-row">
+            <p class="dsperfo-hint">Longpress “Calculated - 00:00:00z”</p>
+            <button type="button" id="btnPasteDsperfo" class="paste-here-btn" aria-label="Paste DSPERFO take-off line">PASTE HERE</button>
           </div>
-          <div class="field time-input-long">
+          <div class="field">
             <label for="calcAt">* Calculated at:</label>
             <input id="calcAt" name="calcAt" type="text" inputmode="numeric" maxlength="8" placeholder="HH:MM:SS" />
           </div>
@@ -2370,82 +2737,58 @@
           </div>
         </section>
 
-        <section class="card span-all">
-          <div class="rvsm-alt-row">
-            <p class="rvsm-alt-title">Before RVSM entry</p>
-            <span class="rvsm-hint" id="rvsmHint" aria-live="polite">MAX Δ 200′</span>
-            <div class="row-3" role="group" aria-label="Before RVSM entry altimeters">
-              <div class="field">
-                <label for="rvsmL">L:</label>
-                <input id="rvsmL" name="rvsmL" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
-              </div>
-              <div class="field">
-                <label for="rvsmR">R:</label>
-                <input id="rvsmR" name="rvsmR" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
-              </div>
-              <div class="field">
-                <label for="rvsmSby">SBY:</label>
-                <input id="rvsmSby" name="rvsmSby" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
-              </div>
-            </div>
-            <div class="field mnps-row">
-              <label>MNPS RTE CHECKS: <span class="ref">8.3.2.11.3 (a)(5)</span></label>
-              <div class="toggle" role="group" aria-label="MNPS RTE CHECKS">
-                <button type="button" id="mnpsNA" class="active" data-value="N/A">N/A</button>
-                <button type="button" id="mnpsPerformed" data-value="PERFORMED">PERFORMED</button>
-              </div>
+        <div class="col3-action-stack">
+        <section class="card card-rvsm">
+          <p class="rvsm-section-title">Before RVSM entry</p>
+          <span class="rvsm-hint" id="rvsmHint" aria-live="polite">MAX Δ 200′</span>
+          <div class="field rvsm-vfield">
+            <label for="rvsmL">L:</label>
+            <input id="rvsmL" name="rvsmL" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+          </div>
+          <div class="field rvsm-vfield">
+            <label for="rvsmR">R:</label>
+            <input id="rvsmR" name="rvsmR" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+          </div>
+          <div class="field rvsm-vfield">
+            <label for="rvsmSby">SBY:</label>
+            <input id="rvsmSby" name="rvsmSby" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
+          </div>
+          <div class="field mnps-row">
+            <label>MNPS RTE CHECKS: <span class="ref">8.3.2.11.3 (a)(5)</span></label>
+            <div class="toggle" role="group" aria-label="MNPS RTE CHECKS">
+              <button type="button" id="mnpsNA" class="active" data-value="N/A">N/A</button>
+              <button type="button" id="mnpsPerformed" data-value="PERFORMED">PERFORMED</button>
             </div>
           </div>
           <input type="hidden" id="mnps" name="mnps" value="N/A" />
         </section>
-      </div>
-    </form>
 
-    <div class="footer-stack">
-      <div class="history-col">
-        <button type="button" id="btnRestore" disabled title="Restore last cleared or copied form values">Restore History</button>
-      </div>
-      <section class="howto" id="howto" aria-label="Offline iPad instructions">
-        <div class="howto-grid" role="list">
-          <!-- DOM order TL, TR, BL, BR → 2-col grid reads down each column -->
-          <p class="howto-item" id="howtoSave" role="listitem">
-            <strong class="howto-save-pulse" id="howtoSavePulse">SAVE SITE OFFLINE on your iPad</strong>
-          </p>
-          <p class="howto-item" role="listitem">Open the Home Screen icon anytime — works offline like a mini app.</p>
-          <p class="howto-item" id="howtoAdd" role="listitem">Tap
-            <span class="help-ios-share" aria-hidden="true" title="Share">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 0L6.5 3.5L7.91 4.91L9 3.83V11H11V3.83L12.09 4.91L13.5 3.5L10 0Z"/><path d="M3 7V17C3 18.1 3.9 19 5 19H15C16.1 19 17 18.1 17 17V7H15V17H5V7H3Z"/></svg>
-            </span>
-            <span class="sr-only">Share</span>
-            → <strong>Add to Home Screen</strong>.
-          </p>
-          <p class="howto-item" role="listitem">Fill the form, tap either <strong>copy __ text</strong>, then paste into your OFP app.</p>
+        <div class="card card-copy-segment card-copy-dept card-copy-compact">
+          <button type="button" id="btnCopy">COPY DEPT TEXT</button>
         </div>
-        <div class="howto-standalone-panel" id="howtoStandalone" aria-label="Web app notes">
-          <p class="howto-standalone-note">Hold [clear] 4 seconds to edit/clear default PIC name and force online version update check.</p>
-          <p class="howto-standalone-caution">CAUTION: deleting webapp also deletes LOGBOOK entries -&gt; export first. Normally a delete is not necessary.</p>
         </div>
-        <p class="howto-version" id="howtoVersion"></p>
-      </section>
-      <div class="dept-col">
-        <button type="button" id="btnCopy">copy DEPT text</button>
-      </div>
-      <section class="landing-prep" aria-label="Landing preparation">
-        <div class="row-3 landing-fields" role="group" aria-label="Arrival ATIS and landing distance">
-          <div class="field">
-            <label for="arrAtis">ARR ATIS:</label>
-            <input id="arrAtis" name="arrAtis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
+
+        <section class="landing-prep" aria-label="Landing preparation">
+          <div class="row-3 landing-fields" role="group" aria-label="Arrival ATIS and landing distance">
+            <div class="field">
+              <label for="arrAtis">ARR ATIS:</label>
+              <input id="arrAtis" name="arrAtis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
+            </div>
+            <div class="field ldis-input">
+              <label for="ldis">LDIS:</label>
+              <input id="ldis" name="ldis" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000 M" title="Landing distance in metres (4 digits)" />
+            </div>
           </div>
-          <div class="field ldis-input">
-            <label for="ldis">LDIS:</label>
-            <input id="ldis" name="ldis" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000 M" title="Landing distance in metres (4 digits)" />
-          </div>
+          <p class="landing-ref">8.3.2.6 (c)(7),(8)</p>
+        </section>
+
+        <div class="card card-copy-segment card-copy-arr card-copy-compact">
+          <button type="button" id="btnCopyArr">COPY ARR TEXT</button>
         </div>
-        <p class="landing-ref">8.3.2.6 (c)(7),(8)</p>
-      </section>
-      <button type="button" id="btnCopyArr">copy ARR text</button>
-      <div class="log-phase-rule" aria-hidden="true"></div>
-      <section class="flight-log" aria-label="Your log">
+
+        <div class="log-phase-rule" aria-hidden="true"></div>
+        <div class="log-entry-row">
+        <section class="flight-log" aria-label="Your log">
         <input type="hidden" id="logDeptDate" name="logDeptDate" value="" />
         <div class="flight-log-entry" role="group" aria-label="Logbook entry">
           <button
@@ -2482,19 +2825,19 @@
           </div>
           <!-- DOM order = Tab order: OFF → AIR → TD → ON (grid-areas keep visual layout) -->
           <div class="field log-off">
-            <label for="offBlocks">OFF BLOCKS:</label>
+            <label for="offBlocks">OFF BLOCKS</label>
             <input id="offBlocks" name="offBlocks" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Off blocks UTC" />
           </div>
           <div class="field log-air">
-            <label for="airborne">AIRBORNE:</label>
+            <label for="airborne">AIRBORNE</label>
             <input id="airborne" name="airborne" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Airborne UTC" />
           </div>
           <div class="field log-td">
-            <label for="touchdown">TOUCHDOWN:</label>
+            <label for="touchdown">TOUCHDOWN</label>
             <input id="touchdown" name="touchdown" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Touchdown UTC" />
           </div>
           <div class="field log-on">
-            <label for="onBlocks">ON BLOCKS:</label>
+            <label for="onBlocks">ON BLOCKS</label>
             <input id="onBlocks" name="onBlocks" type="text" inputmode="numeric" maxlength="5" enterkeyhint="done" placeholder="HH:MM" title="On blocks UTC" />
           </div>
           <span class="flight-log-sum log-flight"><span class="flight-log-sum-lab">FLIGHT</span><strong id="flightTimeCalc">—</strong></span>
@@ -2508,23 +2851,27 @@
           <input id="logArrAdd" class="flight-log-apt-add log-arr-add" type="text" inputmode="text" enterkeyhint="done" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" lang="en" placeholder="add" title="Add arrival IATA (3-letter, charter / divert)" aria-label="Add arrival airport" />
         </div>
       </section>
-      <div class="log-copy-col">
-        <button type="button" id="btnCopyLog">copy/add to LOG</button>
-        <div class="log-pf90" id="logPf90" aria-live="polite" title="Pilot-flying takeoffs and landings in the last 90 days">
-          <span><strong id="logPf90Count">0</strong> T/O and LDG in the last 90 days</span>
+
+        <aside class="log-pf90" id="logPf90" aria-live="polite" title="Pilot-flying takeoffs and landings in the last 90 days">
+          <span class="log-pf90-l1"><strong id="logPf90Count">0</strong> T/O LDG</span>
+          <span class="log-pf90-l2">in the last</span>
+          <span class="log-pf90-l3">90 days</span>
+        </aside>
         </div>
+
+      <div class="log-btn-bar" role="group" aria-label="Logbook actions">
+        <button type="button" class="log-btn-muted" id="btnEditMarkedLog" title="Load one marked line into YOUR LOG for editing">EDIT MARKED LINE</button>
+        <button type="button" class="log-btn-muted log-btn-warn" id="btnClearMarkedLog" title="Remove checked logbook lines">CLEAR MARKED LINES</button>
+        <button type="button" id="btnCopyAllLog">COPY LOG AS TABLE</button>
+        <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">COPY LOG AS CSV</button>
+        <p class="log-data-note">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
+        <button type="button" id="btnCopyLog">COPY/ADD EDIT TO LOG</button>
       </div>
+
       <div class="log-prev" id="logPrev" aria-label="Previous log summaries" aria-live="polite">
         <div class="log-prev-table" id="logPrevTable">
           <div class="log-prev-row log-prev-head" aria-hidden="true"></div>
         </div>
-      </div>
-      <div class="log-side-col">
-        <button type="button" id="btnCopyAllLog">copy LOG as table</button>
-        <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">copy Log as CSV</button>
-        <p class="log-data-note">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
-        <button type="button" id="btnClearMarkedLog" title="Remove checked logbook lines">Clear Marked Lines</button>
-        <button type="button" id="btnEditMarkedLog" title="Load one marked line into YOUR LOG for editing">Edit Marked Line</button>
       </div>
       <p class="app-rec">
         <span class="app-rec-try">
@@ -2534,9 +2881,10 @@
           <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
           for checking today’s EASA limits.
         </span>
-        <span class="app-rec-liability">Runs locally/offline, sends no data, author assumes no liability.</span>
+        <span class="app-rec-liability">Runs locally/offline, sends no data, author assumes no liability. <span class="app-version" id="appVersion"></span></span>
       </p>
-    </div>
+      </div>
+    </form>
   </div>
 
   <div
@@ -2599,7 +2947,7 @@
       />
       <p class="pic-name-overlay-hint">Hold Clear for 4 seconds to edit or remove the PIC name and simultaneously check for an online UPDATE of the website.</p>
       <p class="pic-name-overlay-hint">If you enter a name here, the PIC box will also default be ticked ON. Leave blank for no default PIC.</p>
-      <p class="pic-name-overlay-hint">Logbook shows the 9 most recent added items. These are only lost when the web app is deleted, not with UPDATES.</p>
+      <p class="pic-name-overlay-hint">Logbook keeps a short recent history. Entries are only lost when the web app is deleted, not with UPDATES.</p>
       <p class="pic-name-overlay-hint">Sometimes it may be necessary to swipe to close the web app several times to be able to get an update when online. This is a known Apple limitation.</p>
       <div class="pic-name-overlay-actions">
         <button type="button" id="picNameOverlaySave">Save</button>
@@ -2621,12 +2969,18 @@
     const HISTORY_KEY = "flight-plan-form-history-v2";
     const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
     const LOG_PREV_KEY = "flight-plan-form-log-prev-v1";
-    const LOG_PREV_DISPLAY = 9; /* v2.16 height budget; was briefly 11 */
+    const LOG_PREV_DISPLAY = 9;
+    const LOG_PREV_DISPLAY_STANDALONE = 12; /* A2903 web app — taller logbook area */
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.45";
+    const APP_VERSION = "2.80";
+    const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_KEY = "flight-plan-form-theme-v1";
+    /** iOS clipboard-read succeeded at least once on this origin. */
+    const CLIP_PASTE_OK_KEY = "flight-plan-form-clip-paste-ok-v1";
+    /** Shown the one-time “tap Allow when iOS asks” alert. */
+    const CLIP_PASTE_HINT_KEY = "flight-plan-form-clip-paste-hint-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
     const MY_PIC_NAME_KEY = "flight-plan-form-my-pic-name-v1";
     /** User answered PIC overlay (name or blank) — stop re-prompting FOs every launch. */
@@ -2649,7 +3003,6 @@
     ];
     /** Tab / entry order: OFF → AIRBORNE → TOUCHDOWN → ON (wheels use tabindex=-1) */
     const LOG_TIME_IDS = ["offBlocks", "airborne", "touchdown", "onBlocks"];
-    const LOG_FIELD_IDS = ["logPf", "logPicSelf", "logAcft", "logPic", "logDeptDate", "logDep", "logArr", ...LOG_TIME_IDS];
     const LOG_PREV_HEADERS = [
       "DEP DATE", "REG", "ROUTE", "OFF BLK", "T/O", "LDG",
       "ON BLK", "BLOCK", "FLIGHT", "TASK", "PIC"
@@ -2669,6 +3022,11 @@
       "DWC-AMS": "7:05", "DWC-HKG": "8:00", "GYD-AMS": "5:30", "HHN-AMS": "1:10",
       "HKG-ALA": "6:10", "HKG-GYD": "8:40", "HKG-DWC": "8:00", "ICN-HKG": "3:30",
       "JNB-NBO": "3:55", "MIA-AMS": "8:35", "MIA-BOG": "3:35", "NBO-AMS": "8:50"
+    };
+    /** Likely destination when departure is selected (network pairs). */
+    const DEP_TO_ARR = {
+      MIA: "AMS", NBO: "AMS", JNB: "NBO", GYD: "AMS", HKG: "GYD",
+      ICN: "HKG", AMS: "MIA", BOG: "MIA", HHN: "AMS"
     };
     /**
      * FDPFMS-style device timezone → departure airport (network airports only).
@@ -2722,13 +3080,35 @@
       return "AMS";
     }
 
+    /** Set ARR from network routing table when DEP is chosen. */
+    function applyArrForDep(dep) {
+      const code = normalizeIata(dep);
+      const arr = DEP_TO_ARR[code];
+      if (!arr) return;
+      ensureAirportOption($("logArr"), arr);
+    }
+
     /** Suggest DEP from system timezone (new leg / clear / empty). Manual wheel choice sticks. */
     function applyDepFromTimezone() {
       const code = detectDepAirport();
       const el = $("logDep");
       if (!el || el.value === code) return;
       el.value = code;
+      applyArrForDep(code);
       updateS26Display();
+    }
+
+    /** After archiving / new OFF: last aircraft + toggle PF/PM from previous leg. */
+    function applyNextLegDefaults() {
+      const last = loadLogPrev()[0];
+      if (last && last.logAcft) {
+        $("logAcft").value = last.logAcft;
+      }
+      if (last) {
+        $("logPf").checked = last.logPf !== "yes";
+      } else {
+        $("logPf").checked = false;
+      }
     }
 
     const $ = (id) => document.getElementById(id);
@@ -2894,20 +3274,42 @@
     }
 
     /**
-     * Infer departure UTC day from OFF/ON clocks vs iPad clock → UTC
-     * (manual IATA airports have no timezone; always use device UTC).
-     * Used once when a leg is first completed; then stored in logDeptDate for weeks.
+     * Infer departure UTC day from OFF/ON clocks vs device local + UTC now.
+     * Manual date (calendar) is stored in logDeptDate and not overwritten once set.
      */
     function computeLogUtcDate() {
       const off = timeToMinutes($("offBlocks").value);
       if (off === null) return "";
       const now = new Date();
       const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-      const on = timeToMinutes($("onBlocks").value);
       const nowUtcMins = now.getUTCHours() * 60 + now.getUTCMinutes();
-      if ((on !== null && on < off) || off > nowUtcMins) {
+      const on = timeToMinutes($("onBlocks").value);
+
+      const localKey =
+        now.getFullYear() * 10000 + now.getMonth() * 100 + now.getDate();
+      const utcKey =
+        now.getUTCFullYear() * 10000 + now.getUTCMonth() * 100 + now.getUTCDate();
+
+      // Overnight leg: ON before OFF on the same UTC calendar day.
+      if (on !== null && on < off) {
         d.setUTCDate(d.getUTCDate() - 1);
       }
+      // OFF far ahead on the clock vs now → logged after midnight for yesterday's late departure.
+      else if (off > nowUtcMins && (off - nowUtcMins) > 6 * 60) {
+        d.setUTCDate(d.getUTCDate() - 1);
+      }
+      // Same local & UTC calendar day, UTC evening, early-morning OFF → next UTC day
+      // (e.g. BOG 18:00 local / 23:00Z planning OFF 00:45Z).
+      else if (localKey === utcKey && off < 6 * 60 && nowUtcMins >= 12 * 60) {
+        d.setUTCDate(d.getUTCDate() + 1);
+      }
+      // Local still on previous calendar day while UTC already rolled (Americas evening):
+      // early OFF is on current UTC date — base d is already correct, do not add a day.
+      // Local ahead of UTC (Asia/Oceania morning): very late OFF may be previous UTC day.
+      else if (localKey > utcKey && off >= 18 * 60) {
+        d.setUTCDate(d.getUTCDate() - 1);
+      }
+
       return formatUtcDate(d);
     }
 
@@ -3104,22 +3506,10 @@
           }
           saveNow();
         });
-        /* Tab: dep-add → arr-add only; arr-add → dismiss keyboard. Enter same. */
-        add.addEventListener("keydown", (e) => {
-          if (e.key !== "Tab" && e.key !== "Enter") return;
-          if (e.key === "Tab" && e.shiftKey) return;
-          e.preventDefault();
-          if (addId === "logDepAdd") {
-            const next = $("logArrAdd");
-            if (next) {
-              try { next.focus(); } catch (_) {}
-            }
-          } else {
-            try { add.blur(); } catch (_) {}
-          }
-        });
+        /* Tab/Enter handled by bindTopicKeyboardNav (logbook chain). */
         sel.addEventListener("change", () => {
           syncAirportAddField(selectId, addId);
+          if (selectId === "logDep") applyArrForDep(sel.value);
           updateS26Display();
           saveNow();
         });
@@ -3303,19 +3693,10 @@
       });
     }
 
-    /** Align landing ARR ATIS under RVSM R only — YOUR LOG uses a fixed CSS grid (no margin hacks). */
+    /** Landing fields stay left in cols 1–2 (no margin snap to RVSM R). */
     function alignLogColumns() {
-      const rvsmR = $("rvsmR");
-      const arr = $("arrAtis");
       const landingFields = document.querySelector(".landing-fields");
-      if (!rvsmR || !arr || !landingFields) return;
-      if (window.matchMedia("(max-width: 700px)").matches) {
-        landingFields.style.marginLeft = "";
-        return;
-      }
-      landingFields.style.marginLeft = "0";
-      landingFields.style.marginLeft =
-        (rvsmR.getBoundingClientRect().left - arr.getBoundingClientRect().left) + "px";
+      if (landingFields) landingFields.style.marginLeft = "";
     }
 
     /** Full registration for copy / table REG column (Martinair PH-…). */
@@ -3642,6 +4023,12 @@
       }));
     }
 
+    function logPrevDisplayCount() {
+      return document.body.classList.contains("is-standalone-app")
+        ? LOG_PREV_DISPLAY_STANDALONE
+        : LOG_PREV_DISPLAY;
+    }
+
     /** Render table rows: newest DEP DATE at top. PF = boxed TASK letters only. */
     function renderLogPrev(list) {
       const table = $("logPrevTable");
@@ -3649,15 +4036,14 @@
       syncLogPrevHead();
       table.querySelectorAll(".log-prev-row:not(.log-prev-head)").forEach((el) => el.remove());
       const rows = list || loadLogPrev();
-      const visible = rows.slice(0, LOG_PREV_DISPLAY);
+      const displayCount = logPrevDisplayCount();
+      const visible = rows.slice(0, displayCount);
       const frag = document.createDocumentFragment();
-      for (let i = 0; i < LOG_PREV_DISPLAY; i++) {
+      for (let i = 0; i < displayCount; i++) {
         const v = visible[i];
         const row = document.createElement("div");
-        const isPf = !!(v && v.logPf === "yes");
         row.className = "log-prev-row"
           + (v ? "" : " empty")
-          + (isPf ? " pf" : "")
           + (i % 2 === 1 ? " alt" : "");
         row.dataset.slot = String(i);
         logPrevCells(v, { phReg: false }).forEach((text, col) => {
@@ -3754,14 +4140,22 @@
       });
     }
 
-    /** Custom confirm: Cancel left, OK right (native confirm cannot space buttons). */
-    function showAppConfirm(msg) {
+    /**
+     * Custom confirm: Cancel left, OK right (native confirm cannot space buttons).
+     * Optional onConfirm runs synchronously inside the OK tap — required for iOS
+     * to open the keyboard when focusing an input after confirm.
+     */
+    function showAppConfirm(msg, { onConfirm } = {}) {
       const box = $("appConfirm");
       const text = $("appConfirmMsg");
       const okBtn = $("appConfirmOk");
       const cancelBtn = $("appConfirmCancel");
       if (!box || !text || !okBtn || !cancelBtn) {
-        return Promise.resolve(window.confirm(msg));
+        const ok = window.confirm(msg);
+        if (ok && typeof onConfirm === "function") {
+          try { onConfirm(); } catch (_) {}
+        }
+        return Promise.resolve(ok);
       }
       text.textContent = msg;
       syncVisualViewport();
@@ -3773,6 +4167,16 @@
           cancelBtn.removeEventListener("click", onCancel);
           box.removeEventListener("click", onBackdrop);
           document.removeEventListener("keydown", onKey);
+          if (result && typeof onConfirm === "function") {
+            /* Same tap stack as OK — do not blur first or iOS blocks the keyboard */
+            try { onConfirm(); } catch (_) {}
+          } else {
+            try {
+              if (document.activeElement && typeof document.activeElement.blur === "function") {
+                document.activeElement.blur();
+              }
+            } catch (_) {}
+          }
           resolve(result);
         };
         const onOk = () => finish(true);
@@ -3789,7 +4193,7 @@
         cancelBtn.addEventListener("click", onCancel);
         box.addEventListener("click", onBackdrop);
         document.addEventListener("keydown", onKey);
-        try { cancelBtn.focus(); } catch (_) {}
+        try { cancelBtn.focus({ preventScroll: true }); } catch (_) {}
       });
     }
 
@@ -3849,7 +4253,7 @@
       }
       logEditIndex = idx;
       loadLogLegIntoForm(v);
-      showToast("Line loaded — edit, then copy/add to LOG", 3200);
+      showToast("Line loaded — edit, then COPY/ADD EDIT TO LOG", 3200);
     }
 
     /**
@@ -3873,6 +4277,21 @@
       saveLogPrev(list);
       renderLogPrev(list);
       showToast("Line added to log");
+    }
+
+    let copyAddLoggedTimer = 0;
+    /** Gray out COPY/ADD EDIT TO LOG briefly so the pilot sees the leg was registered. */
+    function pulseCopyAddLogged() {
+      const btn = $("btnCopyLog");
+      if (!btn) return;
+      if (copyAddLoggedTimer) clearTimeout(copyAddLoggedTimer);
+      btn.classList.add("is-logged");
+      btn.disabled = true;
+      copyAddLoggedTimer = setTimeout(() => {
+        copyAddLoggedTimer = 0;
+        btn.classList.remove("is-logged");
+        btn.disabled = false;
+      }, 3000);
     }
 
     /**
@@ -3902,7 +4321,7 @@
             $(id)._editedSinceFocus = false;
           });
           $("logDeptDate").value = "";
-          $("logPf").checked = false;
+          applyNextLegDefaults();
           $("logPicSelf").checked = false;
           $("logPic").value = "";
           applyPicDefIfOn();
@@ -3916,7 +4335,7 @@
       });
     }
 
-    /** When ON BLOCKS first becomes a complete HH:MM, archive that segment to the top line. */
+    /** When ON BLOCKS first becomes a complete HH:MM, archive that segment, then clear times/date for the next leg. */
     function bindOnBlocksArchivesLog() {
       const el = $("onBlocks");
       let wasComplete = digitsOnly(el.value).length >= 4;
@@ -3925,7 +4344,25 @@
       });
       el.addEventListener("input", () => {
         const complete = digitsOnly(el.value).length >= 4;
-        if (!wasComplete && complete) pushLogPrevFromCurrent();
+        if (!wasComplete && complete) {
+          pushLogPrevFromCurrent();
+          pulseCopyAddLogged();
+          suppressFocusClear = true;
+          LOG_TIME_IDS.forEach((id) => {
+            const t = $(id);
+            if (!t) return;
+            t.value = "";
+            delete preFocusById[id];
+            t._editedSinceFocus = false;
+            t.classList.remove("log-time-error", "warn-diff");
+          });
+          if ($("logDeptDate")) $("logDeptDate").value = "";
+          applyNextLegDefaults();
+          updateLogCalcs();
+          saveNow();
+          try { el.blur(); } catch (_) {}
+          suppressFocusClear = false;
+        }
         wasComplete = complete;
       });
     }
@@ -3938,14 +4375,14 @@
     function formatClimbTo(value) {
       const raw = String(value || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
       if (!raw) return "";
-      if (raw.startsWith("FL")) return "FL" + digitsOnly(raw.slice(2)).slice(0, 4);
+      if (raw.startsWith("FL")) return "FL" + digitsOnly(raw.slice(2)).slice(0, 5);
       if (raw === "F" || raw === "FL") return raw;
-      if (/^[A-Z]/.test(raw) && !raw.startsWith("F")) return digitsOnly(raw).slice(0, 4);
+      if (/^[A-Z]/.test(raw) && !raw.startsWith("F")) return digitsOnly(raw).slice(0, 5);
       if (raw.startsWith("F") && !raw.startsWith("FL")) {
         const rest = raw.slice(1);
-        return /^\d*$/.test(rest) ? "F" + rest.slice(0, 4) : "FL" + digitsOnly(rest).slice(0, 4);
+        return /^\d*$/.test(rest) ? "F" + rest.slice(0, 5) : "FL" + digitsOnly(rest).slice(0, 5);
       }
-      return digitsOnly(raw).slice(0, 4);
+      return digitsOnly(raw).slice(0, 5);
     }
 
     function formatMt(value, { finalize = false, max = null } = {}) {
@@ -3973,17 +4410,83 @@
       return { text: finalize ? v + " MT" : v, rejected };
     }
 
-    /** Next text/select field in document order (for auto-advance while typing). */
-    function focusNextField(fromEl) {
-      if (!fromEl) return;
-      const focusables = Array.from(
-        document.querySelectorAll("input[type='text'], input:not([type]), select")
-      ).filter((el) => !el.disabled && el.tabIndex !== -1 && el.offsetParent !== null);
-      const i = focusables.indexOf(fromEl);
-      if (i < 0 || i >= focusables.length - 1) return;
-      const next = focusables[i + 1];
+    /**
+     * Three keyboard topics: departure (clearance+fuel+RVSM), arrival, logbook.
+     * Tab / Enter → next field in the same topic; on last field → blur (dismiss keyboard).
+     */
+    const TOPIC_FIELD_CHAINS = [
+      [
+        "security", "atis", "ctot", "pdc", "rwySid", "climbTo", "transponder",
+        "fuel", "tom", "calcAt", "rwy", "intersection",
+        "rvsmL", "rvsmR", "rvsmSby"
+      ],
+      ["arrAtis", "ldis"],
+      ["logPic", "logDepAdd", "logArrAdd", "offBlocks", "airborne", "touchdown", "onBlocks"]
+    ];
+
+    function findTopicChain(el) {
+      const id = el && el.id;
+      if (!id) return null;
+      for (const chain of TOPIC_FIELD_CHAINS) {
+        const index = chain.indexOf(id);
+        if (index >= 0) return { chain, index };
+      }
+      return null;
+    }
+
+    function focusFieldById(id) {
+      const el = $(id);
+      if (!el) return false;
       requestAnimationFrame(() => {
-        try { next.focus(); } catch (_) {}
+        try { el.focus(); } catch (_) {}
+      });
+      return true;
+    }
+
+    function dismissKeyboard(el) {
+      try { if (el) el.blur(); } catch (_) {}
+    }
+
+    /** Next text field in the active topic, or dismiss keyboard at topic end. */
+    function focusNextField(fromEl) {
+      const found = findTopicChain(fromEl);
+      if (!found) {
+        dismissKeyboard(fromEl);
+        return;
+      }
+      const { chain, index } = found;
+      if (index >= chain.length - 1) {
+        dismissKeyboard(fromEl);
+        return;
+      }
+      if (!focusFieldById(chain[index + 1])) dismissKeyboard(fromEl);
+    }
+
+    function focusPrevField(fromEl) {
+      const found = findTopicChain(fromEl);
+      if (!found) return;
+      const { chain, index } = found;
+      if (index <= 0) {
+        dismissKeyboard(fromEl);
+        return;
+      }
+      if (!focusFieldById(chain[index - 1])) dismissKeyboard(fromEl);
+    }
+
+    function bindTopicKeyboardNav() {
+      TOPIC_FIELD_CHAINS.forEach((chain) => {
+        chain.forEach((id, i) => {
+          const el = $(id);
+          if (!el) return;
+          const isLast = i === chain.length - 1;
+          el.setAttribute("enterkeyhint", isLast ? "done" : "next");
+          el.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter" && e.key !== "Tab") return;
+            e.preventDefault();
+            if (e.key === "Tab" && e.shiftKey) focusPrevField(el);
+            else focusNextField(el);
+          });
+        });
       });
     }
 
@@ -4053,18 +4556,11 @@
       };
     }
 
-    async function pasteDsperfo() {
-      let text = "";
-      try {
-        text = await navigator.clipboard.readText();
-      } catch (_) {
-        showToast("Allow paste, or type fields");
-        return;
-      }
+    function applyDsperfoFromText(text) {
       const parsed = parseDsperfoTakeoff(text);
       if (!parsed) {
         showToast("Not a Take-off line");
-        return;
+        return false;
       }
       $("calcAt").value = parsed.calcAt;
       const rwyAccepted = acceptRunwayDesignator(parsed.rwy);
@@ -4073,6 +4569,65 @@
       $("intersection").value = parsed.intersection;
       saveNow();
       showToast("DSPERFO pasted");
+      return true;
+    }
+
+    async function queryClipboardReadPermission() {
+      if (!navigator.permissions || !navigator.permissions.query) return "unknown";
+      try {
+        const status = await navigator.permissions.query({ name: "clipboard-read" });
+        return status.state;
+      } catch (_) {
+        return "unknown";
+      }
+    }
+
+    function showPastePermissionHelp(wasDenied) {
+      let seenHint = false;
+      try { seenHint = !!localStorage.getItem(CLIP_PASTE_HINT_KEY); } catch (_) {}
+      if (!wasDenied && seenHint) return;
+      try { localStorage.setItem(CLIP_PASTE_HINT_KEY, "1"); } catch (_) {}
+      const lines = wasDenied
+        ? [
+            "iOS blocked clipboard paste for this site.",
+            "",
+            "Safari: Settings → Safari → Advanced → Website Data — remove this site, reopen, tap PASTE HERE, tap Allow.",
+            "",
+            "Copy source app: Settings → [that app] → Paste from Other Apps → Allow."
+          ]
+        : [
+            "When iOS asks to paste from another app, tap Allow.",
+            "",
+            "After that, PASTE HERE works in one tap for this site."
+          ];
+      showAppAlert(lines.join("\n"));
+    }
+
+    /** Paste DSPERFO Take-off line from clipboard (iOS: tap Allow once per site). */
+    function pasteDsperfo(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        showToast("Paste not supported here");
+        return;
+      }
+      navigator.clipboard.readText()
+        .then((text) => {
+          try { localStorage.setItem(CLIP_PASTE_OK_KEY, "1"); } catch (_) {}
+          if (!text || !String(text).trim()) {
+            showToast("Clipboard empty");
+            return;
+          }
+          applyDsperfoFromText(text);
+        })
+        .catch(() => {
+          showToast("Paste blocked — tap Allow if iOS asks", 2800);
+          queryClipboardReadPermission().then((perm) => {
+            showPastePermissionHelp(perm === "denied");
+          });
+        });
     }
 
     function getValues() {
@@ -4415,26 +4970,26 @@
     async function copyAll() {
       pushHistory();
       await writeClipboard(buildOutput());
-      flashCopyBtn($("btnCopy"), "copy DEPT text");
+      flashCopyBtn($("btnCopy"), "COPY DEPT TEXT");
     }
 
     async function copyArr() {
       pushHistory();
       await writeClipboard(buildArrOutput());
-      flashCopyBtn($("btnCopyArr"), "copy ARR text");
+      flashCopyBtn($("btnCopyArr"), "COPY ARR TEXT");
     }
 
     async function copyLog() {
       pushHistory();
       pushLogPrevFromCurrent();
       await writeClipboard(buildLogOutput());
-      flashCopyBtn($("btnCopyLog"), "copy/add to LOG");
+      flashCopyBtn($("btnCopyLog"), "COPY/ADD EDIT TO LOG");
     }
 
     async function copyAllLogText() {
       const rows = allLogRowsOldestFirst();
       await writeClipboard(buildAllLogText(rows), buildAllLogHtml(rows));
-      flashCopyBtn($("btnCopyAllLog"), "copy LOG as table");
+      flashCopyBtn($("btnCopyAllLog"), "COPY LOG AS TABLE");
     }
 
     /**
@@ -4511,10 +5066,10 @@
         return;
       }
       await writeClipboard(buildLogTenCsv());
-      flashCopyBtn($("btnCopyLogCsv"), "copy Log as CSV");
+      flashCopyBtn($("btnCopyLogCsv"), "COPY LOG AS CSV");
     }
 
-    /** Remove checked (marked) visible log lines. */
+    /** Remove checked (marked) visible log lines — irreversible, confirm first. */
     function clearMarkedLogLines() {
       const list = loadLogPrev();
       if (!list.length) {
@@ -4526,43 +5081,57 @@
         showToast("No lines marked");
         return;
       }
-      if (logEditIndex != null && marked.has(logEditIndex)) logEditIndex = null;
-      const next = list.filter((_, i) => !marked.has(i));
-      saveLogPrev(next);
-      renderLogPrev(next);
       const n = marked.size;
-      showToast(n === 1 ? "1 marked line cleared" : n + " marked lines cleared");
+      const msg = n === 1
+        ? "Clear 1 marked log line?\n\nThis cannot be undone."
+        : "Clear " + n + " marked log lines?\n\nThis cannot be undone.";
+      showAppConfirm(msg, {
+        onConfirm() {
+          if (logEditIndex != null && marked.has(logEditIndex)) logEditIndex = null;
+          const next = list.filter((_, i) => !marked.has(i));
+          saveLogPrev(next);
+          renderLogPrev(next);
+          showToast(n === 1 ? "1 marked line cleared" : n + " marked lines cleared");
+        }
+      });
     }
 
-    async function clearForm() {
-      const ok = await showAppConfirm(
-        "Clear all fields?\n\nEntered values will be reset to defaults. Restore with Restore History button.\n\nTo clear the default PIC name and force an online update check, hold the Clear button for 4 seconds.\n\nLogbook shows the 9 most recent added items. These are only lost when the web app is deleted."
+    function clearForm() {
+      showAppConfirm(
+        "Clear all fields?\n\nEntered values will be reset to defaults. Restore with the Hist button.\n\nTo clear the default PIC name and force an online update check, hold the Clear button for 4 seconds.\n\nLogbook keeps a short recent history. Entries are only lost when the web app is deleted.",
+        {
+          /* Must run in the OK tap handler so iOS allows opening the keyboard */
+          onConfirm() {
+            pushHistory();
+            suppressFocusClear = true;
+            for (const id of FIELD_IDS) {
+              const el = $(id);
+              if (!el) continue;
+              if (el.type === "checkbox") el.checked = false;
+              else el.value = DEFAULTS[id] ?? "";
+              delete preFocusById[id];
+              el._editedSinceFocus = false;
+              el.classList.remove("warn-diff", "log-time-error");
+            }
+            setMnps("N/A");
+            applyDepFromTimezone();
+            applyArrForDep($("logDep").value);
+            if ($("logDepAdd")) $("logDepAdd").value = "";
+            if ($("logArrAdd")) $("logArrAdd").value = "";
+            applyPicDefIfOn();
+            saveNow();
+            checkRvsmDiff(true);
+            checkSquawkLen(true);
+            updateLogCalcs();
+            showToast("Cleared");
+            suppressFocusClear = false;
+            const atis = $("atis");
+            if (atis) {
+              try { atis.focus(); } catch (_) {}
+            }
+          }
+        }
       );
-      if (!ok) return;
-      // Snapshot first (getValues recovers focus-cleared active field via preFocusById).
-      pushHistory();
-      suppressFocusClear = true;
-      for (const id of FIELD_IDS) {
-        const el = $(id);
-        if (!el) continue;
-        if (el.type === "checkbox") el.checked = false;
-        else el.value = DEFAULTS[id] ?? "";
-        delete preFocusById[id];
-        el._editedSinceFocus = false;
-        el.classList.remove("warn-diff", "log-time-error");
-      }
-      setMnps("N/A");
-      applyDepFromTimezone();
-      $("logArr").value = "AMS";
-      if ($("logDepAdd")) $("logDepAdd").value = "";
-      if ($("logArrAdd")) $("logArrAdd").value = "";
-      applyPicDefIfOn();
-      saveNow();
-      checkRvsmDiff(true);
-      checkSquawkLen(true);
-      updateLogCalcs();
-      suppressFocusClear = false;
-      showToast("Cleared");
     }
 
     function sleep(ms) {
@@ -4860,6 +5429,7 @@
     bindFormatter("rvsmL", (v) => onlyDigits(5, v));
     bindFormatter("rvsmR", (v) => onlyDigits(5, v));
     bindFormatter("rvsmSby", (v) => onlyDigits(5, v));
+    bindTopicKeyboardNav();
 
     ["security", "intersection"].forEach((id) => $(id).addEventListener("input", save));
     {
@@ -4912,8 +5482,12 @@
         });
       });
     }
-    fillAirportSelect($("logDep"), detectDepAirport());
-    fillAirportSelect($("logArr"), "AMS");
+    {
+      const dep = detectDepAirport();
+      fillAirportSelect($("logDep"), dep);
+      applyArrForDep($("logDep").value || dep);
+      fillAirportSelect($("logArr"), DEP_TO_ARR[dep] || "AMS");
+    }
     bindClearOnFocus();
     bindOffBlocksStartsNewLog();
     bindOnBlocksArchivesLog();
@@ -4943,7 +5517,19 @@
     $("btnTheme").addEventListener("click", toggleTheme);
     bindClearLongPress();
     $("btnRestore").addEventListener("click", restoreHistory);
-    $("btnPasteDsperfo").addEventListener("click", pasteDsperfo);
+    (function bindPasteDsperfo() {
+      const btn = $("btnPasteDsperfo");
+      if (!btn) return;
+      let lastPasteAt = 0;
+      function onPasteTap(e) {
+        const now = Date.now();
+        if (now - lastPasteAt < 400) return;
+        lastPasteAt = now;
+        pasteDsperfo(e);
+      }
+      /* click — iOS Safari ties clipboard.readText to click/tap, not touchstart alone */
+      btn.addEventListener("click", onPasteTap);
+    })();
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") saveNow();
     });
@@ -5024,16 +5610,36 @@
       );
     }
 
-    function initHowtoMode() {
-      const box = $("howto");
-      if (!box) return;
+    function shouldShowInstallOverlay() {
+      if (!isAppleTouchDevice() || isStandaloneDisplay()) return false;
+      try { return localStorage.getItem(INSTALL_OVERLAY_SEEN_KEY) !== "1"; } catch (_) { return true; }
+    }
+
+    function initInstallAndStandalone() {
+      const overlay = $("installOverlay");
       const standalone = isAppleTouchDevice() && isStandaloneDisplay();
-      box.classList.toggle("is-standalone", standalone);
       document.documentElement.classList.toggle("is-standalone-app", standalone);
       document.body.classList.toggle("is-standalone-app", standalone);
-      /* Whole help panel pulses on iPad browser tabs until installed as web app */
-      const cuePulse = isAppleTouchDevice() && !standalone;
-      box.classList.toggle("is-pulsing", cuePulse);
+      if (overlay) {
+        const show = shouldShowInstallOverlay();
+        overlay.hidden = !show;
+        overlay.classList.toggle("is-pulsing", show);
+      }
+    }
+
+    function bindInstallOverlay() {
+      const overlay = $("installOverlay");
+      const dismiss = $("installOverlayDismiss");
+      if (!overlay || !dismiss) return;
+      const close = () => {
+        overlay.hidden = true;
+        overlay.classList.remove("is-pulsing");
+        try { localStorage.setItem(INSTALL_OVERLAY_SEEN_KEY, "1"); } catch (_) {}
+      };
+      dismiss.addEventListener("click", close);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) close();
+      });
     }
 
     function loadThemePref() {
@@ -5050,7 +5656,7 @@
       const btn = $("btnTheme");
       if (btn) {
         /* Press-to-act: label is the theme you switch into */
-        btn.textContent = bright ? "Dim" : "Bright";
+        btn.textContent = bright ? "DIM" : "BRIGHT";
         btn.title = bright ? "Switch to dim cockpit theme" : "Switch to Hi-Contrast Day Theme";
         btn.setAttribute("aria-pressed", bright ? "true" : "false");
       }
@@ -5063,13 +5669,36 @@
       applyTheme(document.documentElement.classList.contains("theme-bright") ? "dim" : "bright");
     }
 
+    /** UTC clock: DD:HH:MM:SS — HH:MM title-size; day & seconds button-size */
+    function tickUtcClock() {
+      const day = $("utcClockDay");
+      const hm = $("utcClockHm");
+      const sec = $("utcClockSec");
+      if (!day || !hm || !sec) return;
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      day.textContent = pad(d.getUTCDate());
+      hm.textContent = pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes());
+      sec.textContent = pad(d.getUTCSeconds());
+    }
+
+    function startUtcClock() {
+      tickUtcClock();
+      setInterval(tickUtcClock, 1000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") tickUtcClock();
+      });
+    }
+
     {
-      const ver = $("howtoVersion");
+      const ver = $("appVersion");
       if (ver) ver.textContent = "v" + APP_VERSION;
     }
     bindVisualViewport();
     applyTheme(loadThemePref());
-    initHowtoMode();
+    startUtcClock();
+    initInstallAndStandalone();
+    bindInstallOverlay();
     load();
     try { lastSavedJson = JSON.stringify(getValues()); } catch (_) {}
     updateHistoryButton();
