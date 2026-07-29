@@ -2816,6 +2816,7 @@
             <option value="CKB">CKB</option>
             <option value="CKC">CKC</option>
             <option value="MPS">MPS</option>
+            <option value="SIM">SIM</option>
           </select>
           <select id="logDep" name="logDep" class="flight-log-apt log-dep" title="Departure airport" aria-label="Departure airport" tabindex="-1"></select>
           <select id="logArr" name="logArr" class="flight-log-apt log-arr" title="Arrival airport" aria-label="Arrival airport" tabindex="-1"></select>
@@ -2846,7 +2847,7 @@
             <input id="logPicSelf" name="logPicSelf" type="checkbox" />
             <span>PIC</span>
           </label>
-          <input id="logPic" name="logPic" class="flight-log-picname" type="text" maxlength="40" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="PIC name" title="Pilot-in-command name (EASA log)" />
+          <input id="logPic" name="logPic" class="flight-log-picname" type="text" maxlength="96" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="PIC name" title="Pilot-in-command name (EASA log); for SIM add TRE/TRI and exam kind" />
           <input id="logDepAdd" class="flight-log-apt-add log-dep-add" type="text" inputmode="text" enterkeyhint="next" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" lang="en" placeholder="add" title="Add departure IATA (3-letter, charter / divert)" aria-label="Add departure airport" />
           <input id="logArrAdd" class="flight-log-apt-add log-arr-add" type="text" inputmode="text" enterkeyhint="done" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" lang="en" placeholder="add" title="Add arrival IATA (3-letter, charter / divert)" aria-label="Add arrival airport" />
         </div>
@@ -2974,7 +2975,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "2.81";
+    const APP_VERSION = "2.9";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** iOS clipboard-read succeeded at least once on this origin. */
@@ -3098,17 +3099,128 @@
       updateS26Display();
     }
 
-    /** After archiving / new OFF: last aircraft + toggle PF/PM from previous leg. */
+    /** After archiving / new OFF: last real aircraft + toggle PF/PM from previous leg. */
     function applyNextLegDefaults() {
-      const last = loadLogPrev()[0];
-      if (last && last.logAcft) {
-        $("logAcft").value = last.logAcft;
+      const rows = loadLogPrev();
+      const last = rows[0];
+      let acft = last && last.logAcft ? String(last.logAcft).trim().toUpperCase() : "";
+      const lastWasSim = acft === "SIM";
+      if (lastWasSim) {
+        const prior = rows.find((v) => {
+          const c = v && String(v.logAcft || "").trim().toUpperCase();
+          return c && c !== "SIM";
+        });
+        acft = prior ? String(prior.logAcft).trim().toUpperCase() : (DEFAULTS.logAcft || "CKA");
+      }
+      if (acft) {
+        const el = $("logAcft");
+        if (el) el.value = acft;
       }
       if (last) {
         $("logPf").checked = last.logPf !== "yes";
       } else {
         $("logPf").checked = false;
       }
+      if (lastWasSim) restoreAirportsAfterSim();
+      syncLogAcftPrevValue();
+    }
+
+    function isSimAcft() {
+      const el = $("logAcft");
+      return !!(el && String(el.value || "").trim().toUpperCase() === "SIM");
+    }
+
+    function isSimLeg(v) {
+      return String((v && v.logAcft) || "").trim().toUpperCase().replace(/^PH-/, "") === "SIM";
+    }
+
+    /** PIC field template for SIM sessions (TRE/TRI + exam notes). */
+    const SIM_PIC_HINT = "| add TRE/TRI name | EXAM kind etc.";
+
+    function simPicTemplate() {
+      const mine = getMyPicName();
+      return mine ? mine + " " + SIM_PIC_HINT : SIM_PIC_HINT;
+    }
+
+    function applySimPicHint() {
+      const nameEl = $("logPic");
+      if (nameEl) nameEl.value = simPicTemplate();
+    }
+
+    function addHoursHhmm(timeStr, hours) {
+      const start = timeToMinutes(timeStr);
+      if (start === null) return "";
+      let total = (start + Math.round(Number(hours) * 60)) % (24 * 60);
+      if (total < 0) total += 24 * 60;
+      const hh = Math.floor(total / 60);
+      const mm = total % 60;
+      return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+    }
+
+    function maybeDefaultSimOnBlocks() {
+      if (!isSimAcft()) return;
+      const offEl = $("offBlocks");
+      const onEl = $("onBlocks");
+      if (!offEl || !onEl) return;
+      if (timeToMinutes(offEl.value) === null) return;
+      if (timeToMinutes(onEl.value) !== null) return;
+      const next = addHoursHhmm(offEl.value, 4);
+      if (next) onEl.value = next;
+    }
+
+    function ensureSimAirports() {
+      ensureAirportOption($("logDep"), "SIM");
+      ensureAirportOption($("logArr"), "SIM");
+      syncAirportAddField("logDep", "logDepAdd");
+      syncAirportAddField("logArr", "logArrAdd");
+      updateS26Display();
+    }
+
+    function restoreAirportsAfterSim() {
+      const dep = detectDepAirport();
+      fillAirportSelect($("logDep"), dep);
+      applyArrForDep($("logDep").value || dep);
+      fillAirportSelect($("logArr"), DEP_TO_ARR[$("logDep").value] || DEP_TO_ARR[dep] || "AMS");
+      syncAirportAddField("logDep", "logDepAdd");
+      syncAirportAddField("logArr", "logArrAdd");
+      updateS26Display();
+    }
+
+    function ensureSimDeptDateAndOpen() {
+      const dateEl = $("logDeptDate");
+      if (!dateEl) return;
+      if (!dateEl.value.trim()) dateEl.value = formatUtcDate(new Date());
+      updateLogCalcs();
+      openDeptDatePopover();
+    }
+
+    function enterSimMode() {
+      const pf = $("logPf");
+      if (pf) pf.checked = true;
+      ensureSimAirports();
+      const air = $("airborne");
+      const td = $("touchdown");
+      if (air) air.value = "N/A";
+      if (td) td.value = "N/A";
+      applySimPicHint();
+      maybeDefaultSimOnBlocks();
+      ensureSimDeptDateAndOpen();
+      updateLogCalcs();
+    }
+
+    function leaveSimMode() {
+      ["airborne", "touchdown"].forEach((id) => {
+        const el = $(id);
+        if (el && /^n\/?a$/i.test(String(el.value || "").trim())) el.value = "";
+      });
+      restoreAirportsAfterSim();
+      const nameEl = $("logPic");
+      const cur = nameEl ? String(nameEl.value || "").trim() : "";
+      if (!cur || cur === SIM_PIC_HINT || cur.endsWith(SIM_PIC_HINT)) {
+        if (nameEl) nameEl.value = "";
+        applyPicDefIfOn();
+      }
+      updateLogCalcs();
     }
 
     const $ = (id) => document.getElementById(id);
@@ -3357,17 +3469,20 @@
 
     function checkLogTimeErrors() {
       const off = timeToMinutes(logEls.off.value);
-      const air = timeToMinutes(logEls.air.value);
-      const td = timeToMinutes(logEls.td.value);
+      const airRaw = String(logEls.air.value || "").trim();
+      const tdRaw = String(logEls.td.value || "").trim();
+      const air = /^n\/?a$/i.test(airRaw) ? null : timeToMinutes(airRaw);
+      const td = /^n\/?a$/i.test(tdRaw) ? null : timeToMinutes(tdRaw);
       const on = timeToMinutes(logEls.on.value);
       // FDPFMS-style: end < start ⇒ next day unless wrapped duration is absurd.
+      // SIM: airborne/touchdown are N/A — skip order checks that need those clocks.
       logEls.air.classList.toggle(
         "log-time-error",
-        isLogTimeOrderError(air, off, LOG_TAXI_WRAP_MAX_MIN)
+        air !== null && isLogTimeOrderError(air, off, LOG_TAXI_WRAP_MAX_MIN)
       );
       logEls.on.classList.toggle(
         "log-time-error",
-        isLogTimeOrderError(on, td, LOG_TAXI_WRAP_MAX_MIN)
+        td !== null && isLogTimeOrderError(on, td, LOG_TAXI_WRAP_MAX_MIN)
       );
     }
 
@@ -3517,8 +3632,11 @@
     }
 
     function updateLogCalcs() {
+      maybeDefaultSimOnBlocks();
       const block = subtractTimes(logEls.on.value, logEls.off.value);
-      const flight = subtractTimes(logEls.td.value, logEls.air.value);
+      const flight = isSimAcft()
+        ? ""
+        : subtractTimes(logEls.td.value, logEls.air.value);
       // Persist DEPT DATE when first complete — do not recompute on later opens (weeks later).
       if (timeToMinutes(logEls.off.value) !== null && !logEls.deptDate.value.trim()) {
         logEls.deptDate.value = computeLogUtcDate();
@@ -3699,10 +3817,11 @@
       if (landingFields) landingFields.style.marginLeft = "";
     }
 
-    /** Full registration for copy / table REG column (Martinair PH-…). */
+    /** Full registration for copy / table REG column (Martinair PH-…; SIM stays SIM). */
     function acftRegistration(code) {
       const c = String(code || "").trim().toUpperCase();
       if (!c) return "";
+      if (c === "SIM") return "SIM";
       if (c.startsWith("PH-")) return c;
       return "PH-" + c;
     }
@@ -3712,23 +3831,24 @@
       return s || "—";
     }
 
-    /** Column cells for one archived leg. UI: 3-letter REG; copy: PH-REG. */
+    /** Column cells for one archived leg. UI: 3-letter REG; copy: PH-REG. SIM route blank. */
     function logPrevCells(v, { phReg = false } = {}) {
       if (!v) {
         return ["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"];
       }
+      const sim = isSimLeg(v);
       const regRaw = String(v.logAcft || "").trim().toUpperCase().replace(/^PH-/, "");
       const reg = phReg ? (acftRegistration(regRaw) || "—") : (regRaw || "—");
       return [
         dash(v.logDeptDate),
         reg,
-        `${v.logDep || "—"}→${v.logArr || "—"}`,
+        sim ? "" : `${v.logDep || "—"}→${v.logArr || "—"}`,
         dash(v.offBlocks),
         dash(v.airborne),
         dash(v.touchdown),
         dash(v.onBlocks),
         subtractTimes(v.onBlocks, v.offBlocks) || "—",
-        subtractTimes(v.touchdown, v.airborne) || "—",
+        sim ? "N/A" : (subtractTimes(v.touchdown, v.airborne) || "—"),
         v.logPf === "yes" ? "PF" : "PM",
         dash(v.logPic)
       ];
@@ -3990,7 +4110,7 @@
       } catch (_) {}
     }
 
-    /** PF flights in the last 90 days → each counts as one T/O + one LDG. */
+    /** PF flights in the last 90 days → each counts as one T/O + one LDG (SIM = ×3). */
     function countPfToLdgLast90Days(list) {
       const rows = list || loadLogPrev();
       const now = new Date();
@@ -4002,7 +4122,8 @@
         const dep = parseLogDeptDate(v.logDeptDate);
         if (!dep) continue;
         const t = dep.getTime();
-        if (t >= cutoff && t <= today) n++;
+        if (t < cutoff || t > today) continue;
+        n += isSimLeg(v) ? 3 : 1;
       }
       return n;
     }
@@ -4226,6 +4347,7 @@
       });
       saveNow();
       updateLogCalcs();
+      syncLogAcftPrevValue();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => { suppressFocusClear = false; });
       });
@@ -4321,10 +4443,25 @@
             $(id)._editedSinceFocus = false;
           });
           $("logDeptDate").value = "";
+          const stayingSim = isSimAcft();
           applyNextLegDefaults();
           $("logPicSelf").checked = false;
           $("logPic").value = "";
           applyPicDefIfOn();
+          if (stayingSim) {
+            // User is still logging a SIM session — keep SIM presets.
+            $("logAcft").value = "SIM";
+            syncLogAcftPrevValue();
+            const air = $("airborne");
+            const td = $("touchdown");
+            if (air) air.value = "N/A";
+            if (td) td.value = "N/A";
+            applySimPicHint();
+            ensureSimAirports();
+            if (!$("logDeptDate").value.trim()) {
+              $("logDeptDate").value = formatUtcDate(new Date());
+            }
+          }
           // Keep DEP and ARR (manual airport picks stick across a new OFF entry).
           updateS26Display();
           armNewLeg = false;
@@ -4873,22 +5010,30 @@
 
     function buildLogOutput() {
       const v = getValues();
+      const sim = isSimAcft() || isSimLeg(v);
       const block = subtractTimes(v.onBlocks, v.offBlocks);
-      const flight = subtractTimes(v.touchdown, v.airborne);
+      const flight = sim ? "N/A" : subtractTimes(v.touchdown, v.airborne);
       const date = (v.logDeptDate || "").trim() || computeLogUtcDate();
+      const airOut = /^n\/?a$/i.test(String(v.airborne || "").trim())
+        ? "N/A"
+        : logTimeOut(v.airborne);
+      const tdOut = /^n\/?a$/i.test(String(v.touchdown || "").trim())
+        ? "N/A"
+        : logTimeOut(v.touchdown);
       const lines = [
         `ACFT: ${acftRegistration(v.logAcft)}`,
         `PIC: ${(v.logPic || "").trim()}`,
         `Acting as PIC: ${v.logPicSelf === "yes" ? "yes" : "no"}`,
-        `Pilot Flying: ${v.logPf === "yes" ? "yes" : "no"}`,
-        `DEP: ${v.logDep || ""}`,
-        `ARR: ${v.logArr || ""}`
+        `Pilot Flying: ${v.logPf === "yes" ? "yes" : "no"}`
       ];
+      if (!sim) {
+        lines.push(`DEP: ${v.logDep || ""}`, `ARR: ${v.logArr || ""}`);
+      }
       if (date) lines.push(`DEPT DATE: ${date}`);
       lines.push(
         `OFF BLOCKS: ${logTimeOut(v.offBlocks)}`,
-        `AIRBORNE: ${logTimeOut(v.airborne)}`,
-        `TOUCHDOWN: ${logTimeOut(v.touchdown)}`,
+        `AIRBORNE: ${airOut}`,
+        `TOUCHDOWN: ${tdOut}`,
         `ON BLOCKS: ${logTimeOut(v.onBlocks)}`,
         `BLOCK: ${block}`,
         `FLIGHT: ${flight}`
@@ -5034,23 +5179,29 @@
         const isPf = v.logPf === "yes";
         const isPicSelf = v.logPicSelf === "yes";
         const regRaw = String(v.logAcft || "").trim().toUpperCase().replace(/^PH-/, "");
-        const reg = acftRegistration(regRaw) || "";
+        const isSim = isSimLeg(v);
+        const reg = isSim ? "SIM" : (acftRegistration(regRaw) || "");
+        const toLdg = isPf ? (isSim ? "3" : "1") : "0";
+        const airRaw = String(v.airborne || "").trim();
+        const tdRaw = String(v.touchdown || "").trim();
+        const airOut = /^n\/?a$/i.test(airRaw) ? "N/A" : airRaw;
+        const tdOut = /^n\/?a$/i.test(tdRaw) ? "N/A" : tdRaw;
         lines.push(
           [
             formatLogTenDate(v.logDeptDate),
             reg,
-            "B744",
-            String(v.logDep || "").trim(),
-            String(v.logArr || "").trim(),
+            isSim ? "SIM" : "B744",
+            isSim ? "" : String(v.logDep || "").trim(),
+            isSim ? "" : String(v.logArr || "").trim(),
             String(v.offBlocks || "").trim(),
-            String(v.airborne || "").trim(),
-            String(v.touchdown || "").trim(),
+            airOut,
+            tdOut,
             String(v.onBlocks || "").trim(),
             block,
             isPicSelf ? block : "", // PIC time only when checkbox ticked
             String(v.logPic || "").trim(),
-            isPf ? "1" : "0", // exporting pilot flew the takeoff
-            isPf ? "1" : "0", // exporting pilot flew the landing
+            toLdg, // exporting pilot flew the takeoff(s)
+            toLdg, // exporting pilot flew the landing(s)
             isPf ? "PF" : "PM"
           ]
             .map(csvEscapeCell)
@@ -5493,7 +5644,18 @@
     bindOnBlocksArchivesLog();
     bindDeptDatePicker();
     bindAirportAddFields();
-    $("logAcft").addEventListener("change", () => { saveNow(); });
+    let logAcftPrevValue = "";
+    function syncLogAcftPrevValue() {
+      logAcftPrevValue = String(($("logAcft") && $("logAcft").value) || "");
+    }
+    $("logAcft").addEventListener("change", () => {
+      const now = String(($("logAcft") && $("logAcft").value) || "");
+      if (now === "SIM") enterSimMode();
+      else if (logAcftPrevValue === "SIM") leaveSimMode();
+      logAcftPrevValue = now;
+      saveNow();
+    });
+    syncLogAcftPrevValue();
     $("logPf").addEventListener("change", () => { saveNow(); });
     bindPicIdentity();
     ["rvsmL", "rvsmR"].forEach((id) => {
