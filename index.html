@@ -734,7 +734,7 @@
       margin-bottom: 2px;
     }
 
-    /* “Start here” markers — immediately left of target inputs / in CLEAR */
+    /* “Start here” markers — immediately left of target inputs */
     .start-here-input {
       display: inline-flex;
       flex-direction: row;
@@ -758,17 +758,6 @@
       -webkit-user-select: none;
       /* › glyph sits high in the em-box — nudge to optical center */
       transform: translateY(0.06em);
-    }
-
-    #btnClear .start-here-chevron {
-      display: inline-flex;
-      height: 1em;
-      margin-right: 0.12em;
-      font-size: 1.7em;
-      line-height: 1;
-      color: inherit;
-      transform: translateY(0.05em);
-      vertical-align: middle;
     }
 
     .card-clearance .field.squawk-input .start-here-input {
@@ -935,7 +924,7 @@
       line-height: 1.15;
     }
 
-    input:focus {
+    input:focus:not([type="checkbox"]):not([type="radio"]) {
       outline: 2px solid var(--accent);
       outline-offset: 1px;
       border-color: var(--accent);
@@ -1283,6 +1272,55 @@
       overflow: visible;
     }
 
+    .log-prev-row > span.c-pic {
+      overflow: visible;
+      text-overflow: clip;
+    }
+
+    /* Inline PIC + REMARK edit in the log table */
+    .log-prev-pic-edit {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 1px 4px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: max(0.74rem, 16px); /* ≥16px avoids iOS focus zoom */
+      font-weight: 550;
+      letter-spacing: 0.01em;
+      text-align: left;
+      line-height: 1.3;
+      min-height: 1.35em;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .log-prev-pic-edit:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--field);
+      color: var(--text);
+    }
+
+    html.theme-bright .log-prev-pic-edit:focus {
+      border-width: 2px;
+      border-color: #000;
+      background: #fff;
+      color: #000;
+    }
+
+    .log-prev-pic-edit::placeholder {
+      color: var(--placeholder);
+      opacity: 0.85;
+      font-weight: 400;
+    }
+
     /* Mark box — large enough for fat-finger ticks without stretching row text */
     .log-prev-mark {
       width: 1.35rem;
@@ -1449,13 +1487,15 @@
       pointer-events: none;
     }
 
-    .log-btn-bar .log-btn-muted {
+    .log-btn-bar .log-btn-muted,
+    button.log-btn-muted {
       background: transparent;
       color: var(--muted);
       border: 1px solid var(--line);
     }
 
-    .log-btn-bar .log-btn-muted:active {
+    .log-btn-bar .log-btn-muted:active,
+    button.log-btn-muted:active {
       background: rgba(0, 161, 228, 0.15);
       color: var(--text);
       border-color: var(--accent);
@@ -1466,7 +1506,8 @@
       border-color: var(--warn);
     }
 
-    html.theme-bright .log-btn-bar .log-btn-muted {
+    html.theme-bright .log-btn-bar .log-btn-muted,
+    html.theme-bright button.log-btn-muted {
       background: #fff;
       border: 2px solid #000;
       color: #000;
@@ -1837,7 +1878,8 @@
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
     }
 
-    html.theme-bright .log-btn-bar .log-btn-muted {
+    html.theme-bright .log-btn-bar .log-btn-muted,
+    html.theme-bright button.log-btn-muted {
       background: #fff;
       border: 2px solid #000;
       color: #000;
@@ -2084,12 +2126,48 @@
     .flight-log-pf.log-pf { grid-area: pf; }
     .flight-log-pf.log-pics { grid-area: pics; }
 
-    .flight-log-pf input {
-      width: 1.4rem;
-      height: 1.4rem;
+    .flight-log-pf input[type="checkbox"] {
+      /* Rounded squares (not circles) — matches prior iOS-like ticks */
+      -webkit-appearance: none;
+      appearance: none;
+      width: 1.35rem;
+      height: 1.35rem;
       margin: 0;
-      accent-color: var(--accent);
+      padding: 0;
       flex: 0 0 auto;
+      box-sizing: border-box;
+      border: 1.5px solid var(--field-border);
+      border-radius: 0.35rem;
+      background: var(--field);
+      outline: none;
+      box-shadow: none;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    .flight-log-pf input[type="checkbox"]:checked {
+      border-color: var(--accent);
+      background-color: var(--accent);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.2l2.8 2.8 6.2-6.2'/%3E%3C/svg%3E");
+      background-size: 72% 72%;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .flight-log-pf input[type="checkbox"]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    html.theme-bright .flight-log-pf input[type="checkbox"] {
+      border-width: 2px;
+      border-color: #000;
+      background: #fff;
+    }
+
+    html.theme-bright .flight-log-pf input[type="checkbox"]:checked {
+      border-color: var(--accent);
+      background-color: var(--accent);
     }
 
     .flight-log-acft-wrap {
@@ -2963,8 +3041,8 @@
           </div>
         </div>
         <div class="card card-toolbar-actions" aria-label="Clear and history">
-          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update."><span class="start-here-chevron" aria-hidden="true">›</span> CLEAR</button>
-          <button type="button" id="btnRestore" disabled title="Restore last cleared or copied form values">HIST</button>
+          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update.">▶ CLEAR</button>
+          <button type="button" id="btnRestore" class="log-btn-muted" title="Restore last cleared or copied form values">HIST</button>
         </div>
 
         <section class="card card-clearance">
@@ -3004,7 +3082,7 @@
         <section class="card card-fuel">
           <div class="dsperfo-paste-row" aria-label="DSPERFO actions">
             <button type="button" id="btnOpenDsperfo" class="paste-here-btn" title="Open DS Perfo (com.klm.dynamicsource://)" aria-label="Open DS Perfo app">DSPERFO</button>
-            <button type="button" id="btnPasteDsperfo" class="paste-here-btn" aria-label="Paste DSPERFO take-off line">PASTE HERE</button>
+            <button type="button" id="btnPasteDsperfo" class="paste-here-btn log-btn-muted" aria-label="Paste DSPERFO take-off line">PASTE HERE</button>
           </div>
           <p class="dsperfo-hint">LONGPRESS DSPERFO HEADER &quot;Calculated 00:00:00z&quot;</p>
           <div class="field">
@@ -3056,7 +3134,7 @@
         </section>
 
         <div class="card card-copy-segment card-copy-dept card-copy-compact">
-          <button type="button" id="btnCopy" title="Copy departure text, then open FLIGHT">COPY DEPT TEXT</button>
+          <button type="button" id="btnCopy" class="log-btn-muted" title="Copy departure text, then open FLIGHT">COPY DEPT TEXT</button>
         </div>
         </div>
 
@@ -3075,7 +3153,7 @@
         </section>
 
         <div class="card card-copy-segment card-copy-arr card-copy-compact">
-          <button type="button" id="btnCopyArr" title="Copy arrival text, then open FLIGHT">COPY ARR TEXT</button>
+          <button type="button" id="btnCopyArr" class="log-btn-muted" title="Copy arrival text, then open FLIGHT">COPY ARR TEXT</button>
         </div>
 
         <div class="log-phase-rule" aria-hidden="true"></div>
@@ -3173,10 +3251,10 @@
       <div class="log-btn-bar" role="group" aria-label="Logbook actions">
         <button type="button" class="log-btn-muted" id="btnEditMarkedLog" title="Load one marked line into YOUR LOG for editing">EDIT MARKED LINE</button>
         <button type="button" class="log-btn-muted log-btn-warn" id="btnClearMarkedLog" title="Remove checked logbook lines">CLEAR MARKED LINES</button>
-        <button type="button" id="btnCopyAllLog">COPY LOG AS TABLE</button>
-        <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">COPY LOG AS CSV</button>
+        <button type="button" class="log-btn-muted" id="btnCopyAllLog">COPY LOG AS TABLE</button>
+        <button type="button" class="log-btn-muted" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">COPY LOG AS CSV</button>
         <p class="log-data-note" id="logDataNote">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
-        <button type="button" id="btnCopyLog" title="Add current YOUR LOG line to the table and copy text">ADD TO LOG</button>
+        <button type="button" class="log-btn-muted" id="btnCopyLog" title="Add current YOUR LOG line to the table and copy text">ADD TO LOG</button>
       </div>
 
       <div class="log-prev" id="logPrev" aria-label="Previous log summaries" aria-live="polite">
@@ -3287,7 +3365,7 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "3.7";
+    const APP_VERSION = "3.9";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -3324,9 +3402,9 @@
     const LOG_TIME_IDS = ["offBlocks", "airborne", "touchdown", "onBlocks"];
     const LOG_PREV_HEADERS = [
       "DEP DATE", "REG", "ROUTE", "OFF BLK", "T/O", "LDG",
-      "ON BLK", "BLOCK", "FLIGHT", "TASK", "PIC"
+      "ON BLK", "BLOCK", "FLIGHT", "TASK", "PIC + REMARK"
     ];
-    /** UI table only — mark column after PIC (not included in copy LOG as table). */
+    /** UI table only — mark column after PIC + REMARK (not included in copy LOG as table). */
     const LOG_PREV_UI_HEADERS = LOG_PREV_HEADERS.concat([""]);
     const DEFAULTS = {
       security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
@@ -3417,7 +3495,7 @@
       updateS26Display();
     }
 
-    /** After archiving / new OFF: keep the aircraft just used (not “newest date” row). */
+    /** After archiving / new OFF: keep the aircraft just used (not “newest date” row). PF stays as set. */
     function applyNextLegDefaults(fromSnap) {
       const rows = loadLogPrev();
       const last = fromSnap || rows[0];
@@ -3430,11 +3508,6 @@
         if (el) el.value = acft;
         syncLogAcftPrevValue();
         syncSimUi();
-      }
-      if (last) {
-        $("logPf").checked = last.logPf !== "yes";
-      } else {
-        $("logPf").checked = false;
       }
     }
 
@@ -4194,6 +4267,7 @@
       if (logEls.flight) logEls.flight.textContent = flight || "—";
       // S26 only changes with airports — updateS26Display() from those handlers.
       checkLogTimeErrors();
+      syncLogActionButtons();
     }
 
     /** In-app calendar (Cursor browser / iPad / desktop — native type=date is unreliable). */
@@ -4420,10 +4494,9 @@
       return /^n\/?a$/i.test(String(value || "").trim());
     }
 
-    /** Missing fields for a complete log line (SIM: AIR/TD may be N/A). */
+    /** Missing fields for a complete log line (AIR/TD optional — not required for EASA block log). */
     function getIncompleteLogFields(snap) {
       const missing = [];
-      const sim = isSimLeg(snap) || isSimAcft();
       if (!String(snap.logDeptDate || "").trim()) {
         missing.push({ id: "logDateHit", label: "DEP DATE" });
       }
@@ -4438,14 +4511,6 @@
       }
       if (digitsOnly(snap.offBlocks).length < 4) {
         missing.push({ id: "offBlocks", label: "OFF BLOCKS" });
-      }
-      if (!sim) {
-        if (digitsOnly(snap.airborne).length < 4 && !isNaClock(snap.airborne)) {
-          missing.push({ id: "airborne", label: "AIRBORNE" });
-        }
-        if (digitsOnly(snap.touchdown).length < 4 && !isNaClock(snap.touchdown)) {
-          missing.push({ id: "touchdown", label: "TOUCHDOWN" });
-        }
       }
       if (digitsOnly(snap.onBlocks).length < 4) {
         missing.push({ id: "onBlocks", label: "ON BLOCKS" });
@@ -4476,10 +4541,135 @@
     }
 
     function syncCopyAddButtonLabel() {
-      const btn = $("btnCopyLog");
-      if (!btn || btn.disabled) return;
-      if (btn.classList.contains("copied")) return;
-      btn.textContent = copyAddButtonLabel();
+      syncLogActionButtons();
+    }
+
+    /** True if current form would replace an existing log line (edit or same identity). */
+    function wouldUpdateExistingLog(snap) {
+      const list = loadLogPrev();
+      if (logEditIndex != null && logEditIndex >= 0 && logEditIndex < list.length) return true;
+      const idKey = logLegIdentityKey(snap);
+      if (idKey && digitsOnly(snap.offBlocks).length >= 4) {
+        if (list.some((v) => v && logLegIdentityKey(v) === idKey)) return true;
+      }
+      const k = logLegKey(snap);
+      if (k && list.some((v) => v && logLegKey(v) === k)) return true;
+      return false;
+    }
+
+    function setLogBtnAction(btn, ready) {
+      if (!btn) return;
+      btn.classList.toggle("log-btn-muted", !ready);
+      btn.setAttribute("aria-disabled", ready ? "false" : "true");
+      if (btn.id === "btnRestore") btn.disabled = false; // visual mute only — keep tappable
+    }
+
+    /** DEPT copy fields that must be non-empty (MNPS toggle always has a value). */
+    function getIncompleteDeptFields(v) {
+      v = v || getValues();
+      const missing = [];
+      const need = [
+        ["security", "Security check"],
+        ["atis", "DEPT ATIS"],
+        ["ctot", "CTOT"],
+        ["pdc", "PDC/ACARS ref"],
+        ["rwySid", "Runway and SID"],
+        ["climbTo", "Climb to"],
+        ["transponder", "Transponder"],
+        ["fuel", "Fuel"],
+        ["tom", "TOM"],
+        ["calcAt", "Calculated at"],
+        ["rwy", "RWY"],
+        ["intersection", "INTERSECTION"],
+        ["rvsmL", "RVSM L"],
+        ["rvsmR", "RVSM R"],
+        ["rvsmSby", "RVSM SBY"]
+      ];
+      need.forEach(([id, label]) => {
+        if (!String(v[id] || "").trim()) missing.push({ id, label });
+      });
+      if (String(v.transponder || "").trim() && digitsOnly(v.transponder).length < 4) {
+        if (!missing.some((m) => m.id === "transponder")) {
+          missing.push({ id: "transponder", label: "Transponder" });
+        }
+      }
+      return missing;
+    }
+
+    function arrCopyReady(v) {
+      v = v || getValues();
+      return !!String(v.arrAtis || "").trim() && digitsOnly(v.ldis).length >= 4;
+    }
+
+    /** Last probe: clipboard holds a parseable DSPERFO Take-off line. */
+    let dsperfoClipboardReady = false;
+
+    async function refreshDsperfoClipboardReady() {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        dsperfoClipboardReady = false;
+        syncActionButtons();
+        return;
+      }
+      let pastOk = false;
+      try { pastOk = !!localStorage.getItem(CLIP_PASTE_OK_KEY); } catch (_) {}
+      if (!pastOk) {
+        dsperfoClipboardReady = false;
+        syncActionButtons();
+        return;
+      }
+      try {
+        const text = await navigator.clipboard.readText();
+        dsperfoClipboardReady = !!parseDsperfoTakeoff(text);
+      } catch (_) {
+        dsperfoClipboardReady = false;
+      }
+      syncActionButtons();
+    }
+
+    /**
+     * Dim vs blue action styles:
+     * Log: ADD / EDIT / CLEAR MARKED / TABLE / CSV
+     * Form: PASTE HERE / COPY DEPT / COPY ARR / HIST
+     */
+    function syncActionButtons() {
+      const snap = snapshotLogLeg();
+      const complete = getIncompleteLogFields(snap).length === 0;
+      const full = isLogPrevFull();
+      const addReady = complete && (!full || wouldUpdateExistingLog(snap));
+      const marked = getMarkedLogIndices().length > 0;
+      const hasLog = loadLogPrev().length > 0;
+      const v = getValues();
+      const deptReady = getIncompleteDeptFields(v).length === 0;
+      const arrReady = arrCopyReady(v);
+      const hasHist = !!loadHistory();
+
+      const addBtn = $("btnCopyLog");
+      if (addBtn && !addBtn.classList.contains("is-logged") && !addBtn.classList.contains("copied")) {
+        setLogBtnAction(addBtn, addReady);
+        addBtn.textContent = copyAddButtonLabel();
+      }
+      setLogBtnAction($("btnEditMarkedLog"), marked);
+      setLogBtnAction($("btnClearMarkedLog"), marked);
+      setLogBtnAction($("btnCopyAllLog"), hasLog);
+      setLogBtnAction($("btnCopyLogCsv"), hasLog);
+
+      const pasteBtn = $("btnPasteDsperfo");
+      if (pasteBtn && !pasteBtn.classList.contains("copied")) {
+        setLogBtnAction(pasteBtn, dsperfoClipboardReady);
+      }
+      const deptBtn = $("btnCopy");
+      if (deptBtn && !deptBtn.classList.contains("copied")) {
+        setLogBtnAction(deptBtn, deptReady);
+      }
+      const arrBtn = $("btnCopyArr");
+      if (arrBtn && !arrBtn.classList.contains("copied")) {
+        setLogBtnAction(arrBtn, arrReady);
+      }
+      setLogBtnAction($("btnRestore"), hasHist);
+    }
+
+    function syncLogActionButtons() {
+      syncActionButtons();
     }
 
     function getMyPicName() {
@@ -4854,6 +5044,36 @@
             box.className = "task-pf-box";
             box.textContent = "PF";
             span.appendChild(box);
+          } else if (col === 10 && v && storageIdx != null) {
+            // PIC + REMARK — editable in-table
+            span.className = "c-pic";
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.className = "log-prev-pic-edit";
+            inp.value = String(v.logPic || "").trim();
+            inp.maxLength = 96;
+            inp.placeholder = "PIC + remark";
+            inp.autocomplete = "off";
+            inp.autocapitalize = "words";
+            inp.spellcheck = false;
+            inp.title = "Edit PIC name / remark";
+            inp.setAttribute("aria-label", "PIC and remark for log line " + (slot + 1));
+            inp.addEventListener("click", (e) => e.stopPropagation());
+            const commitPic = () => {
+              const list = loadLogPrev();
+              if (storageIdx < 0 || storageIdx >= list.length || !list[storageIdx]) return;
+              const next = String(inp.value || "").trim();
+              if (String(list[storageIdx].logPic || "").trim() === next) return;
+              list[storageIdx] = Object.assign({}, list[storageIdx], { logPic: next });
+              saveLogPrev(list);
+              if (logEditIndex === storageIdx) {
+                const formPic = $("logPic");
+                if (formPic) formPic.value = next;
+              }
+            };
+            inp.addEventListener("change", commitPic);
+            inp.addEventListener("blur", commitPic);
+            span.appendChild(inp);
           } else {
             span.textContent = text;
           }
@@ -4869,6 +5089,7 @@
           cb.title = "Mark line to clear or edit";
           cb.setAttribute("aria-label", "Mark log line " + (slot + 1));
           cb.addEventListener("click", (e) => e.stopPropagation());
+          cb.addEventListener("change", () => syncLogActionButtons());
           markCell.appendChild(cb);
         }
         row.appendChild(markCell);
@@ -4878,6 +5099,7 @@
       updateLogPf90Badge(storage);
       updateLogBackupReminder(storage);
       updateLogbookFullUi(storage);
+      syncLogActionButtons();
     }
     function countPfToLdgLast90Days(list) {
       const rows = list || loadLogPrev();
@@ -5271,9 +5493,6 @@
       if ($("logDeptDate")) $("logDeptDate").value = "";
       if (wasSim) {
         exitSimToDefaultAircraft();
-        const last = snap || loadLogPrev()[0];
-        if (last) $("logPf").checked = last.logPf !== "yes";
-        else $("logPf").checked = false;
       } else {
         applyNextLegDefaults(snap);
       }
@@ -5284,7 +5503,7 @@
 
     /**
      * Starting a new log: replacing OFF (type over select-all, or type into empty)
-     * clears prior leg times/date/PF. Skipped while Edit Marked Line is active.
+     * clears prior leg times/date. PF stays as set. Skipped while Edit Marked Line is active.
      */
     function bindOffBlocksStartsNewLog() {
       const el = $("offBlocks");
@@ -5542,6 +5761,8 @@
     function applyDsperfoFromText(text) {
       const parsed = parseDsperfoTakeoff(text);
       if (!parsed) {
+        dsperfoClipboardReady = false;
+        syncActionButtons();
         showToast("Not a Take-off line");
         return false;
       }
@@ -5551,6 +5772,8 @@
       if (rwyAccepted.rejected) flashFieldWarn($("rwy"));
       $("intersection").value = parsed.intersection;
       saveNow();
+      dsperfoClipboardReady = true;
+      syncActionButtons();
       showToast("DSPERFO pasted");
       return true;
     }
@@ -5600,12 +5823,18 @@
         .then((text) => {
           try { localStorage.setItem(CLIP_PASTE_OK_KEY, "1"); } catch (_) {}
           if (!text || !String(text).trim()) {
+            dsperfoClipboardReady = false;
+            syncActionButtons();
             showToast("Clipboard empty");
             return;
           }
+          dsperfoClipboardReady = !!parseDsperfoTakeoff(text);
+          syncActionButtons();
           applyDsperfoFromText(text);
         })
         .catch(() => {
+          dsperfoClipboardReady = false;
+          syncActionButtons();
           showToast("Paste blocked — tap Allow if iOS asks", 2800);
           queryClipboardReadPermission().then((perm) => {
             showPastePermissionHelp(perm === "denied");
@@ -5726,7 +5955,8 @@
     }
 
     function updateHistoryButton(hasSnap) {
-      $("btnRestore").disabled = !(hasSnap === undefined ? loadHistory() : hasSnap);
+      const ready = hasSnap === undefined ? !!loadHistory() : !!hasSnap;
+      setLogBtnAction($("btnRestore"), ready);
     }
 
     function saveHistory(snap) {
@@ -5741,10 +5971,14 @@
 
     function restoreHistory() {
       const snap = loadHistory();
-      if (!snap) return;
+      if (!snap) {
+        showToast("No history");
+        return;
+      }
       setValues(Object.assign({}, snap));
       saveNow();
       updateLogCalcs();
+      syncActionButtons();
       showToast("History restored");
     }
 
@@ -5837,6 +6071,7 @@
       setTimeout(() => {
         btn.classList.remove("copied");
         btn.textContent = label;
+        syncLogActionButtons();
       }, 1400);
     }
 
@@ -6040,6 +6275,11 @@
     }
 
     async function copyAll() {
+      const missing = getIncompleteDeptFields();
+      if (missing.length) {
+        showToast("DEPT incomplete — fill " + missing[0].label, 2800);
+        return;
+      }
       pushHistory();
       await writeClipboard(buildOutput());
       flashCopyBtn($("btnCopy"), "COPY DEPT TEXT");
@@ -6047,6 +6287,10 @@
     }
 
     async function copyArr() {
+      if (!arrCopyReady()) {
+        showToast("ARR incomplete — need ATIS and LDIS", 2800);
+        return;
+      }
       pushHistory();
       await writeClipboard(buildArrOutput());
       flashCopyBtn($("btnCopyArr"), "COPY ARR TEXT");
@@ -6605,8 +6849,26 @@
     $("logPf").addEventListener("change", () => {
       if (isSimAcft()) ensureSimPf();
       saveNow();
+      syncLogActionButtons();
     });
     bindPicIdentity();
+    ["logPic", "logPicSelf", "logAcft", "logDep", "logArr", "logTol"].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("change", () => syncLogActionButtons());
+      el.addEventListener("input", () => syncLogActionButtons());
+    });
+    [
+      "security", "atis", "ctot", "pdc", "rwySid", "climbTo", "transponder",
+      "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby",
+      "arrAtis", "ldis"
+    ].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("input", () => syncActionButtons());
+      el.addEventListener("change", () => syncActionButtons());
+      el.addEventListener("blur", () => syncActionButtons());
+    });
     ["rvsmL", "rvsmR"].forEach((id) => {
       $(id).addEventListener("input", () => checkRvsmDiff(false));
       $(id).addEventListener("blur", () => checkRvsmDiff(true));
@@ -6614,8 +6876,8 @@
     // SBY has no L/R cross-check; still clear any stale warn on edit.
     $("rvsmSby").addEventListener("input", () => $("rvsmSby").classList.remove("warn-diff"));
 
-    $("mnpsNA").addEventListener("click", () => { setMnps("N/A"); saveNow(); });
-    $("mnpsPerformed").addEventListener("click", () => { setMnps("PERFORMED"); saveNow(); });
+    $("mnpsNA").addEventListener("click", () => { setMnps("N/A"); saveNow(); syncActionButtons(); });
+    $("mnpsPerformed").addEventListener("click", () => { setMnps("PERFORMED"); saveNow(); syncActionButtons(); });
     $("flightForm").addEventListener("submit", (e) => e.preventDefault());
     $("btnCopy").addEventListener("click", copyAll);
     $("btnCopyArr").addEventListener("click", copyArr);
@@ -6656,7 +6918,9 @@
     })();
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") saveNow();
+      else refreshDsperfoClipboardReady();
     });
+    window.addEventListener("focus", () => refreshDsperfoClipboardReady());
     window.addEventListener("pagehide", saveNow);
 
     function initServiceWorker() {
@@ -6906,6 +7170,8 @@
     checkRvsmDiff(true);
     checkSquawkLen(true);
     updateLogCalcs();
+    syncActionButtons();
+    refreshDsperfoClipboardReady();
     if (!getMyPicName() && !hasAnsweredPicNamePrompt()) {
       showPicNameOverlay();
     }
