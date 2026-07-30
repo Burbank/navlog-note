@@ -737,6 +737,7 @@
     /* “Start here” markers — immediately left of target inputs / in CLEAR */
     .start-here-input {
       display: inline-flex;
+      flex-direction: row;
       align-items: center;
       gap: 3px;
       min-width: 0;
@@ -744,30 +745,45 @@
 
     .start-here-chevron {
       flex: 0 0 auto;
-      font-size: 2em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px; /* match default text input min-height */
+      font-size: 1.7em;
       font-weight: 700;
-      line-height: 0.85;
+      line-height: 1;
       color: var(--accent);
       pointer-events: none;
       user-select: none;
       -webkit-user-select: none;
+      /* › glyph sits high in the em-box — nudge to optical center */
+      transform: translateY(0.06em);
     }
 
     #btnClear .start-here-chevron {
-      display: inline-block;
-      vertical-align: -0.12em;
-      margin-right: 0.1em;
-      font-size: 2em;
-      line-height: 0.75;
+      display: inline-flex;
+      height: 1em;
+      margin-right: 0.12em;
+      font-size: 1.7em;
+      line-height: 1;
       color: inherit;
+      transform: translateY(0.05em);
+      vertical-align: middle;
     }
 
     .card-clearance .field.squawk-input .start-here-input {
       justify-self: end;
+      align-self: center;
     }
 
     .flight-log-entry .field .start-here-input {
       flex: 0 0 auto;
+      align-items: center;
+      min-height: var(--log-ctrl-h);
+    }
+
+    .flight-log-entry .field .start-here-chevron {
+      height: var(--log-ctrl-h);
     }
 
     /* Clearance card — shared widths */
@@ -873,10 +889,13 @@
     .card-fuel .dsperfo-hint {
       margin: 0 0 6px;
       padding: 2px 0;
-      font-size: 0.68rem;
-      font-weight: 500;
-      line-height: 1.2;
-      color: var(--text);
+      /* Match “Best view: iPad landscape · …” */
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: 1.15;
       text-align: center;
       white-space: nowrap;
     }
@@ -1217,9 +1236,44 @@
     /* Align with left edge of YOUR LOG segment; PIC left for long names */
     .log-prev-row > span:nth-child(1),
     .log-prev-head > span:nth-child(1),
+    .log-prev-head > button.log-prev-sort-date,
     .log-prev-row > span:nth-child(11),
     .log-prev-head > span:nth-child(11) {
       text-align: left;
+    }
+
+    /* DEP DATE sort — same footprint as header cell; Finder-style arrow only */
+    .log-prev-head > button.log-prev-sort-date {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      min-height: 0;
+      margin: 0;
+      padding: 2px 0;
+      border: none;
+      border-radius: 2px;
+      background: rgba(0, 161, 228, 0.2);
+      color: inherit;
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-align: left;
+      line-height: 1.35;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      transform: none;
+    }
+
+    .log-prev-head > button.log-prev-sort-date:active {
+      background: rgba(0, 161, 228, 0.2);
+      transform: none;
+    }
+
+    html.theme-bright .log-prev-head > button.log-prev-sort-date {
+      background: #c5ceda;
+      color: #000;
     }
 
     .log-prev-row > span.c-mark {
@@ -1815,7 +1869,8 @@
       background: #e2e6eb;
     }
 
-    html.theme-bright .log-prev-head > span {
+    html.theme-bright .log-prev-head > span,
+    html.theme-bright .log-prev-head > button.log-prev-sort-date {
       background: #c5ceda;
       border-radius: 2px;
     }
@@ -2118,6 +2173,18 @@
       box-sizing: border-box;
       justify-self: stretch;
       align-self: center;
+    }
+
+    /* Visible log slots full — replace PIC name cue */
+    input.flight-log-picname.log-pic-full {
+      color: #ff2d95; /* magenta on dim */
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    html.theme-bright input.flight-log-picname.log-pic-full {
+      color: #c00000; /* red on bright */
     }
 
     .flight-log-entry .field {
@@ -3217,8 +3284,10 @@
     const LOG_PREV_DISPLAY_STANDALONE = 12; /* A2903 web app — taller logbook area */
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
+    /** Shown in PIC name field when visible log slots are full. */
+    const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "3.6";
+    const APP_VERSION = "3.7";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -3348,10 +3417,10 @@
       updateS26Display();
     }
 
-    /** After archiving / new OFF: last real aircraft + toggle PF/PM from previous leg. */
-    function applyNextLegDefaults() {
+    /** After archiving / new OFF: keep the aircraft just used (not “newest date” row). */
+    function applyNextLegDefaults(fromSnap) {
       const rows = loadLogPrev();
-      const last = rows[0];
+      const last = fromSnap || rows[0];
       let acft = last && last.logAcft ? String(last.logAcft).trim().toUpperCase() : "";
       const lastWasSim = acft === "SIM";
       if (lastWasSim) {
@@ -3367,6 +3436,16 @@
       } else {
         $("logPf").checked = false;
       }
+    }
+
+    /** Prefer last non-SIM aircraft from the log; fall back to CKA. */
+    function lastNonSimAircraft() {
+      const rows = loadLogPrev();
+      for (const v of rows) {
+        const a = v && String(v.logAcft || "").trim().toUpperCase();
+        if (a && a !== "SIM") return a;
+      }
+      return DEFAULTS.logAcft || "CKA";
     }
 
     function isSimAcft() {
@@ -3417,13 +3496,13 @@
 
     let ignoreSimAirportTrigger = false;
 
-    /** Leave SIM chrome and return the YOUR LOG segment to normal line-aircraft inputs (CKA). */
+    /** Leave SIM chrome and return the YOUR LOG segment to last real aircraft (or CKA). */
     function exitSimToDefaultAircraft() {
       ignoreSimAirportTrigger = true;
       simModeLock = false;
       try {
         const el = $("logAcft");
-        if (el) el.value = DEFAULTS.logAcft || "CKA";
+        if (el) el.value = lastNonSimAircraft();
         ["airborne", "touchdown"].forEach((id) => {
           const t = $(id);
           if (t && /^n\/?a$/i.test(String(t.value || "").trim())) t.value = "";
@@ -3464,7 +3543,8 @@
 
     function applySimPicHint() {
       const nameEl = $("logPic");
-      if (nameEl) nameEl.value = simPicTemplate();
+      if (!nameEl || isLogPrevFull()) return;
+      nameEl.value = simPicTemplate();
     }
 
     function addHoursHhmm(timeStr, hours) {
@@ -3567,11 +3647,7 @@
         return;
       }
       if (isSimAcft() && c && c !== "SIM") {
-        const prior = loadLogPrev().find((v) => {
-          const a = v && String(v.logAcft || "").trim().toUpperCase();
-          return a && a !== "SIM";
-        });
-        const nextAcft = prior ? String(prior.logAcft).trim().toUpperCase() : (DEFAULTS.logAcft || "CKA");
+        const nextAcft = lastNonSimAircraft();
         const el = $("logAcft");
         if (el) el.value = nextAcft;
         leaveSimMode({ preferDep: source === "dep" ? c : undefined });
@@ -4441,13 +4517,43 @@
 
     /** Any saved PIC name means PIC defaults on (captains); no name → leave unticked. */
     function applyPicDefIfOn() {
+      if (isLogPrevFull()) return;
       const mine = getMyPicName();
       if (!mine) return;
       const selfCb = $("logPicSelf");
       const nameEl = $("logPic");
       if (!selfCb || !nameEl) return;
+      if (nameEl.classList.contains("log-pic-full")) return;
       selfCb.checked = true;
       nameEl.value = mine;
+    }
+
+    /** Visible table capacity (9 Safari / 12 Home Screen). */
+    function isLogPrevFull(list) {
+      const rows = list || loadLogPrev();
+      return rows.length >= logPrevDisplayCount();
+    }
+
+    /** PIC field → LOGBOOK FULL (magenta/red); block new adds until a line is cleared. */
+    function updateLogbookFullUi(list) {
+      const nameEl = $("logPic");
+      if (!nameEl) return;
+      const full = isLogPrevFull(list);
+      const editing = logEditIndex != null;
+      const wasFull = nameEl.classList.contains("log-pic-full");
+      nameEl.classList.toggle("log-pic-full", full && !editing);
+      nameEl.readOnly = full && !editing;
+      if (full && !editing) {
+        nameEl.value = LOGBOOK_FULL_MSG;
+        nameEl.title = "Logbook full — clear a marked line before adding another";
+      } else {
+        nameEl.title = "Pilot-in-command name (EASA log); for SIM add TRE/TRI and exam kind";
+        if (!editing && (wasFull || nameEl.value === LOGBOOK_FULL_MSG)) {
+          nameEl.value = "";
+          applyPicDefIfOn();
+          if (isSimAcft()) applySimPicHint();
+        }
+      }
     }
 
     /** Keep modal shells inside the visible viewport (above iPad keyboard). */
@@ -4652,9 +4758,127 @@
       try {
         localStorage.setItem(LOG_PREV_KEY, JSON.stringify(ordered));
       } catch (_) {}
+      return ordered;
     }
 
-    /** PF flights in the last 90 days → each counts as one T/O + one LDG (SIM uses TOL). */
+    /** UI sort: true = newest DEP DATE first (default). Storage always newest-first. */
+    const LOG_PREV_SORT_KEY = "flight-plan-form-log-prev-sort-v1";
+    let logPrevSortNewest = true;
+    try {
+      logPrevSortNewest = localStorage.getItem(LOG_PREV_SORT_KEY) !== "oldest";
+    } catch (_) {}
+
+    function setLogPrevSortNewest(newest) {
+      logPrevSortNewest = !!newest;
+      try {
+        localStorage.setItem(LOG_PREV_SORT_KEY, logPrevSortNewest ? "newest" : "oldest");
+      } catch (_) {}
+    }
+
+    /** Storage indices in current display order (respects DEP DATE sort toggle). */
+    function logPrevDisplayStorageOrder(list) {
+      /* Always normalize to newest-first so indices match loadLogPrev() / mark checkboxes */
+      const storage = sortLogPrevNewestFirst(list || loadLogPrev());
+      const idxs = storage.map((_, i) => i);
+      if (!logPrevSortNewest) idxs.reverse();
+      return { storage, idxs };
+    }
+
+    function updateLogPrevSortHeader() {
+      const btn = $("logPrevSortDate");
+      if (!btn) return;
+      /* Finder-style: ▼ = descending (newest first), ▲ = ascending */
+      btn.textContent = "DEP DATE " + (logPrevSortNewest ? "▼" : "▲");
+      btn.title = logPrevSortNewest
+        ? "Sorted newest first — tap for oldest first"
+        : "Sorted oldest first — tap for newest first";
+      btn.setAttribute("aria-label", btn.title);
+    }
+
+    function syncLogPrevHead() {
+      const head = document.querySelector("#logPrevTable .log-prev-head");
+      if (!head) return;
+      if (head.childElementCount !== LOG_PREV_UI_HEADERS.length || !$("logPrevSortDate")) {
+        head.replaceChildren(...LOG_PREV_UI_HEADERS.map((h, i) => {
+          if (i === 0) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "log-prev-sort-date";
+            btn.id = "logPrevSortDate";
+            btn.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setLogPrevSortNewest(!logPrevSortNewest);
+              updateLogPrevSortHeader();
+              renderLogPrev();
+            });
+            return btn;
+          }
+          const span = document.createElement("span");
+          span.textContent = h;
+          if (!h) span.className = "c-mark";
+          return span;
+        }));
+      }
+      updateLogPrevSortHeader();
+    }
+
+    function logPrevDisplayCount() {
+      return document.body.classList.contains("is-standalone-app")
+        ? LOG_PREV_DISPLAY_STANDALONE
+        : LOG_PREV_DISPLAY;
+    }
+
+    /** Render table rows in current DEP DATE sort order. PF = boxed TASK letters only. */
+    function renderLogPrev(list) {
+      const table = $("logPrevTable");
+      if (!table) return;
+      syncLogPrevHead();
+      table.querySelectorAll(".log-prev-row:not(.log-prev-head)").forEach((el) => el.remove());
+      const { storage, idxs } = logPrevDisplayStorageOrder(list);
+      const displayCount = logPrevDisplayCount();
+      const frag = document.createDocumentFragment();
+      for (let slot = 0; slot < displayCount; slot++) {
+        const storageIdx = idxs[slot];
+        const v = storageIdx != null ? storage[storageIdx] : null;
+        const row = document.createElement("div");
+        row.className = "log-prev-row"
+          + (v ? "" : " empty")
+          + (slot % 2 === 1 ? " alt" : "");
+        row.dataset.slot = String(slot);
+        logPrevCells(v, { phReg: false }).forEach((text, col) => {
+          const span = document.createElement("span");
+          // TASK column — tiny box around PF only
+          if (col === 9 && text === "PF") {
+            const box = document.createElement("span");
+            box.className = "task-pf-box";
+            box.textContent = "PF";
+            span.appendChild(box);
+          } else {
+            span.textContent = text;
+          }
+          row.appendChild(span);
+        });
+        const markCell = document.createElement("span");
+        markCell.className = "c-mark";
+        if (v && storageIdx != null) {
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.className = "log-prev-mark";
+          cb.dataset.index = String(storageIdx);
+          cb.title = "Mark line to clear or edit";
+          cb.setAttribute("aria-label", "Mark log line " + (slot + 1));
+          cb.addEventListener("click", (e) => e.stopPropagation());
+          markCell.appendChild(cb);
+        }
+        row.appendChild(markCell);
+        frag.appendChild(row);
+      }
+      table.appendChild(frag);
+      updateLogPf90Badge(storage);
+      updateLogBackupReminder(storage);
+      updateLogbookFullUi(storage);
+    }
     function countPfToLdgLast90Days(list) {
       const rows = list || loadLogPrev();
       const now = new Date();
@@ -4715,73 +4939,6 @@
       }
     }
 
-    function syncLogPrevHead() {
-      const head = document.querySelector("#logPrevTable .log-prev-head");
-      if (!head || head.childElementCount === LOG_PREV_UI_HEADERS.length) return;
-      head.replaceChildren(...LOG_PREV_UI_HEADERS.map((h) => {
-        const span = document.createElement("span");
-        span.textContent = h;
-        if (!h) span.className = "c-mark";
-        return span;
-      }));
-    }
-
-    function logPrevDisplayCount() {
-      return document.body.classList.contains("is-standalone-app")
-        ? LOG_PREV_DISPLAY_STANDALONE
-        : LOG_PREV_DISPLAY;
-    }
-
-    /** Render table rows: newest DEP DATE at top. PF = boxed TASK letters only. */
-    function renderLogPrev(list) {
-      const table = $("logPrevTable");
-      if (!table) return;
-      syncLogPrevHead();
-      table.querySelectorAll(".log-prev-row:not(.log-prev-head)").forEach((el) => el.remove());
-      const rows = list || loadLogPrev();
-      const displayCount = logPrevDisplayCount();
-      const visible = rows.slice(0, displayCount);
-      const frag = document.createDocumentFragment();
-      for (let i = 0; i < displayCount; i++) {
-        const v = visible[i];
-        const row = document.createElement("div");
-        row.className = "log-prev-row"
-          + (v ? "" : " empty")
-          + (i % 2 === 1 ? " alt" : "");
-        row.dataset.slot = String(i);
-        logPrevCells(v, { phReg: false }).forEach((text, col) => {
-          const span = document.createElement("span");
-          // TASK column — tiny box around PF only
-          if (col === 9 && text === "PF") {
-            const box = document.createElement("span");
-            box.className = "task-pf-box";
-            box.textContent = "PF";
-            span.appendChild(box);
-          } else {
-            span.textContent = text;
-          }
-          row.appendChild(span);
-        });
-        const markCell = document.createElement("span");
-        markCell.className = "c-mark";
-        if (v) {
-          const cb = document.createElement("input");
-          cb.type = "checkbox";
-          cb.className = "log-prev-mark";
-          cb.dataset.index = String(i);
-          cb.title = "Mark line to clear or edit";
-          cb.setAttribute("aria-label", "Mark log line " + (i + 1));
-          cb.addEventListener("click", (e) => e.stopPropagation());
-          markCell.appendChild(cb);
-        }
-        row.appendChild(markCell);
-        frag.appendChild(row);
-      }
-      table.appendChild(frag);
-      updateLogPf90Badge(rows);
-      updateLogBackupReminder(rows);
-    }
-
     function getLogBackupAt() {
       try {
         const n = Number(localStorage.getItem(LOG_BACKUP_AT_KEY));
@@ -4820,11 +4977,13 @@
     function snapshotLogLeg() {
       const v = getValues();
       const sim = String(v.logAcft || "").trim().toUpperCase() === "SIM";
+      let pic = (v.logPic || "").trim();
+      if (pic === LOGBOOK_FULL_MSG) pic = getMyPicName() || "";
       return {
         logAcft: v.logAcft || "",
         logPf: v.logPf === "yes" ? "yes" : "no",
         logPicSelf: v.logPicSelf === "yes" ? "yes" : "no",
-        logPic: (v.logPic || "").trim(),
+        logPic: pic,
         logDep: v.logDep || "",
         logArr: v.logArr || "",
         logDeptDate: (v.logDeptDate || "").trim(),
@@ -4998,6 +5157,7 @@
       }
       logEditIndex = idx;
       loadLogLegIntoForm(v);
+      updateLogbookFullUi();
       syncCopyAddButtonLabel();
       showToast("Line loaded — edit, then ADD EDITS TO LOG", 3200);
     }
@@ -5036,28 +5196,34 @@
       }
       const list = loadLogPrev();
       let updated = false;
+      let existing = -1;
       if (logEditIndex != null && logEditIndex >= 0 && logEditIndex < list.length) {
-        list[logEditIndex] = snap;
-        logEditIndex = null;
-        updated = true;
+        existing = logEditIndex;
       } else {
         const idKey = logLegIdentityKey(snap);
-        let existing = -1;
         if (idKey && digitsOnly(snap.offBlocks).length >= 4) {
           existing = list.findIndex((v) => v && logLegIdentityKey(v) === idKey);
         }
         if (existing < 0) {
           existing = list.findIndex((v) => v && logLegKey(v) === logLegKey(snap));
         }
-        if (existing >= 0) {
-          list[existing] = snap;
-          updated = true;
-        } else {
-          list.unshift(snap);
-        }
+      }
+      if (existing < 0 && list.length >= logPrevDisplayCount()) {
+        updateLogbookFullUi(list);
+        return { ok: false, reason: "full", snap };
+      }
+      if (logEditIndex != null && logEditIndex >= 0 && logEditIndex < list.length) {
+        list[logEditIndex] = snap;
+        logEditIndex = null;
+        updated = true;
+      } else if (existing >= 0) {
+        list[existing] = snap;
+        updated = true;
+      } else {
+        list.unshift(snap);
       }
       saveLogPrev(list);
-      renderLogPrev(list);
+      renderLogPrev();
       let archiveMsg;
       if (isSimLeg(snap)) {
         const tol = simTolCredits(snap);
@@ -5091,7 +5257,7 @@
     }
 
     /** After a successful archive: clear OOOI + date so the form is ready for the next leg. */
-    function clearLogTimesAfterArchive({ fromSim = false } = {}) {
+    function clearLogTimesAfterArchive({ fromSim = false, snap = null } = {}) {
       const wasSim = fromSim || isSimAcft();
       suppressFocusClear = true;
       LOG_TIME_IDS.forEach((id) => {
@@ -5105,11 +5271,11 @@
       if ($("logDeptDate")) $("logDeptDate").value = "";
       if (wasSim) {
         exitSimToDefaultAircraft();
-        const last = loadLogPrev()[0];
+        const last = snap || loadLogPrev()[0];
         if (last) $("logPf").checked = last.logPf !== "yes";
         else $("logPf").checked = false;
       } else {
-        applyNextLegDefaults();
+        applyNextLegDefaults(snap);
       }
       updateLogCalcs();
       saveNow();
@@ -5701,11 +5867,21 @@
         return;
       }
 
+      if (!result.ok && result.reason === "full") {
+        logAddForceArmed = false;
+        updateLogbookFullUi();
+        showAppAlert(
+          "Logbook full (" + logPrevDisplayCount() + " lines).\n\n" +
+          "Mark a line and tap CLEAR MARKED LINES before adding another."
+        );
+        return;
+      }
+
       logAddForceArmed = false;
       clearLogIncompleteHighlights();
       const clipText = buildLogOutput();
       const fromSim = !!(result.snap && isSimLeg(result.snap));
-      clearLogTimesAfterArchive({ fromSim });
+      clearLogTimesAfterArchive({ fromSim, snap: result.snap });
       syncCopyAddButtonLabel();
       pulseCopyAddLogged();
       await writeClipboard(clipText);
@@ -5998,7 +6174,7 @@
           if (logEditIndex != null && marked.has(logEditIndex)) logEditIndex = null;
           const next = list.filter((_, i) => !marked.has(i));
           saveLogPrev(next);
-          renderLogPrev(next);
+          renderLogPrev();
           showToast(n === 1 ? "1 marked line cleared" : n + " marked lines cleared");
         }
       });
