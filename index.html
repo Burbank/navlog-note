@@ -3089,7 +3089,7 @@
         <section class="card card-fuel">
           <div class="dsperfo-paste-row" aria-label="DSPERFO actions">
             <button type="button" id="btnOpenDsperfo" class="paste-here-btn" title="Open DS Perfo (com.klm.dynamicsource://)" aria-label="Open DS Perfo app">DSPERFO</button>
-            <button type="button" id="btnPasteDsperfo" class="paste-here-btn log-btn-muted" aria-label="Paste DSPERFO take-off line">PASTE HERE</button>
+            <button type="button" id="btnPasteDsperfo" class="paste-here-btn" aria-label="Paste DSPERFO take-off line">PASTE HERE</button>
           </div>
           <p class="dsperfo-hint">LONGPRESS DSPERFO HEADER &quot;Calculated 00:00:00z&quot;</p>
           <div class="field">
@@ -4606,35 +4606,10 @@
       return !!String(v.arrAtis || "").trim() && digitsOnly(v.ldis).length >= 4;
     }
 
-    /** Last probe: clipboard holds a parseable DSPERFO Take-off line. */
-    let dsperfoClipboardReady = false;
-
-    async function refreshDsperfoClipboardReady() {
-      if (!navigator.clipboard || !navigator.clipboard.readText) {
-        dsperfoClipboardReady = false;
-        syncActionButtons();
-        return;
-      }
-      let pastOk = false;
-      try { pastOk = !!localStorage.getItem(CLIP_PASTE_OK_KEY); } catch (_) {}
-      if (!pastOk) {
-        dsperfoClipboardReady = false;
-        syncActionButtons();
-        return;
-      }
-      try {
-        const text = await navigator.clipboard.readText();
-        dsperfoClipboardReady = !!parseDsperfoTakeoff(text);
-      } catch (_) {
-        dsperfoClipboardReady = false;
-      }
-      syncActionButtons();
-    }
-
     /**
      * Dim vs blue action styles:
      * Log: ADD / EDIT / CLEAR MARKED / TABLE / CSV
-     * Form: PASTE HERE / COPY DEPT / COPY ARR / HIST
+     * Form: COPY DEPT / COPY ARR / HIST (PASTE HERE stays always blue — clipboard probe is unreliable on iOS)
      */
     function syncActionButtons() {
       const snap = snapshotLogLeg();
@@ -4658,9 +4633,10 @@
       setLogBtnAction($("btnCopyAllLog"), hasLog);
       setLogBtnAction($("btnCopyLogCsv"), hasLog);
 
+      /* PASTE HERE: always action-ready (no clipboard sniff — fails often on iOS) */
       const pasteBtn = $("btnPasteDsperfo");
       if (pasteBtn && !pasteBtn.classList.contains("copied")) {
-        setLogBtnAction(pasteBtn, dsperfoClipboardReady);
+        setLogBtnAction(pasteBtn, true);
       }
       const deptBtn = $("btnCopy");
       if (deptBtn && !deptBtn.classList.contains("copied")) {
@@ -5736,8 +5712,6 @@
     function applyDsperfoFromText(text) {
       const parsed = parseDsperfoTakeoff(text);
       if (!parsed) {
-        dsperfoClipboardReady = false;
-        syncActionButtons();
         showToast("Not a Take-off line");
         return false;
       }
@@ -5747,7 +5721,6 @@
       if (rwyAccepted.rejected) flashFieldWarn($("rwy"));
       $("intersection").value = parsed.intersection;
       saveNow();
-      dsperfoClipboardReady = true;
       syncActionButtons();
       showToast("DSPERFO pasted");
       return true;
@@ -5798,18 +5771,12 @@
         .then((text) => {
           try { localStorage.setItem(CLIP_PASTE_OK_KEY, "1"); } catch (_) {}
           if (!text || !String(text).trim()) {
-            dsperfoClipboardReady = false;
-            syncActionButtons();
             showToast("Clipboard empty");
             return;
           }
-          dsperfoClipboardReady = !!parseDsperfoTakeoff(text);
-          syncActionButtons();
           applyDsperfoFromText(text);
         })
         .catch(() => {
-          dsperfoClipboardReady = false;
-          syncActionButtons();
           showToast("Paste blocked — tap Allow if iOS asks", 2800);
           queryClipboardReadPermission().then((perm) => {
             showPastePermissionHelp(perm === "denied");
@@ -6899,9 +6866,7 @@
     })();
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") saveNow();
-      else refreshDsperfoClipboardReady();
     });
-    window.addEventListener("focus", () => refreshDsperfoClipboardReady());
     window.addEventListener("pagehide", saveNow);
 
     function initServiceWorker() {
@@ -7152,7 +7117,6 @@
     checkSquawkLen(true);
     updateLogCalcs();
     syncActionButtons();
-    refreshDsperfoClipboardReady();
     if (!getMyPicName() && !hasAnsweredPicNamePrompt()) {
       showPicNameOverlay();
     }
