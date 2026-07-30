@@ -854,7 +854,7 @@
       justify-self: end;
     }
 
-    /* Static cue on CTOT / PDC labels — Tab or Enter if value is N/A */
+    /* Static cue on CTOT label — Tab or Enter if value is N/A (PDC hint is in its placeholder) */
     .field-na-hint {
       display: inline-flex;
       align-items: center;
@@ -876,6 +876,16 @@
     .field-na-hint .help-ios-enter {
       margin: 0;
       color: inherit;
+    }
+
+    /* Room for “000/ Tab or Enter if N/A” placeholder */
+    .card-clearance #pdc {
+      max-width: 28ch;
+    }
+
+    .card-clearance #pdc::placeholder {
+      font-size: 0.72rem;
+      letter-spacing: 0;
     }
 
     .card-fuel .section-title {
