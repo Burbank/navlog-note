@@ -1,5 +1,5 @@
 /* QUICKLOG service worker — MyNatTrack-style cache-first shell (offline-friendly). */
-const CACHE = "navlog-note-v3.4.0";
+const CACHE = "navlog-note-v3.5.0";
 
 const ASSETS = [
   "./",

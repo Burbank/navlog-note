@@ -814,31 +814,29 @@
     }
 
     .card-fuel .dsperfo-paste-row {
-      margin-bottom: 4px;
-      grid-template-columns: minmax(0, 1fr) var(--fuel-control-w);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 6px;
+      margin: 0 0 4px;
+      align-items: stretch;
     }
 
-    .card-fuel .field.dsperfo-paste-row .dsperfo-hint {
-      grid-column: 1;
-      min-width: 0;
-      align-self: center;
-    }
-
-    .card-fuel .field.dsperfo-paste-row .paste-here-btn {
-      grid-column: 2;
-      justify-self: end;
-      width: var(--fuel-control-w) !important;
-      max-width: var(--fuel-control-w) !important;
-      min-width: var(--fuel-control-w) !important;
+    .card-fuel .dsperfo-paste-row .paste-here-btn {
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      justify-self: stretch;
       box-sizing: border-box;
     }
 
     .card-fuel .dsperfo-hint {
-      margin: 0;
+      margin: 0 0 6px;
+      padding: 2px 0;
       font-size: 0.68rem;
       font-weight: 500;
       line-height: 1.2;
       color: var(--text);
+      text-align: center;
       white-space: nowrap;
     }
 
@@ -1242,11 +1240,11 @@
       align-items: center;
       justify-content: center;
       gap: 2px;
-      /* Match CTOT: inputs use Arial, so 10ch ≈ CTOT box */
+      /* Match CTOT / HH:MM: Arial tabular */
       font-family: Arial, Helvetica, sans-serif;
-      width: 10ch;
-      min-width: 10ch;
-      max-width: 10ch;
+      width: 13ch;
+      min-width: 13ch;
+      max-width: 13ch;
       margin: 0;
       padding: 5px 3px;
       border: 1px solid var(--line);
@@ -1270,7 +1268,7 @@
     }
 
     .log-pf90-l1 {
-      font-size: 0.62rem;
+      font-size: 0.81rem; /* was 0.62 × 1.3 */
       font-weight: 700;
       letter-spacing: 0.01em;
       color: var(--text);
@@ -1279,7 +1277,7 @@
     .log-pf90-l2,
     .log-pf90-l3,
     .log-pf90-l4 {
-      font-size: 0.55rem;
+      font-size: 0.72rem; /* was 0.55 × 1.3 */
       font-weight: 600;
       letter-spacing: 0.02em;
       color: var(--muted);
@@ -1294,6 +1292,12 @@
       font-weight: 800;
     }
 
+    /* < 3 T/O LDG in 90 days — amber, readable on dark + bright */
+    .log-pf90.log-pf90-low .log-pf90-l1,
+    .log-pf90.log-pf90-low .log-pf90-l1 strong {
+      color: #ffb020;
+    }
+
     html.theme-bright .log-pf90 {
       border-width: 2px;
       border-color: #000;
@@ -1304,6 +1308,11 @@
     html.theme-bright .log-pf90-l1,
     html.theme-bright .log-pf90 strong {
       color: #000;
+    }
+
+    html.theme-bright .log-pf90.log-pf90-low .log-pf90-l1,
+    html.theme-bright .log-pf90.log-pf90-low .log-pf90-l1 strong {
+      color: #b45309; /* deep amber on white */
     }
 
     html.theme-bright .log-pf90-l2,
@@ -1775,6 +1784,11 @@
       color: #000;
     }
 
+    html.theme-bright .log-pf90.log-pf90-low .log-pf90-l1,
+    html.theme-bright .log-pf90.log-pf90-low .log-pf90-l1 strong {
+      color: #b45309;
+    }
+
     html.theme-bright select {
       color: #000;
       background: #fff;
@@ -2150,6 +2164,7 @@
       min-height: var(--log-ctrl-h);
       max-height: var(--log-ctrl-h);
       padding: 2px 4px;
+      font-family: Arial, Helvetica, sans-serif; /* match BLOCK / FLIGHT / UTC clock */
       letter-spacing: 0.04em;
       text-align: center;
       box-sizing: border-box;
@@ -2175,6 +2190,7 @@
       grid-template-columns: 3.6rem max-content;
       column-gap: 0.35em;
       align-items: baseline;
+      font-family: Arial, Helvetica, sans-serif; /* same as HH:MM / UTC clock */
       font-size: 0.936rem; /* was 0.72rem × 1.3 */
       font-weight: 650;
       color: var(--muted);
@@ -2203,25 +2219,28 @@
 
     .flight-log-sum-lab {
       text-align: left;
+      font-family: Arial, Helvetica, sans-serif;
       font-size: 0.72rem; /* keep labels closer to original size */
       font-weight: 650;
     }
 
     .flight-log-sum strong {
+      font-family: Arial, Helvetica, sans-serif;
       color: var(--text);
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.04em;
       font-size: 0.936rem;
     }
 
-    /* Same size as BLOCK/FLIGHT times — sits under BLOCK */
+    /* Same size/font as BLOCK/FLIGHT times — sits under BLOCK; stays faded */
     .flight-log-s26 {
       display: none;
+      font-family: Arial, Helvetica, sans-serif;
       font-size: 0.936rem;
       font-weight: 650;
       letter-spacing: 0.04em;
       color: var(--muted);
-      opacity: 0.85;
+      opacity: 0.75;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       line-height: 1.15;
@@ -2611,12 +2630,15 @@
       .field,
       .card-fuel .field,
       .card-clearance .field,
-      .card-rvsm .field,
-      .card-fuel .field.dsperfo-paste-row {
+      .card-rvsm .field {
         grid-template-columns: 1fr;
         gap: 4px;
         padding-left: 0;
         margin-bottom: 10px;
+      }
+      .card-fuel .dsperfo-paste-row {
+        grid-template-columns: 1fr 1fr;
+        margin-bottom: 8px;
       }
       .card-clearance .field,
       .card-fuel .field,
@@ -2636,14 +2658,13 @@
       .card-fuel .field input,
       .card-clearance .field.compact-input input,
       .card-clearance .field:not(.squawk-input):not(.time-input) input,
-      .card-rvsm .field.rvsm-vfield input,
-      .card-fuel .field.dsperfo-paste-row .paste-here-btn {
+      .card-rvsm .field.rvsm-vfield input {
         max-width: none;
         width: 100%;
         min-width: 0;
       }
       .paste-here-btn,
-      .card-fuel .field.dsperfo-paste-row .paste-here-btn {
+      .card-fuel .dsperfo-paste-row .paste-here-btn {
         width: 100%;
         max-width: none;
         min-width: 0;
@@ -2848,19 +2869,11 @@
         </section>
 
         <section class="card card-fuel">
-          <div class="field">
-            <label for="fuel">Fuel when starting engines:</label>
-            <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0 MT" />
-          </div>
-          <div class="field">
-            <label for="tom">TOM:</label>
-            <input id="tom" name="tom" type="text" inputmode="decimal" placeholder="000.0 MT" />
-          </div>
-          <p class="section-title">DSPERFO:</p>
-          <div class="field dsperfo-paste-row">
-            <p class="dsperfo-hint">Longpress “Calculated - 00:00:00z”</p>
+          <div class="dsperfo-paste-row" aria-label="DSPERFO actions">
+            <button type="button" id="btnOpenDsperfo" class="paste-here-btn" title="Open DS Perfo (com.klm.dynamicsource://)" aria-label="Open DS Perfo app">DSPERFO</button>
             <button type="button" id="btnPasteDsperfo" class="paste-here-btn" aria-label="Paste DSPERFO take-off line">PASTE HERE</button>
           </div>
+          <p class="dsperfo-hint">LONGPRESS DSPERFO HEADER &quot;Calculated 00:00:00z&quot;</p>
           <div class="field">
             <label for="calcAt">* Calculated at:</label>
             <input id="calcAt" name="calcAt" type="text" inputmode="numeric" maxlength="8" placeholder="HH:MM:SS" />
@@ -2872,6 +2885,14 @@
           <div class="field">
             <label for="intersection">* INTERSECTION:</label>
             <input id="intersection" name="intersection" type="text" value="FULL" />
+          </div>
+          <div class="field">
+            <label for="tom">TOM:</label>
+            <input id="tom" name="tom" type="text" inputmode="decimal" placeholder="000.0 MT" />
+          </div>
+          <div class="field">
+            <label for="fuel">Fuel when starting engines:</label>
+            <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0 MT" />
           </div>
         </section>
 
@@ -2902,7 +2923,7 @@
         </section>
 
         <div class="card card-copy-segment card-copy-dept card-copy-compact">
-          <button type="button" id="btnCopy">COPY DEPT TEXT</button>
+          <button type="button" id="btnCopy" title="Copy departure text, then open FLIGHT">COPY DEPT TEXT</button>
         </div>
         </div>
 
@@ -2921,7 +2942,7 @@
         </section>
 
         <div class="card card-copy-segment card-copy-arr card-copy-compact">
-          <button type="button" id="btnCopyArr">COPY ARR TEXT</button>
+          <button type="button" id="btnCopyArr" title="Copy arrival text, then open FLIGHT">COPY ARR TEXT</button>
         </div>
 
         <div class="log-phase-rule" aria-hidden="true"></div>
@@ -3128,7 +3149,7 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "3.4";
+    const APP_VERSION = "3.5";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_KEY = "flight-plan-form-theme-v1";
     /** iOS clipboard-read succeeded at least once on this origin. */
@@ -4595,8 +4616,17 @@
 
     function updateLogPf90Badge(list) {
       const rows = list || loadLogPrev();
+      const n = countPfToLdgLast90Days(rows);
       const el = $("logPf90Count");
-      if (el) el.textContent = String(countPfToLdgLast90Days(rows));
+      if (el) el.textContent = String(n);
+      const box = $("logPf90");
+      if (box) {
+        const low = n < 3;
+        box.classList.toggle("log-pf90-low", low);
+        box.title = low
+          ? "Fewer than 3 pilot-flying takeoffs/landings in the last 90 days"
+          : "Pilot-flying takeoffs and landings in the last 90 days";
+      }
       const simEl = $("logPf90Sim");
       if (simEl) {
         const simN = countSimTolLast90Days(rows);
@@ -5085,7 +5115,7 @@
     const TOPIC_FIELD_CHAINS = [
       [
         "security", "atis", "ctot", "pdc", "rwySid", "climbTo", "transponder",
-        "fuel", "tom", "calcAt", "rwy", "intersection",
+        "calcAt", "rwy", "intersection", "tom", "fuel",
         "rvsmL", "rvsmR", "rvsmSby"
       ],
       ["arrAtis", "ldis"],
@@ -5697,12 +5727,23 @@
       pushHistory();
       await writeClipboard(buildOutput());
       flashCopyBtn($("btnCopy"), "COPY DEPT TEXT");
+      openFlightApp();
     }
 
     async function copyArr() {
       pushHistory();
       await writeClipboard(buildArrOutput());
       flashCopyBtn($("btnCopyArr"), "COPY ARR TEXT");
+      openFlightApp();
+    }
+
+    /** Open/focus KLM FLIGHT (Aviobook) so DEP/ARR text can be pasted immediately. */
+    function openFlightApp() {
+      try {
+        window.location.href = "aviobook.ng.efb://";
+      } catch (_) {
+        showToast("Could not open FLIGHT");
+      }
     }
 
     async function copyAllLogText() {
@@ -6282,6 +6323,18 @@
       }
       /* click — iOS Safari ties clipboard.readText to click/tap, not touchstart alone */
       btn.addEventListener("click", onPasteTap);
+    })();
+    (function bindOpenDsperfo() {
+      const btn = $("btnOpenDsperfo");
+      if (!btn) return;
+      const DSPERFO_URL = "com.klm.dynamicsource://";
+      btn.addEventListener("click", () => {
+        try {
+          window.location.href = DSPERFO_URL;
+        } catch (_) {
+          showToast("Could not open DS Perfo");
+        }
+      });
     })();
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") saveNow();
