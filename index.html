@@ -3377,8 +3377,6 @@
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
     const THEME_KEY_LEGACY = "flight-plan-form-theme-v1";
-    /** iOS clipboard-read succeeded at least once on this origin. */
-    const CLIP_PASTE_OK_KEY = "flight-plan-form-clip-paste-ok-v1";
     /** Shown the one-time “tap Allow when iOS asks” alert. */
     const CLIP_PASTE_HINT_KEY = "flight-plan-form-clip-paste-hint-v1";
     /** Remembered own name for PIC-checkbox legs (set via first-run overlay). */
@@ -3595,13 +3593,6 @@
           applyPicDefIfOn();
         }
         setSimTolValue(3);
-        const entry = document.querySelector(".flight-log-entry");
-        if (entry) entry.classList.remove("is-sim");
-        const tol = $("logTol");
-        if (tol) {
-          tol.disabled = true;
-          tol.setAttribute("aria-hidden", "true");
-        }
         syncLogAcftPrevValue();
         syncSimUi();
         updateLogCalcs();
@@ -4609,7 +4600,7 @@
     /**
      * Dim vs blue action styles:
      * Log: ADD / EDIT / CLEAR MARKED / TABLE / CSV
-     * Form: COPY DEPT / COPY ARR / HIST (PASTE HERE stays always blue — clipboard probe is unreliable on iOS)
+     * Form: COPY DEPT / COPY ARR / HIST (PASTE HERE is always blue — not synced here)
      */
     function syncActionButtons() {
       const snap = snapshotLogLeg();
@@ -4633,11 +4624,6 @@
       setLogBtnAction($("btnCopyAllLog"), hasLog);
       setLogBtnAction($("btnCopyLogCsv"), hasLog);
 
-      /* PASTE HERE: always action-ready (no clipboard sniff — fails often on iOS) */
-      const pasteBtn = $("btnPasteDsperfo");
-      if (pasteBtn && !pasteBtn.classList.contains("copied")) {
-        setLogBtnAction(pasteBtn, true);
-      }
       const deptBtn = $("btnCopy");
       if (deptBtn && !deptBtn.classList.contains("copied")) {
         setLogBtnAction(deptBtn, deptReady);
@@ -5769,7 +5755,6 @@
       }
       navigator.clipboard.readText()
         .then((text) => {
-          try { localStorage.setItem(CLIP_PASTE_OK_KEY, "1"); } catch (_) {}
           if (!text || !String(text).trim()) {
             showToast("Clipboard empty");
             return;
