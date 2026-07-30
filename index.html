@@ -1670,15 +1670,23 @@
       margin: 0;
       text-align: right;
       white-space: nowrap;
-      font-size: 0.55rem;
+      font-size: 0.52rem;
       font-weight: 500;
       letter-spacing: 0.01em;
       color: var(--muted);
       opacity: 0.72;
     }
 
+    .app-update-hint {
+      margin-left: 0.45em;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      opacity: 0.95;
+    }
+
     .app-version {
-      margin-left: 0.4em;
+      margin-left: 0.35em;
       font-weight: 750;
       letter-spacing: 0.05em;
       color: #fff;
@@ -3016,7 +3024,7 @@
           </div>
         </div>
         <div class="card card-toolbar-actions" aria-label="Clear and history">
-          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update.">▶ CLEAR</button>
+          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: check for online update (default PIC name is kept).">▶ CLEAR</button>
           <button type="button" id="btnRestore" class="log-btn-muted" title="Restore last cleared or copied form values">HIST</button>
         </div>
 
@@ -3277,7 +3285,7 @@
           <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
           for checking today’s EASA limits.
         </span>
-        <span class="app-rec-liability">Runs locally/offline, sends no data, author assumes no liability. <span class="app-version" id="appVersion"></span></span>
+        <span class="app-rec-liability">Runs locally/offline, sends no data, author assumes no liability. <span class="app-update-hint">longpress CLEAR to update</span> <span class="app-version" id="appVersion"></span></span>
       </p>
       </div>
     </form>
@@ -3341,7 +3349,7 @@
         spellcheck="false"
         placeholder="Leave blank w/o default PIC"
       />
-      <p class="pic-name-overlay-hint">Hold Clear for 4 seconds to edit or remove the PIC name and simultaneously check for an online UPDATE of the website.</p>
+      <p class="pic-name-overlay-hint">Edit or clear this name here anytime. Hold Clear for 4 seconds only to check for an online UPDATE of the website (your PIC name is kept).</p>
       <p class="pic-name-overlay-hint">If you enter a name here, the PIC box will also default be ticked ON. Leave blank for no default PIC.</p>
       <p class="pic-name-overlay-hint">Logbook keeps a short recent history. Entries are only lost when the web app is deleted, not with UPDATES.</p>
       <p class="pic-name-overlay-hint">Sometimes it may be necessary to swipe to close the web app several times to be able to get an update when online. This is a known Apple limitation.</p>
@@ -6353,7 +6361,7 @@
 
     function clearForm() {
       showAppConfirm(
-        "Clear all fields?\n\nEntered values will be reset to defaults. Restore with the Hist button.\n\nTo clear the default PIC name and force an online update check, hold the Clear button for 4 seconds.\n\nLogbook keeps a short recent history. Entries are only lost when the web app is deleted.",
+        "Clear all fields?\n\nEntered values will be reset to defaults. Restore with the Hist button.\n\nTo force an online update check, hold the Clear button for 4 seconds (default PIC name is kept).\n\nLogbook keeps a short recent history. Entries are only lost when the web app is deleted.",
         {
           /* Must run in the OK tap handler so iOS allows opening the keyboard */
           onConfirm() {
@@ -6449,7 +6457,7 @@
       window.location.replace(url.pathname + url.search + url.hash);
     }
 
-    /** Long-press Clear: wipe stored default PIC name and force online update check. */
+    /** Long-press Clear: force online update check (keeps default PIC name). */
     function bindClearLongPress() {
       const btn = $("btnClear");
       if (!btn) return;
@@ -6467,16 +6475,10 @@
       const onLong = () => {
         timer = 0;
         longFired = true;
-        clearMyPicName();
-        if ($("logPicSelf") && $("logPicSelf").checked) {
-          $("logPicSelf").checked = false;
-          $("logPic").value = "";
-          saveNow();
-        }
         if (navigator.onLine) {
           forceLatestIfOnline();
         } else {
-          showToast("Default PIC name cleared — go online to update");
+          showToast("Go online to update");
         }
       };
 
