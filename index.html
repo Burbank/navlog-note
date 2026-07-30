@@ -3740,7 +3740,11 @@
     const $ = (id) => document.getElementById(id);
     const digitsOnly = (v) => String(v || "").replace(/\D/g, "");
     const onlyDigits = (n, v) => digitsOnly(v).slice(0, n);
-    const formatPdc = (v) => String(v || "").toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 8);
+    const formatPdc = (v) => {
+      const raw = String(v || "").trim();
+      if (/^n\/?a$/i.test(raw) || /^na$/i.test(raw)) return "N/A";
+      return raw.toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 8);
+    };
     function formatLdis(value, { finalize = false } = {}) {
       const d = digitsOnly(value).slice(0, 4);
       if (!d) return "";
@@ -5932,7 +5936,7 @@
         `Security check: ${outValue(v.security)}`, "",
         `DEPT ATIS: ${outValue(v.atis)}`, "",
         `CTOT:  ${outValue(v.ctot, { time: true })}`, "",
-        `PDC/ACARS ref: ${outValue(v.pdc)}`, "",
+        `PDC/ACARS ref: ${outValue(v.pdc) || "N/A"}`, "",
         "Departure clearance:", "",
         `* Runway and SID: ${outValue(v.rwySid)}`, "",
         `* Climb to:  ${outValue(v.climbTo)}`, "",
@@ -6667,7 +6671,7 @@
 
     cacheHotEls();
 
-    bindFormatter("pdc", formatPdc);
+    bindFormatter("pdc", formatPdc, { onFocusClear: "N/A" });
     bindClock("ctot", 4, {
       onFocusClear: "N/A",
       advanceWhenDigits: 4,
