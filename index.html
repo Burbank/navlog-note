@@ -16,9 +16,13 @@
   <title>QUICKLOG</title>
   <script>
     try {
-      if (localStorage.getItem("flight-plan-form-theme-v1") === "bright") {
-        document.documentElement.classList.add("theme-bright");
-      }
+      /* Follow system light/dark; sticky override only until OS appearance changes */
+      var themeOverride = localStorage.getItem("flight-plan-form-theme-override-v1");
+      var useBright =
+        themeOverride === "bright" || themeOverride === "dim"
+          ? themeOverride === "bright"
+          : window.matchMedia("(prefers-color-scheme: light)").matches;
+      if (useBright) document.documentElement.classList.add("theme-bright");
       var sa =
         window.matchMedia("(display-mode: standalone)").matches ||
         window.navigator.standalone === true;
@@ -29,7 +33,8 @@
     } catch (e) {}
   </script>
   <style>
-    /* Critical: lock width before paint — avoids iPad PWA zoom-then-fit flash */
+    /* Critical: lock width before paint — avoids iPad PWA zoom-then-fit flash.
+       Prefer 100% over 100vw (vw can briefly disagree with layout viewport on resume). */
     html {
       width: 100%;
       max-width: 100%;
@@ -42,7 +47,7 @@
     }
     body {
       width: 100%;
-      max-width: 100vw;
+      max-width: 100%;
       margin: 0;
       overflow-x: hidden;
       -webkit-text-size-adjust: 100%;
@@ -272,14 +277,14 @@
     @media (orientation: landscape) and (min-width: 901px) {
       html {
         height: 100%;
-        max-width: 100vw;
+        max-width: 100%;
         overflow: hidden;
       }
       body {
         position: fixed;
         inset: 0;
         width: 100%;
-        max-width: 100vw;
+        max-width: 100%;
         height: 100%;
         max-height: 100%;
         overflow: hidden;
@@ -727,6 +732,42 @@
       gap: 4px;
       align-items: center;
       margin-bottom: 2px;
+    }
+
+    /* “Start here” markers — immediately left of target inputs / in CLEAR */
+    .start-here-input {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .start-here-chevron {
+      flex: 0 0 auto;
+      font-size: 2em;
+      font-weight: 700;
+      line-height: 0.85;
+      color: var(--accent);
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #btnClear .start-here-chevron {
+      display: inline-block;
+      vertical-align: -0.12em;
+      margin-right: 0.1em;
+      font-size: 2em;
+      line-height: 0.75;
+      color: inherit;
+    }
+
+    .card-clearance .field.squawk-input .start-here-input {
+      justify-self: end;
+    }
+
+    .flight-log-entry .field .start-here-input {
+      flex: 0 0 auto;
     }
 
     /* Clearance card — shared widths */
@@ -1407,6 +1448,21 @@
       font-weight: 500;
     }
 
+    /* No log backup (TABLE/CSV) in 30 days + >3 lines */
+    .log-btn-bar .log-data-note.log-data-note-stale {
+      color: #ffb020;
+      border-color: #ffb020;
+      opacity: 1;
+      font-weight: 700;
+    }
+
+    html.theme-bright .log-btn-bar .log-data-note.log-data-note-stale {
+      color: #b45309;
+      border-color: #b45309;
+      background: #fff4e5;
+      font-weight: 700;
+    }
+
     .app-rec {
       display: flex;
       align-items: baseline;
@@ -1848,7 +1904,7 @@
     .log-date-dow {
       margin-bottom: 4px;
       padding-bottom: 4px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      border-bottom: 1px solid var(--line);
       font-size: 0.68rem;
       font-weight: 650;
       color: var(--muted);
@@ -1860,20 +1916,27 @@
       padding: 0;
       border-radius: 8px;
       background: transparent;
-      color: #fff;
+      color: var(--text); /* was #fff — invisible on bright popover */
       font-size: 0.85rem;
       font-weight: 500;
       font-variant-numeric: tabular-nums;
     }
 
     .log-date-grid button.muted {
-      color: rgba(255, 255, 255, 0.28);
+      color: var(--muted);
+      opacity: 0.55;
     }
 
     .log-date-grid button.selected {
       background: rgba(80, 80, 84, 0.95);
       color: #ff453a;
       font-weight: 700;
+      opacity: 1;
+    }
+
+    html.theme-bright .log-date-grid button.selected {
+      background: #3a3a3c;
+      color: #ff3b30;
     }
 
     .log-date-grid button:active {
@@ -2833,7 +2896,7 @@
           </div>
         </div>
         <div class="card card-toolbar-actions" aria-label="Clear and history">
-          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update.">CLEAR</button>
+          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: remove default PIC name and check for online update."><span class="start-here-chevron" aria-hidden="true">›</span> CLEAR</button>
           <button type="button" id="btnRestore" disabled title="Restore last cleared or copied form values">HIST</button>
         </div>
 
@@ -2844,7 +2907,10 @@
           </div>
           <div class="field squawk-input">
             <label for="atis">DEPT ATIS:</label>
-            <input id="atis" name="atis" type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" pattern="[A-Za-z]" placeholder="A" title="Departure ATIS letter" />
+            <span class="start-here-input">
+              <span class="start-here-chevron" aria-hidden="true">›</span>
+              <input id="atis" name="atis" type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" pattern="[A-Za-z]" placeholder="A" title="Departure ATIS letter" />
+            </span>
           </div>
           <div class="field squawk-input time-input">
             <label for="ctot">CTOT:</label>
@@ -3000,7 +3066,10 @@
           <!-- DOM order = Tab order: OFF → AIR → TD → ON (grid-areas keep visual layout) -->
           <div class="field log-off">
             <label for="offBlocks">OFF BLOCKS</label>
-            <input id="offBlocks" name="offBlocks" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Off blocks UTC" />
+            <span class="start-here-input">
+              <span class="start-here-chevron" aria-hidden="true">›</span>
+              <input id="offBlocks" name="offBlocks" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" title="Off blocks UTC" />
+            </span>
           </div>
           <div class="field log-air">
             <label for="airborne">AIRBORNE</label>
@@ -3039,7 +3108,7 @@
         <button type="button" class="log-btn-muted log-btn-warn" id="btnClearMarkedLog" title="Remove checked logbook lines">CLEAR MARKED LINES</button>
         <button type="button" id="btnCopyAllLog">COPY LOG AS TABLE</button>
         <button type="button" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">COPY LOG AS CSV</button>
-        <p class="log-data-note">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
+        <p class="log-data-note" id="logDataNote">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
         <button type="button" id="btnCopyLog" title="Add current YOUR LOG line to the table and copy text">ADD TO LOG</button>
       </div>
 
@@ -3149,9 +3218,11 @@
     /** Keep enough archived legs so the 90-day PF T/O–LDG count stays meaningful. */
     const LOG_PREV_STORE_MAX = 60;
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "3.5";
+    const APP_VERSION = "3.6";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
-    const THEME_KEY = "flight-plan-form-theme-v1";
+    const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
+    /** Legacy sticky theme — cleared so system day/night can take over. */
+    const THEME_KEY_LEGACY = "flight-plan-form-theme-v1";
     /** iOS clipboard-read succeeded at least once on this origin. */
     const CLIP_PASTE_OK_KEY = "flight-plan-form-clip-paste-ok-v1";
     /** Shown the one-time “tap Allow when iOS asks” alert. */
@@ -3162,6 +3233,10 @@
     const MY_PIC_NAME_ASKED_KEY = "flight-plan-form-my-pic-name-asked-v1";
     /** Last APP_VERSION the device has acknowledged (for update toast). */
     const SEEN_VERSION_KEY = "flight-plan-form-seen-version-v1";
+    /** Last successful COPY LOG AS TABLE / CSV (localStorage — no cookies). */
+    const LOG_BACKUP_AT_KEY = "flight-plan-form-log-backup-at-v1";
+    const LOG_BACKUP_WARN_DAYS = 30;
+    const LOG_BACKUP_WARN_MIN_LINES = 4; /* warn when more than 3 lines */
     /** Pause before sticky red warn while typing (RVSM / transponder). */
     const WARN_PAUSE_MS = 2500;
     const RVSM_MAX_DIFF_FT = 200;
@@ -4704,6 +4779,42 @@
       }
       table.appendChild(frag);
       updateLogPf90Badge(rows);
+      updateLogBackupReminder(rows);
+    }
+
+    function getLogBackupAt() {
+      try {
+        const n = Number(localStorage.getItem(LOG_BACKUP_AT_KEY));
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    /** Record a successful TABLE/CSV log export — resets the 30-day reminder. */
+    function markLogBackupDone() {
+      try {
+        localStorage.setItem(LOG_BACKUP_AT_KEY, String(Date.now()));
+      } catch (_) {}
+      updateLogBackupReminder();
+    }
+
+    /**
+     * Amber/red backup note when log has >3 lines and neither TABLE nor CSV
+     * copy has run in the last 30 days (timestamp in localStorage).
+     */
+    function updateLogBackupReminder(list) {
+      const note = $("logDataNote");
+      if (!note) return;
+      const rows = list || loadLogPrev();
+      const n = rows.length;
+      const last = getLogBackupAt();
+      const ageMs = last ? Date.now() - last : Infinity;
+      const stale = n >= LOG_BACKUP_WARN_MIN_LINES && ageMs > LOG_BACKUP_WARN_DAYS * 86400000;
+      note.classList.toggle("log-data-note-stale", stale);
+      note.title = stale
+        ? "No TABLE/CSV backup in the last " + LOG_BACKUP_WARN_DAYS + " days — copy your log"
+        : "Backup frequently, data may be lost. CSV is for LogTen/others.";
     }
 
     function snapshotLogLeg() {
@@ -5673,6 +5784,35 @@
      * collapse the gaps to a single space (regular spaces often get crushed on paste).
      * HTML table copy is unchanged. Oldest flight first.
      */
+    /**
+     * Prefixed to TABLE / CSV backups — temporary logbook reminder.
+     * CSV importers (LogTen): start import at the header row below this note.
+     */
+    const LOG_BACKUP_REMINDER =
+      "Thank you for creating a backup. QUICKLOG Logbook is primarily intended for fast access to a temporary logbook.\n" +
+      "After you safely store these flights (in a proper logbook), you can delete their lines by check-marking them and deleting with [CLEAR MARKED LINES] to start logging a new cycle of flights.\n" +
+      "Note that this also affects the RECENCY reminder, so you may want to keep a few PF flights in the app.";
+
+    function withLogBackupReminder(body, { html = false } = {}) {
+      if (html) {
+        const esc = (s) =>
+          String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        const paras = LOG_BACKUP_REMINDER.split("\n")
+          .map((line) => '<p style="margin:0 0 8px;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.35">' + esc(line) + "</p>")
+          .join("");
+        return paras + '<p style="margin:0 0 10px"></p>' + body;
+      }
+      return LOG_BACKUP_REMINDER + "\n\n" + body;
+    }
+
+    /**
+     * Plain-text: fixed-width columns. Pad with NBSP so TextEdit/Notes cannot
+     * collapse the gaps to a single space (regular spaces often get crushed on paste).
+     * HTML table copy is unchanged. Oldest flight first.
+     */
     function buildAllLogText(rowsIn) {
       const NBSP = "\u00A0";
       const rows = (rowsIn || allLogRowsOldestFirst()).map((r) => r.map(asciiPlainCell));
@@ -5687,7 +5827,7 @@
       );
       const fmt = (cells) =>
         cells.map((c, i) => String(c).padEnd(widths[i], NBSP)).join(NBSP + NBSP);
-      return [fmt(LOG_PREV_HEADERS), ...rows.map(fmt)].join("\n");
+      return withLogBackupReminder([fmt(LOG_PREV_HEADERS), ...rows.map(fmt)].join("\n"));
     }
 
     /**
@@ -5717,10 +5857,10 @@
             "</tr>"
         )
         .join("");
-      return (
+      const table =
         '<table border="1" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-spacing:0;width:auto;table-layout:auto;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px">' +
-        "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody></table>"
-      );
+        "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody></table>";
+      return withLogBackupReminder(table, { html: true });
     }
 
     async function copyAll() {
@@ -5749,6 +5889,7 @@
     async function copyAllLogText() {
       const rows = allLogRowsOldestFirst();
       await writeClipboard(buildAllLogText(rows), buildAllLogHtml(rows));
+      markLogBackupDone();
       flashCopyBtn($("btnCopyAllLog"), "COPY LOG AS TABLE");
     }
 
@@ -5823,7 +5964,7 @@
             .join(",")
         );
       }
-      return lines.join("\r\n");
+      return withLogBackupReminder(lines.join("\r\n"));
     }
 
     async function copyLogCsv() {
@@ -5832,6 +5973,7 @@
         return;
       }
       await writeClipboard(buildLogTenCsv());
+      markLogBackupDone();
       flashCopyBtn($("btnCopyLogCsv"), "COPY LOG AS CSV");
     }
 
@@ -6370,9 +6512,12 @@
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").then((reg) => {
           if (reg.waiting) showUpdateBanner(reg.waiting);
-          if (navigator.onLine) {
-            try { reg.update(); } catch (_) {}
-          }
+          /*
+           * Do not call reg.update() on load or visibility — iOS shows
+           * “Turn Off Airplane Mode…” whenever a fetch runs while offline /
+           * during radio transitions (navigator.onLine is unreliable).
+           * Updates: long-press Clear → forceLatestIfOnline().
+           */
           reg.addEventListener("updatefound", () => {
             const installing = reg.installing;
             if (!installing) return;
@@ -6382,16 +6527,6 @@
               }
             });
           });
-        }).catch(() => {});
-      });
-
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState !== "visible") return;
-        if (!navigator.onLine) return;
-        navigator.serviceWorker.getRegistration("./sw.js").then((reg) => {
-          if (!reg) return;
-          try { reg.update(); } catch (_) {}
-          if (reg.waiting) showUpdateBanner(reg.waiting);
         }).catch(() => {});
       });
     }
@@ -6461,12 +6596,28 @@
       });
     }
 
-    function loadThemePref() {
+    function systemTheme() {
       try {
-        return localStorage.getItem(THEME_KEY) === "bright" ? "bright" : "dim";
+        return window.matchMedia("(prefers-color-scheme: light)").matches ? "bright" : "dim";
       } catch (_) {
         return "dim";
       }
+    }
+
+    function loadThemeOverride() {
+      try {
+        const v = localStorage.getItem(THEME_OVERRIDE_KEY);
+        if (v === "bright" || v === "dim") return v;
+      } catch (_) {}
+      return null;
+    }
+
+    function clearThemeOverride() {
+      try { localStorage.removeItem(THEME_OVERRIDE_KEY); } catch (_) {}
+    }
+
+    function resolveTheme() {
+      return loadThemeOverride() || systemTheme();
     }
 
     function applyTheme(mode) {
@@ -6476,16 +6627,69 @@
       if (btn) {
         /* Press-to-act: label is the theme you switch into */
         btn.textContent = bright ? "DIM" : "BRIGHT";
-        btn.title = bright ? "Switch to dim cockpit theme" : "Switch to Hi-Contrast Day Theme";
+        btn.title = bright
+          ? "Override: switch to dim (resets when system appearance changes)"
+          : "Override: switch to bright (resets when system appearance changes)";
         btn.setAttribute("aria-pressed", bright ? "true" : "false");
       }
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", bright ? "#ffffff" : "#1a2332");
-      try { localStorage.setItem(THEME_KEY, bright ? "bright" : "dim"); } catch (_) {}
     }
 
     function toggleTheme() {
-      applyTheme(document.documentElement.classList.contains("theme-bright") ? "dim" : "bright");
+      const next = document.documentElement.classList.contains("theme-bright") ? "dim" : "bright";
+      try { localStorage.setItem(THEME_OVERRIDE_KEY, next); } catch (_) {}
+      applyTheme(next);
+    }
+
+    function bindSystemThemeFollow() {
+      try { localStorage.removeItem(THEME_KEY_LEGACY); } catch (_) {}
+      let mq;
+      try {
+        mq = window.matchMedia("(prefers-color-scheme: light)");
+      } catch (_) {
+        return;
+      }
+      const onSystemChange = () => {
+        /* Next OS day/night change drops manual override and follows system again */
+        clearThemeOverride();
+        applyTheme(systemTheme());
+      };
+      if (typeof mq.addEventListener === "function") mq.addEventListener("change", onSystemChange);
+      else if (typeof mq.addListener === "function") mq.addListener(onSystemChange);
+    }
+
+    /**
+     * iPad PWA often flashes a wrong layout size for ~0.5–1s when returning from
+     * another app (WebKit visualViewport / safe-area settle). Re-sync shell metrics.
+     */
+    function stabilizeShellLayout() {
+      syncVisualViewport();
+      try { window.scrollTo(0, 0); } catch (_) {}
+      try {
+        if (window.visualViewport && window.visualViewport.offsetTop) {
+          window.scrollTo(0, 0);
+        }
+      } catch (_) {}
+    }
+
+    function bindViewportResumeStabilize() {
+      const run = () => {
+        stabilizeShellLayout();
+        requestAnimationFrame(() => {
+          stabilizeShellLayout();
+          setTimeout(stabilizeShellLayout, 50);
+          setTimeout(stabilizeShellLayout, 200);
+          setTimeout(stabilizeShellLayout, 500);
+        });
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") run();
+      });
+      window.addEventListener("pageshow", run);
+      window.addEventListener("focus", () => {
+        setTimeout(stabilizeShellLayout, 0);
+      });
     }
 
     /** UTC clock: DD:HH:MM:SS — HH:MM title-size; day & seconds button-size */
@@ -6514,7 +6718,9 @@
       if (ver) ver.textContent = "v" + APP_VERSION;
     }
     bindVisualViewport();
-    applyTheme(loadThemePref());
+    bindViewportResumeStabilize();
+    bindSystemThemeFollow();
+    applyTheme(resolveTheme());
     startUtcClock();
     initInstallAndStandalone();
     bindInstallOverlay();
@@ -6537,11 +6743,12 @@
     trackUsageOncePerDay();
     initServiceWorker();
 
-    /** One anonymous open-count per device per UTC day (skipped on localhost). */
+    /** One anonymous open-count per device per UTC day (skipped offline / localhost). */
     function trackUsageOncePerDay() {
       try {
+        if (!navigator.onLine) return;
         const host = location.hostname;
-        if (host === "localhost" || host === "127.0.0.1") return;
+        if (host === "localhost" || host === "127.0.0.1" || host.startsWith("192.168.") || host.startsWith("172.")) return;
         const day = new Date().toISOString().slice(0, 10);
         const key = USAGE_HIT_PREFIX + day;
         if (localStorage.getItem(key)) return;

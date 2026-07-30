@@ -1,5 +1,5 @@
-/* QUICKLOG service worker — MyNatTrack-style cache-first shell (offline-friendly). */
-const CACHE = "navlog-note-v3.5.0";
+/* QUICKLOG service worker — cache-first shell (offline-first, no speculative fetch). */
+const CACHE = "navlog-note-v3.6.0";
 
 const ASSETS = [
   "./",
@@ -50,8 +50,8 @@ self.addEventListener("message", (event) => {
   }
 });
 
-/** Fetch and refresh cache; never throws to the page. */
-function networkUpdate(request) {
+/** Fetch once; never throws to the page. Used only on cache miss. */
+function networkFetch(request) {
   return fetch(request)
     .then((response) => {
       if (response && response.status === 200 && response.type === "basic") {
@@ -75,26 +75,20 @@ self.addEventListener("fetch", (event) => {
   }
   if (url.origin !== self.location.origin) return;
 
-  // App shell / static: cache-first so iPad offline open never hits Safari’s
-  // “offline” interstitial. When online, refresh the cache in the background.
+  /*
+   * Pure cache-first: never background-revalidate.
+   * iOS treats any fetch while Airplane Mode / flaky link as
+   * “Turn Off Airplane Mode or Use Wi-Fi to Access Data”.
+   * navigator.onLine is unreliable on resume / radio changes.
+   * Updates are explicit (long-press Clear) from the page.
+   */
   const cacheKey = request.mode === "navigate" ? "./index.html" : request;
 
   event.respondWith(
     caches.match(cacheKey).then((cached) => {
-      const online =
-        typeof self.navigator === "undefined" ||
-        self.navigator.onLine !== false;
+      if (cached) return cached;
 
-      if (cached) {
-        if (online) {
-          event.waitUntil(
-            networkUpdate(request.mode === "navigate" ? request : request)
-          );
-        }
-        return cached;
-      }
-
-      return networkUpdate(request).then(
+      return networkFetch(request).then(
         (response) =>
           response ||
           caches.match("./index.html").then(
