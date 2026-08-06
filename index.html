@@ -10,13 +10,13 @@
   <meta name="theme-color" content="#1a2332" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=11" />
-  <link rel="icon" type="image/png" href="favicon.png?v=11" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=11" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" href="apple-touch-icon.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <title>QUICKLOG</title>
   <script>
     try {
-      /* Follow system light/dark; sticky override only until OS appearance changes */
+      /* Follow system light/dark; BRIGHT/DIM override survives app switch, yields on real OS flip */
       var themeOverride = localStorage.getItem("flight-plan-form-theme-override-v1");
       var useBright =
         themeOverride === "bright" || themeOverride === "dim"
@@ -489,7 +489,7 @@
       flex-wrap: nowrap;
     }
 
-    /* Left toolbar: UTC clock + Bright as two equal segments (like Clear | Hist) */
+    /* Left toolbar: UTC clock + Bright as two equal segments (like Clear | Undo) */
     .toolbar-left-pair {
       display: flex;
       flex-direction: row;
@@ -529,7 +529,7 @@
     .utc-clock-day,
     .utc-clock-sec,
     .utc-clock-sep {
-      font-size: 0.68rem; /* match Bright / Clear / Hist button type */
+      font-size: 0.68rem; /* match Bright / Clear / Undo button type */
       font-weight: 600;
       letter-spacing: 0.04em;
       opacity: 0.85;
@@ -579,7 +579,7 @@
     }
 
     .card-toolbar-actions button:disabled,
-    .card-toolbar-actions #btnRestore:disabled {
+    .card-toolbar-actions #btnUndo:disabled {
       opacity: 0.35;
       cursor: default;
       transform: none;
@@ -718,13 +718,6 @@
       padding: 7px 10px;
     }
 
-
-    .section-title {
-      margin: 2px 0 1px;
-      font-size: 0.78rem;
-      font-weight: 650;
-      line-height: 1.15;
-    }
 
     .field {
       display: grid;
@@ -886,11 +879,6 @@
     .card-clearance #pdc::placeholder {
       font-size: 0.72rem;
       letter-spacing: 0;
-    }
-
-    .card-fuel .section-title {
-      margin: 4px 0 2px;
-      font-size: 0.74rem;
     }
 
     .card-fuel .dsperfo-paste-row {
@@ -3033,9 +3021,9 @@
             </p>
           </div>
         </div>
-        <div class="card card-toolbar-actions" aria-label="Clear and history">
+        <div class="card card-toolbar-actions" aria-label="Clear and undo">
           <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: check for online update (default PIC name is kept).">▶ CLEAR</button>
-          <button type="button" id="btnRestore" class="log-btn-muted" title="Restore last cleared or copied form values">HIST</button>
+          <button type="button" id="btnUndo" class="log-btn-muted" title="Undo last clear or copy — restore previous form values">UNDO</button>
         </div>
 
         <section class="card card-clearance">
@@ -3259,10 +3247,10 @@
 
       <div class="log-btn-bar" role="group" aria-label="Logbook actions">
         <button type="button" class="log-btn-muted" id="btnEditMarkedLog" title="Load one marked line into YOUR LOG for editing">EDIT MARKED LINE</button>
+        <button type="button" class="log-btn-muted" id="btnCopyAllLog" title="Copy marked log lines as a table">COPY MARKED AS TABLE</button>
+        <button type="button" class="log-btn-muted" id="btnCopyLogCsv" title="Copy marked lines as CSV for LogTen Pro import (map columns on import)">COPY MARKED AS CSV</button>
         <button type="button" class="log-btn-muted log-btn-warn" id="btnClearMarkedLog" title="Remove checked logbook lines">CLEAR MARKED LINES</button>
-        <button type="button" class="log-btn-muted" id="btnCopyAllLog">COPY LOG AS TABLE</button>
-        <button type="button" class="log-btn-muted" id="btnCopyLogCsv" title="Copy log as CSV for LogTen Pro import (map columns on import)">COPY LOG AS CSV</button>
-        <p class="log-data-note" id="logDataNote">Backup frequently, data may be lost. CSV is for LogTen/others.</p>
+        <p class="log-data-note" id="logDataNote">Backup frequently, data may be lost. Mark lines, then TABLE/CSV. CSV is for LogTen/others.</p>
         <button type="button" class="log-btn-muted" id="btnCopyLog" title="Add current YOUR LOG line to the table and copy text">ADD TO LOG</button>
       </div>
 
@@ -3364,8 +3352,10 @@
 
   <script>
     const STORAGE_KEY = "flight-plan-form-v3";
-    const HISTORY_KEY = "flight-plan-form-history-v2";
-    const HISTORY_KEY_LEGACY = "flight-plan-form-history-v1";
+    /** One-step form undo snapshot (Clear / Copy DEPT / Copy ARR). */
+    const UNDO_KEY = "flight-plan-form-undo-v1";
+    const UNDO_KEY_LEGACY_V2 = "flight-plan-form-history-v2";
+    const UNDO_KEY_LEGACY_V1 = "flight-plan-form-history-v1";
     const LOG_PREV_KEY = "flight-plan-form-log-prev-v1";
     const LOG_PREV_DISPLAY = 9;
     const LOG_PREV_DISPLAY_STANDALONE = 12; /* A2903 web app — taller logbook area */
@@ -3374,7 +3364,7 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.0";
+    const APP_VERSION = "4.1";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -3387,7 +3377,7 @@
     const MY_PIC_NAME_ASKED_KEY = "flight-plan-form-my-pic-name-asked-v1";
     /** Last APP_VERSION the device has acknowledged (for update toast). */
     const SEEN_VERSION_KEY = "flight-plan-form-seen-version-v1";
-    /** Last successful COPY LOG AS TABLE / CSV (localStorage — no cookies). */
+    /** Last successful COPY MARKED AS TABLE / CSV (localStorage — no cookies). */
     const LOG_BACKUP_AT_KEY = "flight-plan-form-log-backup-at-v1";
     const LOG_BACKUP_WARN_DAYS = 30;
     const LOG_BACKUP_WARN_MIN_LINES = 4; /* warn when more than 3 lines */
@@ -4024,6 +4014,8 @@
     };
     const rvsmEls = { l: null, r: null, sby: null, hint: null };
 
+    const fieldElsById = Object.create(null);
+
     function cacheHotEls() {
       logEls.off = $("offBlocks");
       logEls.air = $("airborne");
@@ -4042,6 +4034,7 @@
       rvsmEls.r = $("rvsmR");
       rvsmEls.sby = $("rvsmSby");
       rvsmEls.hint = $("rvsmHint");
+      for (const id of FIELD_IDS) fieldElsById[id] = $(id);
     }
 
     function checkLogTimeErrors() {
@@ -4271,7 +4264,7 @@
       if (logEls.flight) logEls.flight.textContent = flight || "—";
       // S26 only changes with airports — updateS26Display() from those handlers.
       checkLogTimeErrors();
-      syncLogActionButtons();
+      syncActionButtons();
     }
 
     /** In-app calendar (Cursor browser / iPad / desktop — native type=date is unreliable). */
@@ -4430,12 +4423,6 @@
       });
     }
 
-    /** Landing fields stay left in cols 1–2 (no margin snap to RVSM R). */
-    function alignLogColumns() {
-      const landingFields = document.querySelector(".landing-fields");
-      if (landingFields) landingFields.style.marginLeft = "";
-    }
-
     /** Full registration for copy / table REG column (Martinair PH-…; SIM stays SIM). */
     function acftRegistration(code) {
       const c = String(code || "").trim().toUpperCase();
@@ -4494,10 +4481,6 @@
       ].join("|");
     }
 
-    function isNaClock(value) {
-      return /^n\/?a$/i.test(String(value || "").trim());
-    }
-
     /** Missing fields for a complete log line (AIR/TD optional — not required for EASA block log). */
     function getIncompleteLogFields(snap) {
       const missing = [];
@@ -4544,10 +4527,6 @@
       return logEditIndex != null ? "ADD EDITS TO LOG" : "ADD TO LOG";
     }
 
-    function syncCopyAddButtonLabel() {
-      syncLogActionButtons();
-    }
-
     /** True if current form would replace an existing log line (edit or same identity). */
     function wouldUpdateExistingLog(snap) {
       const list = loadLogPrev();
@@ -4565,7 +4544,7 @@
       if (!btn) return;
       btn.classList.toggle("log-btn-muted", !ready);
       btn.setAttribute("aria-disabled", ready ? "false" : "true");
-      if (btn.id === "btnRestore") btn.disabled = false; // visual mute only — keep tappable
+      if (btn.id === "btnUndo") btn.disabled = false; // visual mute only — keep tappable
     }
 
     /** DEPT copy fields that must be non-empty (CTOT / PDC optional; MNPS always has a value). */
@@ -4603,22 +4582,33 @@
       return !!String(v.arrAtis || "").trim() && digitsOnly(v.ldis).length >= 4;
     }
 
+    /** Cached: whether an undo snapshot exists (avoid localStorage on every keystroke). */
+    let undoReady = false;
+
     /**
      * Dim vs blue action styles:
-     * Log: ADD / EDIT / CLEAR MARKED / TABLE / CSV
-     * Form: COPY DEPT / COPY ARR / HIST (PASTE HERE is always blue — not synced here)
+     * Log: ADD / EDIT / CLEAR MARKED / MARKED TABLE / MARKED CSV
+     * Form: COPY DEPT / COPY ARR / UNDO (PASTE HERE is always blue — not synced here)
+     * Coalesced to one rAF so typing does not re-scrape the form every keystroke.
      */
+    let syncButtonsRaf = 0;
     function syncActionButtons() {
-      const snap = snapshotLogLeg();
+      if (syncButtonsRaf) return;
+      syncButtonsRaf = requestAnimationFrame(() => {
+        syncButtonsRaf = 0;
+        syncActionButtonsNow();
+      });
+    }
+
+    function syncActionButtonsNow() {
+      const v = getValues();
+      const snap = snapshotLogLeg(v);
       const complete = getIncompleteLogFields(snap).length === 0;
       const full = isLogPrevFull();
       const addReady = complete && (!full || wouldUpdateExistingLog(snap));
       const marked = getMarkedLogIndices().length > 0;
-      const hasLog = loadLogPrev().length > 0;
-      const v = getValues();
       const deptReady = getIncompleteDeptFields(v).length === 0;
       const arrReady = arrCopyReady(v);
-      const hasHist = !!loadHistory();
 
       const addBtn = $("btnCopyLog");
       if (addBtn && !addBtn.classList.contains("is-logged") && !addBtn.classList.contains("copied")) {
@@ -4627,8 +4617,8 @@
       }
       setLogBtnAction($("btnEditMarkedLog"), marked);
       setLogBtnAction($("btnClearMarkedLog"), marked);
-      setLogBtnAction($("btnCopyAllLog"), hasLog);
-      setLogBtnAction($("btnCopyLogCsv"), hasLog);
+      setLogBtnAction($("btnCopyAllLog"), marked);
+      setLogBtnAction($("btnCopyLogCsv"), marked);
 
       const deptBtn = $("btnCopy");
       if (deptBtn && !deptBtn.classList.contains("copied")) {
@@ -4638,11 +4628,7 @@
       if (arrBtn && !arrBtn.classList.contains("copied")) {
         setLogBtnAction(arrBtn, arrReady);
       }
-      setLogBtnAction($("btnRestore"), hasHist);
-    }
-
-    function syncLogActionButtons() {
-      syncActionButtons();
+      setLogBtnAction($("btnUndo"), undoReady);
     }
 
     function getMyPicName() {
@@ -5032,7 +5018,7 @@
           cb.title = "Mark line to clear or edit";
           cb.setAttribute("aria-label", "Mark log line " + (slot + 1));
           cb.addEventListener("click", (e) => e.stopPropagation());
-          cb.addEventListener("change", () => syncLogActionButtons());
+          cb.addEventListener("change", () => syncActionButtons());
           markCell.appendChild(cb);
         }
         row.appendChild(markCell);
@@ -5042,7 +5028,7 @@
       updateLogPf90Badge(storage);
       updateLogBackupReminder(storage);
       updateLogbookFullUi(storage);
-      syncLogActionButtons();
+      syncActionButtons();
     }
     function countPfToLdgLast90Days(list) {
       const rows = list || loadLogPrev();
@@ -5122,7 +5108,7 @@
     }
 
     /**
-     * Amber/red backup note when log has >3 lines and neither TABLE nor CSV
+     * Amber/red backup note when log has >3 lines and neither marked TABLE nor CSV
      * copy has run in the last 30 days (timestamp in localStorage).
      */
     function updateLogBackupReminder(list) {
@@ -5135,12 +5121,12 @@
       const stale = n >= LOG_BACKUP_WARN_MIN_LINES && ageMs > LOG_BACKUP_WARN_DAYS * 86400000;
       note.classList.toggle("log-data-note-stale", stale);
       note.title = stale
-        ? "No TABLE/CSV backup in the last " + LOG_BACKUP_WARN_DAYS + " days — copy your log"
-        : "Backup frequently, data may be lost. CSV is for LogTen/others.";
+        ? "No marked TABLE/CSV backup in the last " + LOG_BACKUP_WARN_DAYS + " days — mark lines and copy"
+        : "Backup frequently, data may be lost. Mark lines, then TABLE/CSV. CSV is for LogTen/others.";
     }
 
-    function snapshotLogLeg() {
-      const v = getValues();
+    function snapshotLogLeg(v) {
+      v = v || getValues();
       const sim = String(v.logAcft || "").trim().toUpperCase() === "SIM";
       let pic = (v.logPic || "").trim();
       if (pic === LOGBOOK_FULL_MSG) pic = getMyPicName() || "";
@@ -5173,6 +5159,15 @@
         if (!Number.isNaN(idx) && idx >= 0 && idx < list.length) marked.push(idx);
       });
       return marked;
+    }
+
+    /** Marked log legs, oldest calendar date first (export order). */
+    function getMarkedLogLegsOldestFirst() {
+      const list = loadLogPrev();
+      const legs = getMarkedLogIndices()
+        .map((i) => list[i])
+        .filter(Boolean);
+      return sortLogPrevOldestFirst(legs);
     }
 
     function showAppAlert(msg) {
@@ -5323,7 +5318,7 @@
       logEditIndex = idx;
       loadLogLegIntoForm(v);
       updateLogbookFullUi();
-      syncCopyAddButtonLabel();
+      syncActionButtons();
       showToast("Line loaded — edit, then ADD EDITS TO LOG", 3200);
     }
 
@@ -5417,7 +5412,7 @@
         copyAddLoggedTimer = 0;
         btn.classList.remove("is-logged");
         btn.disabled = false;
-        syncCopyAddButtonLabel();
+        syncActionButtons();
       }, 3000);
     }
 
@@ -5495,7 +5490,7 @@
           updateS26Display();
           logAddForceArmed = false;
           clearLogIncompleteHighlights();
-          syncCopyAddButtonLabel();
+          syncActionButtons();
           armNewLeg = false;
         }
         if (n >= 4) armNewLeg = false;
@@ -5778,7 +5773,7 @@
     function getValues() {
       const data = {};
       for (const id of FIELD_IDS) {
-        const el = $(id);
+        const el = fieldElsById[id] || $(id);
         if (!el) {
           data[id] = "";
           continue;
@@ -5807,8 +5802,8 @@
     function setValues(data) {
       suppressFocusClear = true;
       for (const id of FIELD_IDS) {
-        if (data[id] === undefined || !$(id)) continue;
-        const el = $(id);
+        const el = fieldElsById[id] || $(id);
+        if (data[id] === undefined || !el) continue;
         if (el.type === "checkbox") {
           el.checked = data[id] === "yes" || data[id] === true || data[id] === "true";
         } else {
@@ -5831,7 +5826,7 @@
 
     let saveTimer = 0;
     let lastSavedJson = "";
-    /** Persist form now (blur, Clear, Restore, leaving the page). */
+    /** Persist form now (blur, Clear, Undo, leaving the page). */
     function saveNow() {
       if (saveTimer) {
         clearTimeout(saveTimer);
@@ -5871,48 +5866,62 @@
       renderLogPrev();
     }
 
-    function loadHistory() {
+    function loadUndoSnap() {
       try {
-        const raw = localStorage.getItem(HISTORY_KEY);
+        let raw = localStorage.getItem(UNDO_KEY);
         if (raw) {
           const data = JSON.parse(raw);
           return data.snap || null;
         }
-        const legacy = localStorage.getItem(HISTORY_KEY_LEGACY);
+        raw = localStorage.getItem(UNDO_KEY_LEGACY_V2);
+        if (raw) {
+          const data = JSON.parse(raw);
+          const snap = data.snap || null;
+          if (snap) localStorage.setItem(UNDO_KEY, JSON.stringify({ snap }));
+          try { localStorage.removeItem(UNDO_KEY_LEGACY_V2); } catch (_) {}
+          try { localStorage.removeItem(UNDO_KEY_LEGACY_V1); } catch (_) {}
+          return snap;
+        }
+        const legacy = localStorage.getItem(UNDO_KEY_LEGACY_V1);
         if (!legacy) return null;
         const old = JSON.parse(legacy);
-        return old.h1 || old.h2 || null;
+        const snap = old.h1 || old.h2 || null;
+        if (snap) localStorage.setItem(UNDO_KEY, JSON.stringify({ snap }));
+        try { localStorage.removeItem(UNDO_KEY_LEGACY_V1); } catch (_) {}
+        return snap;
       } catch (_) {
         return null;
       }
     }
 
-    function updateHistoryButton(hasSnap) {
-      const ready = hasSnap === undefined ? !!loadHistory() : !!hasSnap;
-      setLogBtnAction($("btnRestore"), ready);
+    function refreshUndoReady() {
+      undoReady = !!loadUndoSnap();
+      setLogBtnAction($("btnUndo"), undoReady);
+      return undoReady;
     }
 
-    function saveHistory(snap) {
+    function saveUndoSnap(snap) {
       const next = snap || null;
-      localStorage.setItem(HISTORY_KEY, JSON.stringify({ snap: next }));
-      updateHistoryButton(!!next);
+      localStorage.setItem(UNDO_KEY, JSON.stringify({ snap: next }));
+      undoReady = !!next;
+      setLogBtnAction($("btnUndo"), undoReady);
     }
 
-    function pushHistory() {
-      saveHistory(getValues());
+    function pushUndo() {
+      saveUndoSnap(getValues());
     }
 
-    function restoreHistory() {
-      const snap = loadHistory();
+    function undoForm() {
+      const snap = loadUndoSnap();
       if (!snap) {
-        showToast("No history");
+        showToast("Nothing to undo");
         return;
       }
       setValues(Object.assign({}, snap));
       saveNow();
       updateLogCalcs();
       syncActionButtons();
-      showToast("History restored");
+      showToast("Undone");
     }
 
     function outValue(value, { time = false, weight = false } = {}) {
@@ -6004,12 +6013,12 @@
       setTimeout(() => {
         btn.classList.remove("copied");
         btn.textContent = label;
-        syncLogActionButtons();
+        syncActionButtons();
       }, 1400);
     }
 
     async function copyLog() {
-      pushHistory();
+      pushUndo();
       clearLogIncompleteHighlights();
       const result = pushLogPrevFromCurrent({ force: logAddForceArmed });
 
@@ -6050,7 +6059,7 @@
       const clipText = buildLogOutput();
       const fromSim = !!(result.snap && isSimLeg(result.snap));
       clearLogTimesAfterArchive({ fromSim, snap: result.snap });
-      syncCopyAddButtonLabel();
+      syncActionButtons();
       pulseCopyAddLogged();
       await writeClipboard(clipText);
       flashCopyBtn(
@@ -6213,7 +6222,7 @@
         showToast("DEPT incomplete — fill " + missing[0].label, 2800);
         return;
       }
-      pushHistory();
+      pushUndo();
       await writeClipboard(buildOutput());
       flashCopyBtn($("btnCopy"), "COPY DEPT TEXT");
       openFlightApp();
@@ -6224,7 +6233,7 @@
         showToast("ARR incomplete — need ATIS and LDIS", 2800);
         return;
       }
-      pushHistory();
+      pushUndo();
       await writeClipboard(buildArrOutput());
       flashCopyBtn($("btnCopyArr"), "COPY ARR TEXT");
       openFlightApp();
@@ -6240,10 +6249,15 @@
     }
 
     async function copyAllLogText() {
-      const rows = allLogRowsOldestFirst();
+      const legs = getMarkedLogLegsOldestFirst();
+      if (!legs.length) {
+        showToast("Nothing marked", 2200);
+        return;
+      }
+      const rows = allLogRowsOldestFirst(legs);
       await writeClipboard(buildAllLogText(rows), buildAllLogHtml(rows));
       markLogBackupDone();
-      flashCopyBtn($("btnCopyAllLog"), "COPY LOG AS TABLE");
+      flashCopyBtn($("btnCopyAllLog"), "COPY MARKED AS TABLE");
     }
 
     /**
@@ -6279,8 +6293,8 @@
       return s;
     }
 
-    function buildLogTenCsv() {
-      const rows = sortLogPrevOldestFirst(loadLogPrev());
+    function buildLogTenCsv(legsIn) {
+      const rows = sortLogPrevOldestFirst(legsIn || loadLogPrev());
       const lines = [LOGTEN_CSV_HEADERS.map(csvEscapeCell).join(",")];
       for (const v of rows) {
         if (!v) continue;
@@ -6321,13 +6335,14 @@
     }
 
     async function copyLogCsv() {
-      if (!loadLogPrev().length) {
-        showToast("Log empty");
+      const legs = getMarkedLogLegsOldestFirst();
+      if (!legs.length) {
+        showToast("Nothing marked", 2200);
         return;
       }
-      await writeClipboard(buildLogTenCsv());
+      await writeClipboard(buildLogTenCsv(legs));
       markLogBackupDone();
-      flashCopyBtn($("btnCopyLogCsv"), "COPY LOG AS CSV");
+      flashCopyBtn($("btnCopyLogCsv"), "COPY MARKED AS CSV");
     }
 
     /** Remove checked (marked) visible log lines — irreversible, confirm first. */
@@ -6359,11 +6374,11 @@
 
     function clearForm() {
       showAppConfirm(
-        "Clear all fields?\n\nEntered values of entire app will be reset to defaults. Restore if needed with the Hist button.\n___________________________________\nTo force an online code update check, hold the Clear button for 4 seconds (default PIC name is kept, but can be edited).\nLogbook keeps recent history with updates. Entries are only lost when the web app is deleted.",
+        "Clear all fields?\n\nEntered values of entire app will be reset to defaults. Restore if needed with the Undo button.\n___________________________________\nTo force an online code update check, hold the Clear button for 4 seconds (default PIC name is kept, but can be edited).\nLogbook keeps recent history with updates. Entries are only lost when the web app is deleted.",
         {
           /* Must run in the OK tap handler so iOS allows opening the keyboard */
           onConfirm() {
-            pushHistory();
+            pushUndo();
             suppressFocusClear = true;
             logEditIndex = null;
             logAddForceArmed = false;
@@ -6387,7 +6402,7 @@
             checkRvsmDiff(true);
             checkSquawkLen(true);
             updateLogCalcs();
-            syncCopyAddButtonLabel();
+            syncActionButtons();
             showToast("Cleared");
             suppressFocusClear = false;
             const atis = $("atis");
@@ -6782,14 +6797,14 @@
     $("logPf").addEventListener("change", () => {
       if (isSimAcft()) ensureSimPf();
       saveNow();
-      syncLogActionButtons();
+      syncActionButtons();
     });
     bindPicIdentity();
     ["logPic", "logPicSelf", "logAcft", "logDep", "logArr", "logTol"].forEach((id) => {
       const el = $(id);
       if (!el) return;
-      el.addEventListener("change", () => syncLogActionButtons());
-      el.addEventListener("input", () => syncLogActionButtons());
+      el.addEventListener("change", () => syncActionButtons());
+      el.addEventListener("input", () => syncActionButtons());
     });
     [
       "security", "atis", "ctot", "pdc", "rwySid", "climbTo", "transponder",
@@ -6815,7 +6830,7 @@
     $("btnCopy").addEventListener("click", copyAll);
     $("btnCopyArr").addEventListener("click", copyArr);
     $("btnCopyLog").addEventListener("click", copyLog);
-    syncCopyAddButtonLabel();
+    syncActionButtons();
     $("btnCopyAllLog").addEventListener("click", copyAllLogText);
     $("btnCopyLogCsv").addEventListener("click", copyLogCsv);
     $("btnClearMarkedLog").addEventListener("click", clearMarkedLogLines);
@@ -6823,7 +6838,7 @@
     bindAppAlert();
     $("btnTheme").addEventListener("click", toggleTheme);
     bindClearLongPress();
-    $("btnRestore").addEventListener("click", restoreHistory);
+    $("btnUndo").addEventListener("click", undoForm);
     (function bindPasteDsperfo() {
       const btn = $("btnPasteDsperfo");
       if (!btn) return;
@@ -6902,15 +6917,6 @@
       });
     }
 
-    let alignRaf = 0;
-    function scheduleAlignLogColumns() {
-      if (alignRaf) cancelAnimationFrame(alignRaf);
-      alignRaf = requestAnimationFrame(() => {
-        alignRaf = 0;
-        alignLogColumns();
-      });
-    }
-
     /** iPad/iPhone (incl. iPadOS desktop UA) */
     function isAppleTouchDevice() {
       const ua = navigator.userAgent || "";
@@ -6975,6 +6981,9 @@
       }
     }
 
+    /** Last observed OS appearance — used to ignore iOS false media-change on app resume. */
+    let lastKnownSystemTheme = systemTheme();
+
     function loadThemeOverride() {
       try {
         const v = localStorage.getItem(THEME_OVERRIDE_KEY);
@@ -6996,11 +7005,16 @@
       document.documentElement.classList.toggle("theme-bright", bright);
       const btn = $("btnTheme");
       if (btn) {
+        const overridden = !!loadThemeOverride();
         /* Press-to-act: label is the theme you switch into */
         btn.textContent = bright ? "DIM" : "BRIGHT";
         btn.title = bright
-          ? "Override: switch to dim (resets when system appearance changes)"
-          : "Override: switch to bright (resets when system appearance changes)";
+          ? (overridden
+            ? "Override on — switch to dim (keeps across app switch; drops if iPad Appearance changes)"
+            : "Switch to dim")
+          : (overridden
+            ? "Override on — switch to bright (keeps across app switch; drops if iPad Appearance changes)"
+            : "Switch to bright");
         btn.setAttribute("aria-pressed", bright ? "true" : "false");
       }
       const meta = document.querySelector('meta[name="theme-color"]');
@@ -7013,21 +7027,53 @@
       applyTheme(next);
     }
 
+    /**
+     * Follow OS light→bright / dark→dim by default.
+     * Manual BRIGHT/DIM override survives app switches (iOS often fires a fake
+     * prefers-color-scheme change on resume). Drop override only when OS
+     * appearance actually differs from lastKnownSystemTheme.
+     */
     function bindSystemThemeFollow() {
       try { localStorage.removeItem(THEME_KEY_LEGACY); } catch (_) {}
+      lastKnownSystemTheme = systemTheme();
+
+      const onRealSystemThemeChange = (sys) => {
+        lastKnownSystemTheme = sys;
+        clearThemeOverride();
+        applyTheme(sys);
+      };
+
       let mq;
       try {
         mq = window.matchMedia("(prefers-color-scheme: light)");
       } catch (_) {
-        return;
+        mq = null;
       }
-      const onSystemChange = () => {
-        /* Next OS day/night change drops manual override and follows system again */
-        clearThemeOverride();
-        applyTheme(systemTheme());
+      if (mq) {
+        const onMediaChange = () => {
+          const sys = systemTheme();
+          if (sys === lastKnownSystemTheme) return; /* spurious / same value */
+          onRealSystemThemeChange(sys);
+        };
+        if (typeof mq.addEventListener === "function") mq.addEventListener("change", onMediaChange);
+        else if (typeof mq.addListener === "function") mq.addListener(onMediaChange);
+      }
+
+      const onResume = () => {
+        if (document.visibilityState && document.visibilityState !== "visible") return;
+        const sys = systemTheme();
+        if (sys !== lastKnownSystemTheme) {
+          /* Appearance changed while we were in another app */
+          onRealSystemThemeChange(sys);
+          return;
+        }
+        /* Same OS theme — keep override; re-assert resolved look after WebKit resume */
+        applyTheme(resolveTheme());
       };
-      if (typeof mq.addEventListener === "function") mq.addEventListener("change", onSystemChange);
-      else if (typeof mq.addListener === "function") mq.addListener(onSystemChange);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") onResume();
+      });
+      window.addEventListener("pageshow", onResume);
     }
 
     /**
@@ -7097,7 +7143,7 @@
     bindInstallOverlay();
     load();
     try { lastSavedJson = JSON.stringify(getValues()); } catch (_) {}
-    updateHistoryButton();
+    refreshUndoReady();
     checkRvsmDiff(true);
     checkSquawkLen(true);
     updateLogCalcs();
@@ -7107,11 +7153,6 @@
     }
     /* After PIC overlay decision so update toast waits if that modal is open */
     maybeShowVersionUpdateToast();
-    requestAnimationFrame(() => {
-      alignLogColumns();
-      requestAnimationFrame(alignLogColumns);
-    });
-    window.addEventListener("resize", scheduleAlignLogColumns);
     trackUsageOncePerDay();
     initServiceWorker();
 
