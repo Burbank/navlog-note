@@ -3423,7 +3423,7 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.2";
+    const APP_VERSION = "4.3";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -4690,7 +4690,9 @@
       const complete = getIncompleteLogFields(snap).length === 0;
       const full = isLogPrevFull();
       const addReady = complete && (!full || wouldUpdateExistingLog(snap));
-      const marked = getMarkedLogIndices().length > 0;
+      const markedCount = getMarkedLogIndices().length;
+      const marked = markedCount > 0;
+      const editReady = markedCount === 1;
       const deptReady = getIncompleteDeptFields(v).length === 0;
       const arrReady = arrCopyReady(v);
 
@@ -4699,7 +4701,7 @@
         setLogBtnAction(addBtn, addReady);
         addBtn.textContent = copyAddButtonLabel();
       }
-      setLogBtnAction($("btnEditMarkedLog"), marked);
+      setLogBtnAction($("btnEditMarkedLog"), editReady);
       setLogBtnAction($("btnClearMarkedLog"), marked);
       setLogBtnAction($("btnCopyAllLog"), marked);
       setLogBtnAction($("btnCopyLogCsv"), marked);
@@ -6171,8 +6173,6 @@
         markLogIncompleteFields(result.missing || []);
         logAddForceArmed = false;
         showAppAlert("Need OFF or ON time to add a log line.");
-        await writeClipboard(buildLogOutput());
-        flashCopyBtn($("btnCopyLog"), copyAddButtonLabel(), "Copied to clipboard");
         return;
       }
 
@@ -6184,8 +6184,6 @@
           "Log line incomplete (" + names + ").\n\n" +
           "Fill the highlighted fields, or press " + copyAddButtonLabel() + " again to save anyway."
         );
-        await writeClipboard(buildLogOutput());
-        flashCopyBtn($("btnCopyLog"), copyAddButtonLabel(), "Copied to clipboard");
         return;
       }
 
