@@ -1,4 +1,6 @@
 .DS_Store
+seed-ipad-log.html
+seed-ipad-log.js
 .venv/
 __pycache__/
 *.pyc

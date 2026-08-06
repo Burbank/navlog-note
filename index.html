@@ -1294,6 +1294,65 @@
       overflow: visible;
     }
 
+    .log-prev-head > span.c-mark {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    /* Fits the fixed 1.5rem mark column — outline matches mark checkboxes */
+    .log-prev-mark-all {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      width: 1.35rem;
+      max-width: 1.5rem;
+      min-height: 1.35rem;
+      margin: 0 auto;
+      padding: 1px 0;
+      border: 1.5px solid var(--field-border);
+      border-radius: 0.35rem;
+      background: var(--field);
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.46rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1;
+      text-align: center;
+      text-transform: uppercase;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      transform: none;
+    }
+
+    .log-prev-mark-all.is-none {
+      border-color: var(--accent);
+      color: var(--text);
+      font-size: 0.42rem;
+      line-height: 0.95;
+      gap: 0;
+    }
+
+    .log-prev-mark-all:active {
+      opacity: 0.7;
+      transform: none;
+    }
+
+    html.theme-bright .log-prev-mark-all {
+      border-width: 2px;
+      border-color: #000;
+      background: #fff;
+      color: #000;
+    }
+
+    html.theme-bright .log-prev-mark-all.is-none {
+      border-color: var(--accent);
+      color: #000;
+    }
+
     /* Mark box — large enough for fat-finger ticks without stretching row text */
     .log-prev-mark {
       width: 1.35rem;
@@ -3364,7 +3423,7 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.1";
+    const APP_VERSION = "4.2";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -4505,12 +4564,36 @@
       return missing;
     }
 
+    let logIncompleteClearTimer = 0;
+    const LOG_INCOMPLETE_CLEAR_MS = 20000;
+
     function clearLogIncompleteHighlights() {
+      if (logIncompleteClearTimer) {
+        clearTimeout(logIncompleteClearTimer);
+        logIncompleteClearTimer = 0;
+      }
       document.querySelectorAll(".log-incomplete").forEach((el) => {
         el.classList.remove("log-incomplete");
       });
       const btn = $("btnCopyLog");
       if (btn) btn.classList.remove("is-incomplete-warn");
+    }
+
+    /** Drop incomplete red after a quiet period (ignore log sheet / dismiss warning). */
+    function scheduleLogIncompleteAutoClear() {
+      if (logIncompleteClearTimer) {
+        clearTimeout(logIncompleteClearTimer);
+        logIncompleteClearTimer = 0;
+      }
+      logIncompleteClearTimer = setTimeout(() => {
+        logIncompleteClearTimer = 0;
+        logAddForceArmed = false;
+        document.querySelectorAll(".log-incomplete").forEach((el) => {
+          el.classList.remove("log-incomplete");
+        });
+        const btn = $("btnCopyLog");
+        if (btn) btn.classList.remove("is-incomplete-warn");
+      }, LOG_INCOMPLETE_CLEAR_MS);
     }
 
     function markLogIncompleteFields(missing) {
@@ -4521,6 +4604,7 @@
       });
       const btn = $("btnCopyLog");
       if (btn) btn.classList.add("is-incomplete-warn");
+      scheduleLogIncompleteAutoClear();
     }
 
     function copyAddButtonLabel() {
@@ -4629,6 +4713,7 @@
         setLogBtnAction(arrBtn, arrReady);
       }
       setLogBtnAction($("btnUndo"), undoReady);
+      syncMarkAllLogButton();
     }
 
     function getMyPicName() {
@@ -4947,7 +5032,11 @@
     function syncLogPrevHead() {
       const head = document.querySelector("#logPrevTable .log-prev-head");
       if (!head) return;
-      if (head.childElementCount !== LOG_PREV_UI_HEADERS.length || !$("logPrevSortDate")) {
+      if (
+        head.childElementCount !== LOG_PREV_UI_HEADERS.length ||
+        !$("logPrevSortDate") ||
+        !$("btnMarkAllLog")
+      ) {
         head.replaceChildren(...LOG_PREV_UI_HEADERS.map((h, i) => {
           if (i === 0) {
             const btn = document.createElement("button");
@@ -4964,12 +5053,61 @@
             return btn;
           }
           const span = document.createElement("span");
+          if (!h) {
+            span.className = "c-mark";
+            const allBtn = document.createElement("button");
+            allBtn.type = "button";
+            allBtn.className = "log-prev-mark-all";
+            allBtn.id = "btnMarkAllLog";
+            allBtn.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleMarkAllLogLines();
+            });
+            span.appendChild(allBtn);
+            return span;
+          }
           span.textContent = h;
-          if (!h) span.className = "c-mark";
           return span;
         }));
       }
       updateLogPrevSortHeader();
+      syncMarkAllLogButton();
+    }
+
+    /** Header control: ALL when nothing marked; stacked “no/ne” when any line is marked. */
+    function syncMarkAllLogButton() {
+      const btn = $("btnMarkAllLog");
+      if (!btn) return;
+      const any = getMarkedLogIndices().length > 0;
+      btn.classList.toggle("is-none", any);
+      if (any) {
+        btn.replaceChildren(
+          document.createTextNode("no"),
+          document.createElement("br"),
+          document.createTextNode("ne")
+        );
+      } else {
+        btn.textContent = "ALL";
+      }
+      btn.title = any ? "Clear marked lines (none)" : "Mark all lines";
+      btn.setAttribute("aria-label", any ? "Clear marked lines" : "Mark all lines");
+      btn.setAttribute("aria-pressed", any ? "true" : "false");
+    }
+
+    /**
+     * ALL / none toggle: no marks → mark every visible line;
+     * any marks → clear those marks (even if only some were selected).
+     */
+    function toggleMarkAllLogLines() {
+      const boxes = Array.from(document.querySelectorAll("#logPrevTable input.log-prev-mark"));
+      if (!boxes.length) {
+        showToast("Log empty", 1800);
+        return;
+      }
+      const anyOn = boxes.some((cb) => cb.checked);
+      boxes.forEach((cb) => { cb.checked = !anyOn; });
+      syncActionButtons();
     }
 
     function logPrevDisplayCount() {
@@ -5190,7 +5328,14 @@
       const box = $("appAlert");
       const ok = $("appAlertOk");
       if (!box || !ok) return;
-      const close = () => { box.hidden = true; };
+      const close = () => {
+        box.hidden = true;
+        /* Restart 20s fade after OK — covers SW-stale loads mid-session and clipboard flash */
+        const btn = $("btnCopyLog");
+        if (btn && btn.classList.contains("is-incomplete-warn")) {
+          scheduleLogIncompleteAutoClear();
+        }
+      };
       ok.addEventListener("click", close);
       box.addEventListener("click", (e) => {
         if (e.target === box) close();
