@@ -16,7 +16,7 @@
   <title>QUICKLOG</title>
   <script>
     try {
-      /* Follow system light/dark; BRIGHT/DIM override survives app switch, yields on real OS flip */
+      /* SYSTEM follows OS; BRIGHT/DIM are sticky manual locks */
       var themeOverride = localStorage.getItem("flight-plan-form-theme-override-v1");
       var useBright =
         themeOverride === "bright" || themeOverride === "dim"
@@ -489,7 +489,7 @@
       flex-wrap: nowrap;
     }
 
-    /* Left toolbar: UTC clock + Bright as two equal segments (like Clear | Undo) */
+    /* Left toolbar: UTC (narrower) + Bright/Dim/System toggle (wider) */
     .toolbar-left-pair {
       display: flex;
       flex-direction: row;
@@ -499,9 +499,17 @@
     }
 
     .toolbar-left-pair > .card {
-      flex: 1 1 0;
       min-width: 0;
       margin: 0;
+    }
+
+    /* UTC narrowed further (−30% then −15%); freed space goes to theme toggle */
+    .toolbar-left-pair > .card-utc-clock {
+      flex: 0.595 1 0;
+    }
+
+    .toolbar-left-pair > .card-bright {
+      flex: 1.405 1 0;
     }
 
     .card-utc-clock {
@@ -559,16 +567,18 @@
       padding: 4px 6px;
     }
 
-    .card-bright button {
+    .card-bright .toggle {
       width: 100%;
-      min-height: 28px;
-      padding: 4px 6px;
-      font-size: 0.68rem;
+      max-width: 100%;
+    }
+
+    .card-bright .toggle button {
+      min-height: 32px; /* ~15% taller than 28px toolbar controls */
+      padding: 4px 4px;
+      font-size: 0.62rem;
       font-weight: 600;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
       text-transform: uppercase;
-      background: var(--btn);
-      color: var(--btn-text);
     }
 
     .card-toolbar-actions {
@@ -3187,7 +3197,11 @@
             </p>
           </div>
           <div class="card card-bright" aria-label="Theme">
-            <button type="button" id="btnTheme" aria-pressed="false" title="Switch to Hi-Contrast Day Theme">BRIGHT</button>
+            <div class="toggle" role="group" aria-label="Theme">
+              <button type="button" id="themeBright" data-theme="bright" title="Manual bright theme">BRIGHT</button>
+              <button type="button" id="themeDim" data-theme="dim" title="Manual dim theme">DIM</button>
+              <button type="button" id="themeSystem" data-theme="system" class="active" title="Follow iPad Appearance">SYSTEM</button>
+            </div>
           </div>
         </div>
         <div class="card card-quicklog-title">
@@ -3595,9 +3609,9 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.4";
+    const APP_VERSION = "4.5";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "2";
+    const APP_BUILD = "0";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -7560,7 +7574,9 @@
     $("btnClearMarkedLog").addEventListener("click", clearMarkedLogLines);
     $("btnEditMarkedLog").addEventListener("click", editMarkedLogLine);
     bindAppAlert();
-    $("btnTheme").addEventListener("click", toggleTheme);
+    $("themeBright").addEventListener("click", () => setThemeMode("bright"));
+    $("themeDim").addEventListener("click", () => setThemeMode("dim"));
+    $("themeSystem").addEventListener("click", () => setThemeMode("system"));
     bindClearLongPress();
     $("btnUndo").addEventListener("click", undoForm);
     (function bindPasteDsperfo() {
@@ -7735,9 +7751,10 @@
       }
     }
 
-    /** Last observed OS appearance — used to ignore iOS false media-change on app resume. */
+    /** Last observed OS appearance — ignore iOS false media-change on app resume. */
     let lastKnownSystemTheme = systemTheme();
 
+    /** Manual lock: "bright" | "dim". Null / missing = follow SYSTEM. */
     function loadThemeOverride() {
       try {
         const v = localStorage.getItem(THEME_OVERRIDE_KEY);
@@ -7746,56 +7763,58 @@
       return null;
     }
 
-    function clearThemeOverride() {
-      try { localStorage.removeItem(THEME_OVERRIDE_KEY); } catch (_) {}
+    function themeMode() {
+      const o = loadThemeOverride();
+      return o || "system";
     }
 
     function resolveTheme() {
       return loadThemeOverride() || systemTheme();
     }
 
-    function applyTheme(mode) {
-      const bright = mode === "bright";
+    function syncThemeToggle() {
+      const mode = themeMode();
+      const brightBtn = $("themeBright");
+      const dimBtn = $("themeDim");
+      const sysBtn = $("themeSystem");
+      if (!brightBtn || !dimBtn || !sysBtn) return;
+      brightBtn.classList.toggle("active", mode === "bright");
+      dimBtn.classList.toggle("active", mode === "dim");
+      sysBtn.classList.toggle("active", mode === "system");
+      brightBtn.setAttribute("aria-pressed", mode === "bright" ? "true" : "false");
+      dimBtn.setAttribute("aria-pressed", mode === "dim" ? "true" : "false");
+      sysBtn.setAttribute("aria-pressed", mode === "system" ? "true" : "false");
+    }
+
+    function applyTheme(look) {
+      const bright = look === "bright";
       document.documentElement.classList.toggle("theme-bright", bright);
-      const btn = $("btnTheme");
-      if (btn) {
-        const overridden = !!loadThemeOverride();
-        /* Press-to-act: label is the theme you switch into */
-        btn.textContent = bright ? "DIM" : "BRIGHT";
-        btn.title = bright
-          ? (overridden
-            ? "Override on — switch to dim (keeps across app switch; drops if iPad Appearance changes)"
-            : "Switch to dim")
-          : (overridden
-            ? "Override on — switch to bright (keeps across app switch; drops if iPad Appearance changes)"
-            : "Switch to bright");
-        btn.setAttribute("aria-pressed", bright ? "true" : "false");
-      }
+      syncThemeToggle();
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", bright ? "#ffffff" : "#1a2332");
     }
 
-    function toggleTheme() {
-      const next = document.documentElement.classList.contains("theme-bright") ? "dim" : "bright";
-      try { localStorage.setItem(THEME_OVERRIDE_KEY, next); } catch (_) {}
-      applyTheme(next);
+    /** mode: "bright" | "dim" | "system" */
+    function setThemeMode(mode) {
+      if (mode === "bright" || mode === "dim") {
+        try { localStorage.setItem(THEME_OVERRIDE_KEY, mode); } catch (_) {}
+        applyTheme(mode);
+        return;
+      }
+      try { localStorage.removeItem(THEME_OVERRIDE_KEY); } catch (_) {}
+      lastKnownSystemTheme = systemTheme();
+      applyTheme(systemTheme());
     }
 
     /**
-     * Follow OS light→bright / dark→dim by default.
-     * Manual BRIGHT/DIM override survives app switches (iOS often fires a fake
-     * prefers-color-scheme change on resume). Drop override only when OS
-     * appearance actually differs from lastKnownSystemTheme.
+     * SYSTEM mode: follow OS light→bright / dark→dim.
+     * BRIGHT / DIM: sticky manual lock (ignore OS flips; survive app switch).
+     * iOS often fires a fake prefers-color-scheme change on resume — ignore
+     * when the resolved system value has not actually changed.
      */
     function bindSystemThemeFollow() {
       try { localStorage.removeItem(THEME_KEY_LEGACY); } catch (_) {}
       lastKnownSystemTheme = systemTheme();
-
-      const onRealSystemThemeChange = (sys) => {
-        lastKnownSystemTheme = sys;
-        clearThemeOverride();
-        applyTheme(sys);
-      };
 
       let mq;
       try {
@@ -7807,7 +7826,9 @@
         const onMediaChange = () => {
           const sys = systemTheme();
           if (sys === lastKnownSystemTheme) return; /* spurious / same value */
-          onRealSystemThemeChange(sys);
+          lastKnownSystemTheme = sys;
+          if (themeMode() !== "system") return; /* manual lock */
+          applyTheme(sys);
         };
         if (typeof mq.addEventListener === "function") mq.addEventListener("change", onMediaChange);
         else if (typeof mq.addListener === "function") mq.addListener(onMediaChange);
@@ -7817,11 +7838,11 @@
         if (document.visibilityState && document.visibilityState !== "visible") return;
         const sys = systemTheme();
         if (sys !== lastKnownSystemTheme) {
-          /* Appearance changed while we were in another app */
-          onRealSystemThemeChange(sys);
+          lastKnownSystemTheme = sys;
+          if (themeMode() === "system") applyTheme(sys);
+          else applyTheme(resolveTheme());
           return;
         }
-        /* Same OS theme — keep override; re-assert resolved look after WebKit resume */
         applyTheme(resolveTheme());
       };
       document.addEventListener("visibilitychange", () => {
