@@ -1182,18 +1182,20 @@
 
     .log-prev-table {
       display: grid;
+      /* DEP −30% fr (min keeps “07 AUG 2026”); PIC −15% fr; T/O+LDG = REG; gains → REMARK */
       grid-template-columns:
-        minmax(5.2rem, 0.9fr)
+        minmax(5.6rem, 0.63fr)
         minmax(2.3rem, 0.42fr)
         minmax(3.8rem, 0.72fr)
         minmax(2.9rem, 0.58fr)
-        minmax(2.9rem, 0.58fr)
-        minmax(2.9rem, 0.58fr)
+        minmax(2.3rem, 0.42fr)
+        minmax(2.3rem, 0.42fr)
         minmax(2.9rem, 0.58fr)
         minmax(2.5rem, 0.5fr)
         minmax(2.5rem, 0.5fr)
         minmax(2rem, 0.38fr)
-        minmax(4.5rem, 1.2fr)
+        minmax(1.9rem, 0.51fr)
+        minmax(3.2rem, 1.28fr)
         1.5rem;
       column-gap: 5px;
       row-gap: 4px;
@@ -1244,13 +1246,32 @@
       border-radius: 2px;
     }
 
-    /* Align with left edge of YOUR LOG segment; PIC left for long names */
+    /* Align with left edge of YOUR LOG segment; PIC / REMARK left for long text */
     .log-prev-row > span:nth-child(1),
     .log-prev-head > span:nth-child(1),
     .log-prev-head > button.log-prev-sort-date,
     .log-prev-row > span:nth-child(11),
-    .log-prev-head > span:nth-child(11) {
+    .log-prev-head > span:nth-child(11),
+    .log-prev-row > span:nth-child(12),
+    .log-prev-head > span:nth-child(12) {
       text-align: left;
+    }
+
+    /* REMARK may clip; never spill into the mark column */
+    .log-prev-row > span:nth-child(12),
+    .log-prev-head > span:nth-child(12) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .log-prev-row > span.c-mark,
+    .log-prev-head > span.c-mark {
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
     }
 
     /* DEP DATE sort — same footprint as header cell; Finder-style arrow only */
@@ -1490,10 +1511,11 @@
     /* Four actions + backup note + copy/add */
     .log-btn-bar {
       display: grid;
+      /* EDIT · TABLE · CSV · CLEAR · ADD TO LOG · backup note (note on right — away from ALL) */
       grid-template-columns:
         repeat(4, minmax(0, 1fr))
-        minmax(6.5rem, 0.85fr)
-        minmax(0, 1fr);
+        minmax(0, 1fr)
+        minmax(6.5rem, 0.85fr);
       gap: 5px;
       width: 100%;
       align-items: stretch;
@@ -1844,7 +1866,6 @@
       position: relative;
       display: block;
       grid-area: date;
-      /* Don’t stretch both rows — tall hit target stole taps meant for PF / PIC */
       align-self: center;
       min-width: 5rem;
       min-height: 2.15rem;
@@ -2110,9 +2131,9 @@
     }
 
     /*
-     * Two aligned rows (calendar spans left).
-     * Row1: PF · acft · DEP · OFF · ARR · ON · BLOCK
-     * Row2: PIC · name · add · AIR · add · TD · FLIGHT
+     * Two aligned rows (calendar top-left; RMK below it).
+     * Row1: DATE · PF · acft · DEP · OFF · ARR · ON · BLOCK
+     * Row2: RMK · PIC · name · add · AIR · add · TD · FLIGHT
      * Full-width spread with gaps; PIC name = 20ch; times fit HH:MM.
      */
     .flight-log-entry {
@@ -2133,7 +2154,7 @@
         max-content;
       grid-template-areas:
         "date pf   acft dep  off arr  on block"
-        "date pics picn addd air adda td flight";
+        "rmk  pics picn addd air adda td flight";
       column-gap: clamp(10px, 1.6vw, 22px);
       row-gap: 3px;
       align-items: center;
@@ -2165,6 +2186,62 @@
 
     .flight-log-pf.log-pf { grid-area: pf; }
     .flight-log-pf.log-pics { grid-area: pics; }
+
+    .flight-log-rmk-wrap {
+      grid-area: rmk;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .flight-log-rmk-wrap .flight-log-pf.log-rmk {
+      width: 100%;
+    }
+
+    .flight-log-rmk-wrap.has-remark .flight-log-pf.log-rmk {
+      display: none;
+    }
+
+    .flight-log-rmk-edit {
+      display: none;
+      box-sizing: border-box;
+      width: 100%;
+      min-height: var(--log-ctrl-h);
+      margin: 0;
+      padding: 2px 5px;
+      border: 1.5px solid var(--field-border);
+      border-radius: 0.35rem;
+      background: var(--field);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+      text-align: center;
+      text-transform: uppercase;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      white-space: nowrap;
+    }
+
+    .flight-log-rmk-wrap.has-remark .flight-log-rmk-edit {
+      display: block;
+    }
+
+    .flight-log-rmk-edit:active {
+      opacity: 0.75;
+      border-color: var(--accent);
+    }
+
+    html.theme-bright .flight-log-rmk-edit {
+      border-width: 2px;
+      border-color: #000;
+      background: #fff;
+      color: #000;
+    }
 
     .flight-log-pf input[type="checkbox"] {
       /* Rounded squares (not circles) — matches prior iOS-like ticks */
@@ -2714,6 +2791,39 @@
       border-color: #000;
     }
 
+    /* Safe default (e.g. PIC rename): No on the right (thumb), highlighted; Yes dimmed on the left */
+    .app-confirm-actions.prefer-cancel {
+      flex-direction: row-reverse;
+    }
+
+    .app-confirm-actions.prefer-cancel #appConfirmCancel {
+      background: var(--btn);
+      color: var(--btn-text);
+      border: none;
+      font-weight: 700;
+    }
+
+    .app-confirm-actions.prefer-cancel #appConfirmOk {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      font-weight: 500;
+      opacity: 0.75;
+    }
+
+    html.theme-bright .app-confirm-actions.prefer-cancel #appConfirmCancel {
+      background: var(--btn);
+      color: var(--btn-text);
+      border: none;
+    }
+
+    html.theme-bright .app-confirm-actions.prefer-cancel #appConfirmOk {
+      color: #000;
+      border-color: #000;
+      background: #fff;
+      opacity: 0.7;
+    }
+
     /* First-run / missing identity: your name for PIC legs */
     .pic-name-overlay {
       position: fixed;
@@ -2802,12 +2912,37 @@
       background: #fff;
     }
 
+    .pic-name-overlay-box textarea {
+      width: 100%;
+      min-height: 4.5rem;
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--field-border);
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.35;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    html.theme-bright .pic-name-overlay-box textarea {
+      border-width: 2px;
+      border-color: #000;
+      color: #000;
+      background: #fff;
+    }
+
     .pic-name-overlay-actions {
       display: flex;
+      gap: 10px;
     }
 
     .pic-name-overlay-actions button {
-      width: 100%;
+      flex: 1;
+      width: auto;
       min-height: 40px;
       font-size: 0.85rem;
     }
@@ -3081,7 +3216,7 @@
           </div>
         </div>
         <div class="card card-toolbar-actions" aria-label="Clear and undo">
-          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: check for online update (default PIC name is kept).">▶ CLEAR</button>
+          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: check for online update.">▶ CLEAR</button>
           <button type="button" id="btnUndo" class="log-btn-muted" title="Undo last clear or copy — restore previous form values">UNDO</button>
         </div>
 
@@ -3216,6 +3351,7 @@
         <div class="log-entry-row">
         <section class="flight-log" aria-label="Your log">
         <input type="hidden" id="logDeptDate" name="logDeptDate" value="" />
+        <input type="hidden" id="logRemark" name="logRemark" value="" />
         <div class="flight-log-entry" role="group" aria-label="Logbook entry">
           <button
             type="button"
@@ -3232,6 +3368,14 @@
               <span class="flight-log-days-ago" id="logDaysAgo"></span>
             </div>
           </button>
+
+          <div class="flight-log-rmk-wrap" id="logRmkWrap">
+            <label class="flight-log-pf log-rmk" for="logRmk" title="Add a short remark for this leg">
+              <input id="logRmk" name="logRmk" type="checkbox" />
+              <span>RMK</span>
+            </label>
+            <button type="button" class="flight-log-rmk-edit" id="logRmkEdit" title="Edit or clear remark" hidden>RMK EDIT</button>
+          </div>
 
           <label class="flight-log-pf log-pf" for="logPf" title="Pilot flying this leg">
             <input id="logPf" name="logPf" type="checkbox" />
@@ -3290,7 +3434,8 @@
             <input id="logPicSelf" name="logPicSelf" type="checkbox" />
             <span>PIC</span>
           </label>
-          <input id="logPic" name="logPic" class="flight-log-picname" type="text" maxlength="96" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="PIC name" title="Pilot-in-command name (EASA log); for SIM add TRE/TRI and exam kind" />
+          <input id="logPic" name="logPic" class="flight-log-picname" type="text" list="logPicList" maxlength="96" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="PIC name" title="PIC name for this leg. Default name auto-ticks PIC; a different name unticks PIC (other captain). Suggestions after 2 letters. Use RMK for remarks." />
+          <datalist id="logPicList"></datalist>
           <input id="logDepAdd" class="flight-log-apt-add log-dep-add" type="text" inputmode="text" enterkeyhint="next" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" lang="en" placeholder="add" title="Add departure IATA (3-letter, charter / divert)" aria-label="Add departure airport" />
           <input id="logArrAdd" class="flight-log-apt-add log-arr-add" type="text" inputmode="text" enterkeyhint="done" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" lang="en" placeholder="add" title="Add arrival IATA (3-letter, charter / divert)" aria-label="Add arrival airport" />
         </div>
@@ -3309,8 +3454,8 @@
         <button type="button" class="log-btn-muted" id="btnCopyAllLog" title="Copy marked log lines as a table">COPY MARKED AS TABLE</button>
         <button type="button" class="log-btn-muted" id="btnCopyLogCsv" title="Copy marked lines as CSV for LogTen Pro import (map columns on import)">COPY MARKED AS CSV</button>
         <button type="button" class="log-btn-muted log-btn-warn" id="btnClearMarkedLog" title="Remove checked logbook lines">CLEAR MARKED LINES</button>
-        <p class="log-data-note" id="logDataNote">Backup frequently, data may be lost. Mark lines, then TABLE/CSV. CSV is for LogTen/others.</p>
         <button type="button" class="log-btn-muted" id="btnCopyLog" title="Add current YOUR LOG line to the table and copy text">ADD TO LOG</button>
+        <p class="log-data-note" id="logDataNote">Backup frequently, data may be lost. Mark lines, then TABLE/CSV. CSV is for LogTen/others.</p>
       </div>
 
       <div class="log-prev" id="logPrev" aria-label="Previous log summaries" aria-live="polite">
@@ -3326,7 +3471,7 @@
           <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
           for checking today’s EASA limits.
         </span>
-        <span class="app-rec-liability">Runs locally/offline, sends no data, author assumes no liability. <span class="app-update-hint">longpress CLEAR to update</span> <span class="app-version" id="appVersion"></span></span>
+        <span class="app-rec-liability">Runs locally/offline, sends no data. Author assumes no liability. <span class="app-update-hint">Longpress CLEAR to update</span> <span class="app-version" id="appVersion"></span></span>
       </p>
       </div>
     </form>
@@ -3390,12 +3535,39 @@
         spellcheck="false"
         placeholder="Leave blank w/o default PIC"
       />
-      <p class="pic-name-overlay-hint">Edit or clear this name here anytime. Hold Clear for 4 seconds only to check for an online UPDATE of the website (your PIC name is kept).</p>
-      <p class="pic-name-overlay-hint">If you enter a name here, the PIC box will also default be ticked ON. Leave blank for no default PIC.</p>
+      <p class="pic-name-overlay-hint">If you enter a name here, the PIC box will also default be ticked ON. Leave blank for no default PIC (typical for first officers).</p>
+      <p class="pic-name-overlay-hint">Later, typing a different PIC name and leaving the field will ask whether to save it as your new default — only if a default was set here.</p>
       <p class="pic-name-overlay-hint">Logbook keeps a short recent history. Entries are only lost when the web app is deleted, not with UPDATES.</p>
       <p class="pic-name-overlay-hint">Sometimes it may be necessary to swipe to close the web app several times to be able to get an update when online. This is a known Apple limitation.</p>
       <div class="pic-name-overlay-actions">
         <button type="button" id="picNameOverlaySave">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="pic-name-overlay"
+    id="remarkOverlay"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="remarkOverlayTitle"
+  >
+    <div class="pic-name-overlay-box">
+      <p id="remarkOverlayTitle" class="pic-name-overlay-title">Remark</p>
+      <textarea
+        id="remarkOverlayInput"
+        maxlength="160"
+        rows="3"
+        autocomplete="off"
+        autocapitalize="sentences"
+        spellcheck="true"
+        placeholder="Short remark (SIM: TRE/TRI · exam kind, etc.)"
+      ></textarea>
+      <p class="pic-name-overlay-hint">Saved with this log line. Leave blank and Save to clear the remark (RMK tick goes away). Cancel keeps the previous remark.</p>
+      <div class="pic-name-overlay-actions">
+        <button type="button" id="remarkOverlayCancel">Cancel</button>
+        <button type="button" id="remarkOverlaySave">Save</button>
       </div>
     </div>
   </div>
@@ -3423,7 +3595,7 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.3";
+    const APP_VERSION = "4.4";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -3451,20 +3623,20 @@
     const FIELD_IDS = [
       "security", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
       "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps",
-      "arrAtis", "ldis", "logPf", "logPicSelf", "logAcft", "logTol", "logPic", "logDeptDate", "logDep", "logArr",
+      "arrAtis", "ldis", "logPf", "logPicSelf", "logAcft", "logTol", "logPic", "logRemark", "logDeptDate", "logDep", "logArr",
       "offBlocks", "airborne", "touchdown", "onBlocks"
     ];
     /** Tab / entry order: OFF → AIRBORNE → TOUCHDOWN → ON (wheels use tabindex=-1) */
     const LOG_TIME_IDS = ["offBlocks", "airborne", "touchdown", "onBlocks"];
     const LOG_PREV_HEADERS = [
       "DEP DATE", "REG", "ROUTE", "OFF BLK", "T/O", "LDG",
-      "ON BLK", "BLOCK", "FLIGHT", "TASK", "PIC + REMARK"
+      "ON BLK", "BLOCK", "FLIGHT", "TASK", "PIC", "REMARK"
     ];
-    /** UI table only — mark column after PIC + REMARK (not included in copy LOG as table). */
+    /** UI table only — mark column after REMARK (not included in copy LOG as table). */
     const LOG_PREV_UI_HEADERS = LOG_PREV_HEADERS.concat([""]);
     const DEFAULTS = {
       security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
-      logAcft: "CKA", logPf: "no", logPicSelf: "no", logPic: "", logDeptDate: "", logDep: "", logArr: "AMS"
+      logAcft: "CKA", logPf: "no", logPicSelf: "no", logPic: "", logRemark: "", logDeptDate: "", logDep: "", logArr: "AMS"
     };
     const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     /** Martinair B747-400 Summer 2026 city pairs — OM-A style block times table */
@@ -3653,20 +3825,31 @@
       }
     }
 
-    /** PIC field template for SIM sessions (TRE/TRI + exam notes). */
+    /** Legacy SIM text that used to live in the PIC name field (now use RMK). */
     const SIM_PIC_HINT = "| add TRE/TRI name | EXAM kind etc.";
+    const SIM_REMARK_HINT = "TRE/TRI · exam kind";
 
     let simModeLock = false;
 
-    function simPicTemplate() {
-      const mine = getMyPicName();
-      return mine ? mine + " " + SIM_PIC_HINT : SIM_PIC_HINT;
-    }
-
     function applySimPicHint() {
+      if (isLogPrevFull()) return;
       const nameEl = $("logPic");
-      if (!nameEl || isLogPrevFull()) return;
-      nameEl.value = simPicTemplate();
+      if (nameEl) {
+        const cur = String(nameEl.value || "").trim();
+        if (!cur || cur === SIM_PIC_HINT || cur.endsWith(SIM_PIC_HINT)) {
+          const mine = getMyPicName();
+          nameEl.value = mine || "";
+          if (mine) {
+            const selfCb = $("logPicSelf");
+            if (selfCb) selfCb.checked = true;
+          }
+        }
+      }
+      const rmkEl = $("logRemark");
+      if (rmkEl && !String(rmkEl.value || "").trim()) {
+        rmkEl.value = SIM_REMARK_HINT;
+        syncRmkCheckbox();
+      }
     }
 
     function addHoursHhmm(timeStr, hours) {
@@ -3750,6 +3933,7 @@
           if (nameEl) nameEl.value = "";
           applyPicDefIfOn();
         }
+        if (getLogRemark() === SIM_REMARK_HINT) setLogRemark("");
         setSimTolValue(3);
         syncSimUi();
         syncLogAcftPrevValue();
@@ -4499,7 +4683,7 @@
     /** Column cells for one archived leg. UI: 3-letter REG; copy: PH-REG. SIM route blank. */
     function logPrevCells(v, { phReg = false } = {}) {
       if (!v) {
-        return ["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"];
+        return ["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"];
       }
       const sim = isSimLeg(v);
       const regRaw = String(v.logAcft || "").trim().toUpperCase().replace(/^PH-/, "");
@@ -4515,14 +4699,15 @@
         subtractTimes(v.onBlocks, v.offBlocks) || "—",
         sim ? "N/A" : (subtractTimes(v.touchdown, v.airborne) || "—"),
         v.logPf === "yes" ? "PF" : "PM",
-        dash(v.logPic)
+        dash(v.logPic),
+        dash(v.logRemark)
       ];
     }
 
     function logLegKey(v) {
       if (!v) return "";
       return [
-        v.logDeptDate, v.logAcft, v.logDep, v.logArr, v.logPf, v.logPicSelf, v.logPic,
+        v.logDeptDate, v.logAcft, v.logDep, v.logArr, v.logPf, v.logPicSelf, v.logPic, v.logRemark,
         v.offBlocks, v.airborne, v.touchdown, v.onBlocks
       ].map((x) => String(x || "").trim()).join("|");
     }
@@ -4760,8 +4945,10 @@
       const nameEl = $("logPic");
       if (!selfCb || !nameEl) return;
       if (nameEl.classList.contains("log-pic-full")) return;
-      selfCb.checked = true;
-      nameEl.value = mine;
+      withPicDefaultPromptSuppressed(() => {
+        selfCb.checked = true;
+        nameEl.value = mine;
+      });
     }
 
     /** Visible table capacity (9 Safari / 12 Home Screen). */
@@ -4783,7 +4970,7 @@
         nameEl.value = LOGBOOK_FULL_MSG;
         nameEl.title = "Logbook full — clear a marked line before adding another";
       } else {
-        nameEl.title = "Pilot-in-command name (EASA log); for SIM add TRE/TRI and exam kind";
+        nameEl.title = "Pilot-in-command name (EASA log). With a default name, PIC ticks only when the field matches you; other names untick PIC. Use RMK for remarks.";
         if (!editing && (wasFull || nameEl.value === LOGBOOK_FULL_MSG)) {
           nameEl.value = "";
           applyPicDefIfOn();
@@ -4868,6 +5055,143 @@
       flushVersionUpdateToast();
     }
 
+    function normalizePicNameKey(s) {
+      return String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
+    }
+
+    /** Session: names declined for “save as default?” (this leg only). */
+    const picDefaultDeclinedNorm = new Set();
+    let picDefaultPromptOpen = false;
+    let suppressPicDefaultPrompt = 0;
+
+    function withPicDefaultPromptSuppressed(fn) {
+      suppressPicDefaultPrompt += 1;
+      try {
+        return fn();
+      } finally {
+        setTimeout(() => {
+          suppressPicDefaultPrompt = Math.max(0, suppressPicDefaultPrompt - 1);
+        }, 0);
+      }
+    }
+
+    function isIgnorablePicSuggestName(name) {
+      const t = String(name || "").trim();
+      if (!t || t === LOGBOOK_FULL_MSG) return true;
+      if (t === SIM_PIC_HINT || t.endsWith(SIM_PIC_HINT)) return true;
+      return false;
+    }
+
+    function collectPicNamePool() {
+      const pool = [];
+      const seen = new Set();
+      const add = (name) => {
+        if (isIgnorablePicSuggestName(name)) return;
+        const t = String(name || "").trim().replace(/\s+/g, " ");
+        const k = normalizePicNameKey(t);
+        if (seen.has(k)) return;
+        seen.add(k);
+        pool.push(t);
+      };
+      add(getMyPicName());
+      loadLogPrev().forEach((leg) => add(leg && leg.logPic));
+      return pool;
+    }
+
+    /** Match full name prefix or any word / last-name prefix (after 2+ chars). */
+    function picNameMatchesQuery(name, query) {
+      const n = normalizePicNameKey(name);
+      const q = normalizePicNameKey(query);
+      if (q.length < 2) return false;
+      if (n.startsWith(q)) return true;
+      return n.split(/\s+/).some((part) => part.startsWith(q));
+    }
+
+    function refreshPicNameDatalist(query) {
+      const list = $("logPicList");
+      if (!list) return;
+      list.innerHTML = "";
+      const q = String(query || "").trim();
+      if (q.length < 2) return;
+      collectPicNamePool()
+        .filter((n) => picNameMatchesQuery(n, q))
+        .slice(0, 8)
+        .forEach((n) => {
+          const opt = document.createElement("option");
+          opt.value = n;
+          list.appendChild(opt);
+        });
+    }
+
+    /**
+     * Captains with a saved default: PIC tick means “I was PIC”.
+     * Typed name = default → tick on; other name / empty → tick off (keep the typed name).
+     * FOs (no default) are left alone — they control the tick manually.
+     */
+    function syncPicSelfFromTypedName() {
+      if (suppressPicDefaultPrompt) return;
+      const selfCb = $("logPicSelf");
+      const nameEl = $("logPic");
+      if (!selfCb || !nameEl) return;
+      if (nameEl.classList.contains("log-pic-full")) return;
+      const mine = getMyPicName();
+      if (!mine) return;
+      const typed = String(nameEl.value || "").trim().replace(/\s+/g, " ");
+      if (!typed || isIgnorablePicSuggestName(typed)) {
+        selfCb.checked = false;
+        return;
+      }
+      selfCb.checked = normalizePicNameKey(typed) === normalizePicNameKey(mine);
+    }
+
+    /**
+     * Captains with a saved default: on blur of a different non-empty name,
+     * ask whether to update the default. FOs (no default) never see this.
+     */
+    function maybePromptSaveDefaultPic() {
+      if (suppressPicDefaultPrompt || picDefaultPromptOpen) return;
+      if (isPicNameOverlayOpen()) return;
+      const mine = getMyPicName();
+      if (!mine) return;
+      const nameEl = $("logPic");
+      const selfCb = $("logPicSelf");
+      if (!nameEl) return;
+      const typed = String(nameEl.value || "").trim().replace(/\s+/g, " ");
+      if (!typed || isIgnorablePicSuggestName(typed)) return;
+      const typedKey = normalizePicNameKey(typed);
+      if (typedKey === normalizePicNameKey(mine)) return;
+      if (picDefaultDeclinedNorm.has(typedKey)) return;
+
+      picDefaultPromptOpen = true;
+      showAppConfirm(
+        'Save "' + typed + '" as your default PIC name?\n\n' +
+          "Yes — use it for future PIC legs (PIC tick stays for you).\n" +
+          "No — keep it for this leg only (you were not PIC).",
+        {
+          okLabel: "Yes",
+          cancelLabel: "No",
+          primary: "cancel", /* highlight No — avoid accidental default rename */
+          onConfirm() {
+            setMyPicName(typed);
+            withPicDefaultPromptSuppressed(() => {
+              if (selfCb) selfCb.checked = true;
+              nameEl.value = typed;
+            });
+            showToast("Default PIC name saved", 2200);
+          }
+        }
+      ).then((ok) => {
+        picDefaultPromptOpen = false;
+        if (!ok) {
+          picDefaultDeclinedNorm.add(typedKey);
+          /* Other captain this leg — ensure PIC tick stays off */
+          if (selfCb) selfCb.checked = false;
+        }
+        saveNow();
+        syncActionButtons();
+      });
+    }
+
     function bindPicIdentity() {
       const selfCb = $("logPicSelf");
       const nameEl = $("logPic");
@@ -4880,22 +5204,67 @@
         if (selfCb.checked) {
           const mine = getMyPicName();
           if (mine) {
-            /* Always replace whatever was typed (other PIC, prior leg, etc.) */
-            nameEl.value = mine;
+            withPicDefaultPromptSuppressed(() => {
+              nameEl.value = mine;
+            });
           } else {
             nameEl.value = "";
             showPicNameOverlay();
           }
-        } else {
-          nameEl.value = "";
         }
+        /* Untick: keep whatever name is in the field (often the other pilot’s). */
         saveNow();
+        syncActionButtons();
       });
 
-      nameEl.addEventListener("input", () => { save(); });
+      const isExactPicSuggestion = (value) => {
+        const key = normalizePicNameKey(value);
+        if (!key) return false;
+        return collectPicNamePool().some((n) => normalizePicNameKey(n) === key);
+      };
+      let picAdvanceLock = false;
+      const advanceAfterPicPick = () => {
+        if (picAdvanceLock) return;
+        picAdvanceLock = true;
+        /* Let datalist UI close before moving focus (input+change may both fire) */
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            focusNextField(nameEl);
+            picAdvanceLock = false;
+          });
+        });
+      };
+
+      nameEl.addEventListener("input", (e) => {
+        const prev = nameEl._picPrevValue || "";
+        refreshPicNameDatalist(nameEl.value);
+        syncPicSelfFromTypedName();
+        save();
+        syncActionButtons();
+        const cur = String(nameEl.value || "").trim();
+        const picked =
+          isExactPicSuggestion(cur) &&
+          (e.inputType === "insertReplacementText" ||
+            (normalizePicNameKey(cur) !== normalizePicNameKey(prev) &&
+              !isExactPicSuggestion(prev)));
+        nameEl._picPrevValue = nameEl.value;
+        if (picked) advanceAfterPicPick();
+      });
+      nameEl.addEventListener("focus", () => {
+        nameEl._picPrevValue = nameEl.value;
+        refreshPicNameDatalist(nameEl.value);
+      });
       nameEl.addEventListener("blur", () => {
-        /* Do not write logPic back into stored default — only the PIC overlay Save does that */
+        syncPicSelfFromTypedName();
         saveNow();
+        /* After focus moves away — not while typing */
+        maybePromptSaveDefaultPic();
+      });
+      nameEl.addEventListener("change", () => {
+        /* datalist pick on some browsers fires change */
+        syncPicSelfFromTypedName();
+        saveNow();
+        if (isExactPicSuggestion(nameEl.value)) advanceAfterPicPick();
       });
 
       if (saveBtn && input) {
@@ -4909,12 +5278,16 @@
               nameEl.value = "";
             }
             hidePicNameOverlay();
+            showToast("Default PIC name cleared", 2200);
             saveNow();
             return;
           }
           setMyPicName(n);
-          applyPicDefIfOn();
+          withPicDefaultPromptSuppressed(() => {
+            applyPicDefIfOn();
+          });
           hidePicNameOverlay();
+          showToast("Default PIC name saved", 2200);
           saveNow();
         };
         saveBtn.addEventListener("click", commit);
@@ -5275,6 +5648,7 @@
         logPf: v.logPf === "yes" ? "yes" : "no",
         logPicSelf: v.logPicSelf === "yes" ? "yes" : "no",
         logPic: pic,
+        logRemark: String(v.logRemark || "").trim(),
         logDep: v.logDep || "",
         logArr: v.logArr || "",
         logDeptDate: (v.logDeptDate || "").trim(),
@@ -5352,11 +5726,12 @@
      * Optional onConfirm runs synchronously inside the OK tap — required for iOS
      * to open the keyboard when focusing an input after confirm.
      */
-    function showAppConfirm(msg, { onConfirm } = {}) {
+    function showAppConfirm(msg, { onConfirm, okLabel, cancelLabel, primary = "ok" } = {}) {
       const box = $("appConfirm");
       const text = $("appConfirmMsg");
       const okBtn = $("appConfirmOk");
       const cancelBtn = $("appConfirmCancel");
+      const actions = box && box.querySelector(".app-confirm-actions");
       if (!box || !text || !okBtn || !cancelBtn) {
         const ok = window.confirm(msg);
         if (ok && typeof onConfirm === "function") {
@@ -5364,12 +5739,20 @@
         }
         return Promise.resolve(ok);
       }
+      const prevOk = okBtn.textContent;
+      const prevCancel = cancelBtn.textContent;
+      if (okLabel) okBtn.textContent = okLabel;
+      if (cancelLabel) cancelBtn.textContent = cancelLabel;
+      if (actions) actions.classList.toggle("prefer-cancel", primary === "cancel");
       text.textContent = msg;
       syncVisualViewport();
       box.hidden = false;
       return new Promise((resolve) => {
         const finish = (result) => {
           box.hidden = true;
+          okBtn.textContent = prevOk;
+          cancelBtn.textContent = prevCancel;
+          if (actions) actions.classList.remove("prefer-cancel");
           okBtn.removeEventListener("click", onOk);
           cancelBtn.removeEventListener("click", onCancel);
           box.removeEventListener("click", onBackdrop);
@@ -5408,10 +5791,12 @@
     function loadLogLegIntoForm(v) {
       if (!v) return;
       suppressFocusClear = true;
+      withPicDefaultPromptSuppressed(() => {
       $("logAcft").value = v.logAcft || DEFAULTS.logAcft || "CKA";
       $("logPf").checked = v.logPf === "yes";
       $("logPicSelf").checked = v.logPicSelf === "yes";
       $("logPic").value = v.logPic || "";
+      setLogRemark(v.logRemark || "");
       $("logDeptDate").value = v.logDeptDate || "";
       if (isSimLeg(v)) setSimTolValue(simTolCredits(v));
       else setSimTolValue(3);
@@ -5437,6 +5822,7 @@
       saveNow();
       updateLogCalcs();
       syncLogAcftPrevValue();
+      });
       requestAnimationFrame(() => {
         requestAnimationFrame(() => { suppressFocusClear = false; });
       });
@@ -5576,6 +5962,7 @@
         t.classList.remove("log-time-error", "warn-diff", "log-incomplete");
       });
       if ($("logDeptDate")) $("logDeptDate").value = "";
+      setLogRemark("");
       if (wasSim) {
         exitSimToDefaultAircraft();
       } else {
@@ -5617,6 +6004,7 @@
           applyNextLegDefaults();
           $("logPicSelf").checked = false;
           $("logPic").value = "";
+          setLogRemark("");
           applyPicDefIfOn();
           if (stayingSim) {
             // User is still logging a SIM session — keep SIM presets.
@@ -5959,6 +6347,7 @@
         delete preFocusById[id];
       }
       setMnps(data.mnps || "N/A");
+      syncRmkCheckbox();
       checkRvsmDiff(true);
       checkSquawkLen(true);
       const active = document.activeElement;
@@ -5969,6 +6358,111 @@
       requestAnimationFrame(() => {
         requestAnimationFrame(() => { suppressFocusClear = false; });
       });
+    }
+
+    function getLogRemark() {
+      const el = $("logRemark");
+      return el ? String(el.value || "").trim() : "";
+    }
+
+    function setLogRemark(text) {
+      const el = $("logRemark");
+      if (el) el.value = String(text || "").trim();
+      syncRmkUi();
+    }
+
+    /** Empty → RMK tick; has text → RMK EDIT button (tick hidden). */
+    function syncRmkUi() {
+      const has = !!getLogRemark();
+      const wrap = $("logRmkWrap");
+      const cb = $("logRmk");
+      const editBtn = $("logRmkEdit");
+      if (cb) cb.checked = has;
+      if (wrap) wrap.classList.toggle("has-remark", has);
+      if (editBtn) {
+        editBtn.hidden = !has;
+        editBtn.setAttribute("aria-hidden", has ? "false" : "true");
+      }
+    }
+
+    function syncRmkCheckbox() {
+      syncRmkUi();
+    }
+
+    function isRemarkOverlayOpen() {
+      const box = $("remarkOverlay");
+      return !!(box && !box.hidden);
+    }
+
+    function showRemarkOverlay() {
+      const box = $("remarkOverlay");
+      const input = $("remarkOverlayInput");
+      if (!box || !input) return;
+      input.value = getLogRemark();
+      syncVisualViewport();
+      box.hidden = false;
+      requestAnimationFrame(() => {
+        syncVisualViewport();
+        try {
+          input.focus();
+          const n = input.value.length;
+          input.setSelectionRange(n, n);
+        } catch (_) {}
+        setTimeout(syncVisualViewport, 350);
+      });
+    }
+
+    function hideRemarkOverlay() {
+      const box = $("remarkOverlay");
+      if (box) box.hidden = true;
+    }
+
+    function bindRemarkDialog() {
+      const cb = $("logRmk");
+      const editBtn = $("logRmkEdit");
+      const overlay = $("remarkOverlay");
+      const input = $("remarkOverlayInput");
+      const saveBtn = $("remarkOverlaySave");
+      const cancelBtn = $("remarkOverlayCancel");
+      if (!cb || !overlay || !input || !saveBtn || !cancelBtn) return;
+
+      cb.addEventListener("click", (e) => {
+        e.preventDefault();
+        showRemarkOverlay();
+      });
+      if (editBtn) {
+        editBtn.addEventListener("click", () => showRemarkOverlay());
+      }
+
+      const commit = () => {
+        setLogRemark(input.value);
+        hideRemarkOverlay();
+        saveNow();
+        syncActionButtons();
+        if (!getLogRemark()) showToast("Remark cleared", 1800);
+      };
+      const cancel = () => {
+        hideRemarkOverlay();
+        syncRmkUi();
+      };
+      saveBtn.addEventListener("click", commit);
+      cancelBtn.addEventListener("click", cancel);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          commit();
+        }
+      });
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) cancel();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !overlay.hidden) {
+          e.preventDefault();
+          cancel();
+        }
+      });
+      syncRmkUi();
     }
 
     let saveTimer = 0;
@@ -6244,6 +6738,8 @@
         `Acting as PIC: ${v.logPicSelf === "yes" ? "yes" : "no"}`,
         `Pilot Flying: ${v.logPf === "yes" ? "yes" : "no"}`
       ];
+      const rmk = String(v.logRemark || "").trim();
+      if (rmk) lines.push(`REMARK: ${rmk}`);
       if (!sim) {
         lines.push(`DEP: ${v.logDep || ""}`, `ARR: ${v.logArr || ""}`);
       }
@@ -6313,7 +6809,7 @@
       const NBSP = "\u00A0";
       const rows = (rowsIn || allLogRowsOldestFirst()).map((r) => r.map(asciiPlainCell));
       // Typical widths after ASCII: MIA->AMS (8), PH-CKA (6), HH:MM (5); PIC varies.
-      const minW = [11, 6, 8, 7, 5, 5, 6, 6, 6, 4, 8];
+      const minW = [11, 6, 8, 7, 5, 5, 6, 6, 6, 4, 8, 8];
       const widths = LOG_PREV_HEADERS.map((h, i) =>
         Math.max(
           minW[i] || 1,
@@ -6468,7 +6964,7 @@
             String(v.logPic || "").trim(),
             toLdg, // exporting pilot flew the takeoff(s)
             toLdg, // exporting pilot flew the landing(s)
-            isPf ? "PF" : "PM"
+            [isPf ? "PF" : "PM", String(v.logRemark || "").trim()].filter(Boolean).join(" · ")
           ]
             .map(csvEscapeCell)
             .join(",")
@@ -6517,7 +7013,7 @@
 
     function clearForm() {
       showAppConfirm(
-        "Clear all fields?\n\nEntered values of entire app will be reset to defaults. Restore if needed with the Undo button.\n___________________________________\nTo force an online code update check, hold the Clear button for 4 seconds (default PIC name is kept, but can be edited).\nLogbook keeps recent history with updates. Entries are only lost when the web app is deleted.",
+        "Clear all fields?\n\nEntered values of entire app will be reset to defaults. Restore if needed with the Undo button.\n___________________________________\nTo check for an online update, hold the Clear button for 4 seconds.\nLogbook keeps recent history with updates. Entries are only lost when the web app is deleted.",
         {
           /* Must run in the OK tap handler so iOS allows opening the keyboard */
           onConfirm() {
@@ -6582,10 +7078,36 @@
       if (box) box.hidden = false;
     }
 
-    /** Drop SW caches and reload so Safari / Home Screen app pick up the latest build. */
+    function hideUpdateBusy() {
+      const box = $("updateBusy");
+      if (box) box.hidden = true;
+    }
+
+    /** Network APP_VERSION via SW bypass (?updateCheck=1). null if unknown / timed out. */
+    async function fetchRemoteAppVersion() {
+      try {
+        const url = new URL("./index.html", location.href);
+        url.searchParams.set("updateCheck", "1");
+        url.searchParams.set("t", Date.now().toString(36));
+        const res = await withTimeout(fetch(url.href, { cache: "reload" }), 10000);
+        if (!res || !res.ok) return null;
+        const text = await withTimeout(res.text(), 5000);
+        if (typeof text !== "string") return null;
+        const m = text.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+        return m ? m[1] : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    /** Drop SW caches, compare online APP_VERSION, reload only when needed. */
     async function forceLatestIfOnline() {
-      if (!navigator.onLine) return;
-      showUpdateBusy("Update requested");
+      if (!navigator.onLine) {
+        showToast("Go online to update");
+        return;
+      }
+      showUpdateBusy("Checking for update…", "Contacting server (up to ~10s)");
+      /* Clear caches first so the version fetch is not answered from the stale shell */
       try {
         if ("caches" in window) {
           const keys = await withTimeout(caches.keys(), 2000);
@@ -6607,13 +7129,44 @@
           }
         }
       } catch (_) {}
-      await sleep(2000);
+
+      const remoteVer = await fetchRemoteAppVersion();
+      if (remoteVer && remoteVer === APP_VERSION) {
+        hideUpdateBusy();
+        showAppAlert(
+          "No new version available.\n\nYou already have v" + APP_VERSION + "."
+        );
+        return;
+      }
+
+      showUpdateBusy(
+        "Update requested",
+        remoteVer ? ("Loading v" + remoteVer + "…") : "Refreshing app shell…"
+      );
+      await sleep(1200);
       const url = new URL(window.location.href);
       url.searchParams.set("r", Date.now().toString(36));
+      /* If version could not be read online, reload still runs — report “already current” if unchanged */
+      url.searchParams.set("updateAttempt", "1");
       window.location.replace(url.pathname + url.search + url.hash);
     }
 
-    /** Long-press Clear: force online update check (keeps default PIC name). */
+    /** After long-press update reload: strip flag; alert if version did not change. */
+    function consumeUpdateAttemptFlag() {
+      try {
+        const u = new URL(location.href);
+        if (!u.searchParams.has("updateAttempt")) return false;
+        u.searchParams.delete("updateAttempt");
+        u.searchParams.delete("r");
+        const q = u.searchParams.toString();
+        history.replaceState(null, "", u.pathname + (q ? "?" + q : "") + u.hash);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    /** Long-press Clear: online update check only. */
     function bindClearLongPress() {
       const btn = $("btnClear");
       if (!btn) return;
@@ -6943,6 +7496,7 @@
       syncActionButtons();
     });
     bindPicIdentity();
+    bindRemarkDialog();
     ["logPic", "logPicSelf", "logAcft", "logDep", "logArr", "logTol"].forEach((id) => {
       const el = $(id);
       if (!el) return;
@@ -7294,8 +7848,14 @@
     if (!getMyPicName() && !hasAnsweredPicNamePrompt()) {
       showPicNameOverlay();
     }
+    const fromUpdateAttempt = consumeUpdateAttemptFlag();
     /* After PIC overlay decision so update toast waits if that modal is open */
     maybeShowVersionUpdateToast();
+    if (fromUpdateAttempt && !pendingVersionToast) {
+      showAppAlert(
+        "No new version available.\n\nYou already have v" + APP_VERSION + "."
+      );
+    }
     trackUsageOncePerDay();
     initServiceWorker();
 

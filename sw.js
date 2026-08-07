@@ -1,5 +1,5 @@
 /* QUICKLOG service worker — cache-first shell (offline-first, no speculative fetch). */
-const CACHE = "navlog-note-v4.3.0";
+const CACHE = "navlog-note-v4.4.0";
 
 const ASSETS = [
   "./",
@@ -80,7 +80,21 @@ self.addEventListener("fetch", (event) => {
    * “Turn Off Airplane Mode or Use Wi-Fi to Access Data”.
    * navigator.onLine is unreliable on resume / radio changes.
    * Updates are explicit (long-press Clear) from the page.
+   * ?updateCheck=1 bypasses cache so the page can compare APP_VERSION.
    */
+  if (url.searchParams.has("updateCheck")) {
+    event.respondWith(
+      fetch(request, { cache: "reload" }).catch(
+        () =>
+          new Response("", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" }
+          })
+      )
+    );
+    return;
+  }
+
   const cacheKey = request.mode === "navigate" ? "./index.html" : request;
 
   event.respondWith(
