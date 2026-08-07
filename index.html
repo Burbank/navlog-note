@@ -3466,9 +3466,9 @@
       <p class="app-rec">
         <span class="app-rec-try">
           Also try:
-          <a href="https://klyear.netlify.app/" target="_blank" rel="noopener noreferrer">https://klyear.netlify.app/</a>
+          <a href="https://klyear.netlify.app/" class="open-system-browser" target="_blank" rel="noopener noreferrer">https://klyear.netlify.app/</a>
           for a calendar overview and
-          <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" target="_blank" rel="noopener noreferrer">FDP FMS</a>
+          <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" class="open-system-browser" target="_blank" rel="noopener noreferrer">FDP FMS</a>
           for checking today’s EASA limits.
         </span>
         <span class="app-rec-liability">Runs locally/offline, sends no data. Author assumes no liability. <span class="app-update-hint">Longpress CLEAR to update</span> <span class="app-version" id="appVersion"></span></span>
@@ -3596,6 +3596,8 @@
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "4.4";
+    /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
+    const APP_BUILD = "1";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -3608,6 +3610,8 @@
     const MY_PIC_NAME_ASKED_KEY = "flight-plan-form-my-pic-name-asked-v1";
     /** Last APP_VERSION the device has acknowledged (for update toast). */
     const SEEN_VERSION_KEY = "flight-plan-form-seen-version-v1";
+    /** Last APP_VERSION+APP_BUILD stamp (same-version patches). */
+    const SEEN_STAMP_KEY = "flight-plan-form-seen-stamp-v1";
     /** Last successful COPY MARKED AS TABLE / CSV (localStorage — no cookies). */
     const LOG_BACKUP_AT_KEY = "flight-plan-form-log-backup-at-v1";
     const LOG_BACKUP_WARN_DAYS = 30;
@@ -5046,12 +5050,32 @@
       showToast(msg, 3500);
     }
 
+    function localAppStamp() {
+      return APP_VERSION + "+" + APP_BUILD;
+    }
+
     function maybeShowVersionUpdateToast() {
-      let prev = "";
-      try { prev = String(localStorage.getItem(SEEN_VERSION_KEY) || ""); } catch (_) {}
-      try { localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION); } catch (_) {}
-      if (!prev || prev === APP_VERSION) return;
-      pendingVersionToast = "Update successful — v" + APP_VERSION;
+      let prevVer = "";
+      let prevStamp = "";
+      try { prevVer = String(localStorage.getItem(SEEN_VERSION_KEY) || ""); } catch (_) {}
+      try { prevStamp = String(localStorage.getItem(SEEN_STAMP_KEY) || ""); } catch (_) {}
+      const stamp = localAppStamp();
+      try {
+        localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION);
+        localStorage.setItem(SEEN_STAMP_KEY, stamp);
+      } catch (_) {}
+      if (!prevVer && !prevStamp) return; /* first run */
+      if (prevStamp === stamp) return;
+      if (prevVer && prevVer !== APP_VERSION) {
+        pendingVersionToast = "Update successful — v" + APP_VERSION;
+      } else if (prevStamp && prevStamp !== stamp) {
+        pendingVersionToast = "Update applied — v" + APP_VERSION;
+      } else if (!prevStamp && prevVer === APP_VERSION && APP_BUILD !== "0") {
+        /* Same version label, new patch build (e.g. 4.4 → 4.4+1) */
+        pendingVersionToast = "Update applied — v" + APP_VERSION;
+      } else {
+        return;
+      }
       flushVersionUpdateToast();
     }
 
@@ -7083,8 +7107,8 @@
       if (box) box.hidden = true;
     }
 
-    /** Network APP_VERSION via SW bypass (?updateCheck=1). null if unknown / timed out. */
-    async function fetchRemoteAppVersion() {
+    /** Network app stamp (version+build) via SW bypass (?updateCheck=1). null if unknown. */
+    async function fetchRemoteAppStamp() {
       try {
         const url = new URL("./index.html", location.href);
         url.searchParams.set("updateCheck", "1");
@@ -7093,14 +7117,16 @@
         if (!res || !res.ok) return null;
         const text = await withTimeout(res.text(), 5000);
         if (typeof text !== "string") return null;
-        const m = text.match(/APP_VERSION\s*=\s*"([^"]+)"/);
-        return m ? m[1] : null;
+        const vm = text.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+        if (!vm) return null;
+        const bm = text.match(/APP_BUILD\s*=\s*"([^"]+)"/);
+        return vm[1] + "+" + (bm ? bm[1] : "0");
       } catch (_) {
         return null;
       }
     }
 
-    /** Drop SW caches, compare online APP_VERSION, reload only when needed. */
+    /** Drop SW caches, compare online stamp, reload only when needed. */
     async function forceLatestIfOnline() {
       if (!navigator.onLine) {
         showToast("Go online to update");
@@ -7130,8 +7156,8 @@
         }
       } catch (_) {}
 
-      const remoteVer = await fetchRemoteAppVersion();
-      if (remoteVer && remoteVer === APP_VERSION) {
+      const remoteStamp = await fetchRemoteAppStamp();
+      if (remoteStamp && remoteStamp === localAppStamp()) {
         hideUpdateBusy();
         showAppAlert(
           "No new version available.\n\nYou already have v" + APP_VERSION + "."
@@ -7139,6 +7165,7 @@
         return;
       }
 
+      const remoteVer = remoteStamp ? remoteStamp.split("+")[0] : "";
       showUpdateBusy(
         "Update requested",
         remoteVer ? ("Loading v" + remoteVer + "…") : "Refreshing app shell…"
@@ -7146,7 +7173,7 @@
       await sleep(1200);
       const url = new URL(window.location.href);
       url.searchParams.set("r", Date.now().toString(36));
-      /* If version could not be read online, reload still runs — report “already current” if unchanged */
+      /* If stamp could not be read online, reload still runs — report “already current” if unchanged */
       url.searchParams.set("updateAttempt", "1");
       window.location.replace(url.pathname + url.search + url.hash);
     }
@@ -7628,6 +7655,36 @@
       );
     }
 
+    /**
+     * Home Screen PWA: open https links in Safari (not the in-app webview).
+     * Uses iOS x-safari-https:// scheme; elsewhere falls back to a new tab.
+     */
+    function openInSystemBrowser(url) {
+      const href = String(url || "").trim();
+      if (!href) return;
+      if (isStandaloneDisplay() && /^https?:\/\//i.test(href)) {
+        try {
+          location.href = "x-safari-" + href;
+          return;
+        } catch (_) {}
+      }
+      try {
+        window.open(href, "_blank", "noopener,noreferrer");
+      } catch (_) {
+        location.href = href;
+      }
+    }
+
+    function bindOpenSystemBrowserLinks() {
+      document.querySelectorAll("a.open-system-browser").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openInSystemBrowser(a.href);
+        });
+      });
+    }
+
     function shouldShowInstallOverlay() {
       if (isStandaloneDisplay()) return false;
       if (document.documentElement.classList.contains("is-standalone-app")) return false;
@@ -7838,6 +7895,7 @@
     startUtcClock();
     initInstallAndStandalone();
     bindInstallOverlay();
+    bindOpenSystemBrowserLinks();
     load();
     try { lastSavedJson = JSON.stringify(getValues()); } catch (_) {}
     refreshUndoReady();

@@ -1,5 +1,5 @@
 /* QUICKLOG service worker — cache-first shell (offline-first, no speculative fetch). */
-const CACHE = "navlog-note-v4.4.0";
+const CACHE = "navlog-note-v4.4.1";
 
 const ASSETS = [
   "./",
