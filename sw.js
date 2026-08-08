@@ -1,5 +1,8 @@
-/* QUICKLOG service worker — cache-first shell (offline-first, no speculative fetch). */
-const CACHE = "navlog-note-v4.5.0";
+/* QUICKLOG service worker — cache-only shell (offline-first).
+ * Network is used only for explicit ?updateCheck=1 (long-press Clear /
+ * PWA cold-start stamp check). Never speculative fetch on resume —
+ * iOS treats that as “Turn Off Airplane Mode…”. */
+const CACHE = "navlog-note-v4.6.0";
 
 const ASSETS = [
   "./",
@@ -49,19 +52,6 @@ self.addEventListener("message", (event) => {
   }
 });
 
-/** Fetch once; never throws to the page. Used only on cache miss. */
-function networkFetch(request) {
-  return fetch(request)
-    .then((response) => {
-      if (response && response.status === 200 && response.type === "basic") {
-        const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(request, copy));
-      }
-      return response;
-    })
-    .catch(() => null);
-}
-
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
@@ -74,14 +64,7 @@ self.addEventListener("fetch", (event) => {
   }
   if (url.origin !== self.location.origin) return;
 
-  /*
-   * Pure cache-first: never background-revalidate.
-   * iOS treats any fetch while Airplane Mode / flaky link as
-   * “Turn Off Airplane Mode or Use Wi-Fi to Access Data”.
-   * navigator.onLine is unreliable on resume / radio changes.
-   * Updates are explicit (long-press Clear) from the page.
-   * ?updateCheck=1 bypasses cache so the page can compare APP_VERSION.
-   */
+  /* Explicit online probe only (page sets this during allowed windows). */
   if (url.searchParams.has("updateCheck")) {
     event.respondWith(
       fetch(request, { cache: "reload" }).catch(
@@ -100,18 +83,15 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(cacheKey).then((cached) => {
       if (cached) return cached;
-
-      return networkFetch(request).then(
-        (response) =>
-          response ||
-          caches.match("./index.html").then(
-            (shell) =>
-              shell ||
-              new Response("QUICKLOG offline — open once while online to cache.", {
-                status: 503,
-                headers: { "Content-Type": "text/plain; charset=utf-8" }
-              })
-          )
+      /* Cache miss: never hit the network — avoids Airplane Mode dialogs on
+       * app-switch resume when WebKit re-requests a resource. */
+      return caches.match("./index.html").then(
+        (shell) =>
+          shell ||
+          new Response("QUICKLOG offline — open once while online to cache.", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" }
+          })
       );
     })
   );

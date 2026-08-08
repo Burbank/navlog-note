@@ -3609,7 +3609,7 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.5";
+    const APP_VERSION = "4.6";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
     const APP_BUILD = "0";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
@@ -4954,7 +4954,10 @@
       } catch (_) {}
     }
 
-    /** Any saved PIC name means PIC defaults on (captains); no name → leave unticked. */
+    /**
+     * Fill default PIC name only when the field is empty.
+     * Never clobber a custom / other-captain name the pilot already typed.
+     */
     function applyPicDefIfOn() {
       if (isLogPrevFull()) return;
       const mine = getMyPicName();
@@ -4963,6 +4966,13 @@
       const nameEl = $("logPic");
       if (!selfCb || !nameEl) return;
       if (nameEl.classList.contains("log-pic-full")) return;
+      const cur = String(nameEl.value || "").trim().replace(/\s+/g, " ");
+      if (cur && cur !== LOGBOOK_FULL_MSG) {
+        withPicDefaultPromptSuppressed(() => {
+          selfCb.checked = normalizePicNameKey(cur) === normalizePicNameKey(mine);
+        });
+        return;
+      }
       withPicDefaultPromptSuppressed(() => {
         selfCb.checked = true;
         nameEl.value = mine;
@@ -6012,8 +6022,10 @@
     }
 
     /**
-     * Starting a new log: replacing OFF (type over select-all, or type into empty)
-     * clears prior leg times/date. PF stays as set. Skipped while Edit Marked Line is active.
+     * Starting a new log: replacing an existing OFF (type over select-all / shorten)
+     * clears prior leg times/date/PIC. Typing into a truly empty OFF for the first
+     * time must NOT wipe a custom PIC name the pilot already entered.
+     * Skipped while Edit Marked Line is active.
      */
     function bindOffBlocksStartsNewLog() {
       const el = $("offBlocks");
@@ -6032,18 +6044,28 @@
           n >= 1 &&
           (prevDigits === 0 || n < prevDigits)
         ) {
+          const hadPriorOff = prevDigits > 0;
+          const hadDownstream = ["airborne", "touchdown", "onBlocks"].some((id) => {
+            const t = $(id);
+            return !!(t && String(t.value || "").trim());
+          });
+          /* Fresh first OFF on an empty time row — keep PIC / RMK / date as typed */
+          const replacePriorLeg = hadPriorOff || hadDownstream;
+
           ["airborne", "touchdown", "onBlocks"].forEach((id) => {
             $(id).value = "";
             delete preFocusById[id];
             $(id)._editedSinceFocus = false;
           });
-          $("logDeptDate").value = "";
           const stayingSim = isSimAcft();
-          applyNextLegDefaults();
-          $("logPicSelf").checked = false;
-          $("logPic").value = "";
-          setLogRemark("");
-          applyPicDefIfOn();
+          if (replacePriorLeg) {
+            $("logDeptDate").value = "";
+            applyNextLegDefaults();
+            $("logPicSelf").checked = false;
+            $("logPic").value = "";
+            setLogRemark("");
+            applyPicDefIfOn();
+          }
           if (stayingSim) {
             // User is still logging a SIM session — keep SIM presets.
             $("logAcft").value = "SIM";
@@ -7121,8 +7143,32 @@
       if (box) box.hidden = true;
     }
 
+    /**
+     * Home Screen PWA network gate.
+     * Open only during cold-start update check or long-press Clear.
+     * Closed for the rest of the session — including app-switch resume —
+     * so iOS does not show Airplane Mode / Wi‑Fi popups.
+     * Safari (non-standalone) is never gated.
+     */
+    let pwaNetworkAllowed = false;
+
+    function pwaNetworkLocked() {
+      return isStandaloneDisplay() && !pwaNetworkAllowed;
+    }
+
+    async function withPwaNetworkAllowed(fn) {
+      if (!isStandaloneDisplay()) return fn();
+      pwaNetworkAllowed = true;
+      try {
+        return await fn();
+      } finally {
+        pwaNetworkAllowed = false;
+      }
+    }
+
     /** Network app stamp (version+build) via SW bypass (?updateCheck=1). null if unknown. */
     async function fetchRemoteAppStamp() {
+      if (pwaNetworkLocked()) return null;
       try {
         const url = new URL("./index.html", location.href);
         url.searchParams.set("updateCheck", "1");
@@ -7146,50 +7192,52 @@
         showToast("Go online to update");
         return;
       }
-      showUpdateBusy("Checking for update…", "Contacting server (up to ~10s)");
-      /* Clear caches first so the version fetch is not answered from the stale shell */
-      try {
-        if ("caches" in window) {
-          const keys = await withTimeout(caches.keys(), 2000);
-          if (Array.isArray(keys) && keys.length) {
-            await withTimeout(Promise.all(keys.map((key) => caches.delete(key))), 2500);
-          }
-        }
-        if ("serviceWorker" in navigator) {
-          const regs = await withTimeout(navigator.serviceWorker.getRegistrations(), 2000);
-          if (Array.isArray(regs)) {
-            for (const reg of regs) {
-              /* iOS Home Screen apps often stall on await reg.update() for ~1 min */
-              const updating = reg.update().catch(() => {});
-              if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
-              const worker = reg.active || reg.waiting || reg.installing;
-              if (worker) worker.postMessage("CLEAR_CACHES");
-              await withTimeout(updating, 3000);
+      await withPwaNetworkAllowed(async () => {
+        showUpdateBusy("Checking for update…", "Contacting server (up to ~10s)");
+        /* Clear caches first so the version fetch is not answered from the stale shell */
+        try {
+          if ("caches" in window) {
+            const keys = await withTimeout(caches.keys(), 2000);
+            if (Array.isArray(keys) && keys.length) {
+              await withTimeout(Promise.all(keys.map((key) => caches.delete(key))), 2500);
             }
           }
+          if ("serviceWorker" in navigator) {
+            const regs = await withTimeout(navigator.serviceWorker.getRegistrations(), 2000);
+            if (Array.isArray(regs)) {
+              for (const reg of regs) {
+                /* iOS Home Screen apps often stall on await reg.update() for ~1 min */
+                const updating = reg.update().catch(() => {});
+                if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
+                const worker = reg.active || reg.waiting || reg.installing;
+                if (worker) worker.postMessage("CLEAR_CACHES");
+                await withTimeout(updating, 3000);
+              }
+            }
+          }
+        } catch (_) {}
+
+        const remoteStamp = await fetchRemoteAppStamp();
+        if (remoteStamp && remoteStamp === localAppStamp()) {
+          hideUpdateBusy();
+          showAppAlert(
+            "No new version available.\n\nYou already have v" + APP_VERSION + "."
+          );
+          return;
         }
-      } catch (_) {}
 
-      const remoteStamp = await fetchRemoteAppStamp();
-      if (remoteStamp && remoteStamp === localAppStamp()) {
-        hideUpdateBusy();
-        showAppAlert(
-          "No new version available.\n\nYou already have v" + APP_VERSION + "."
+        const remoteVer = remoteStamp ? remoteStamp.split("+")[0] : "";
+        showUpdateBusy(
+          "Update requested",
+          remoteVer ? ("Loading v" + remoteVer + "…") : "Refreshing app shell…"
         );
-        return;
-      }
-
-      const remoteVer = remoteStamp ? remoteStamp.split("+")[0] : "";
-      showUpdateBusy(
-        "Update requested",
-        remoteVer ? ("Loading v" + remoteVer + "…") : "Refreshing app shell…"
-      );
-      await sleep(1200);
-      const url = new URL(window.location.href);
-      url.searchParams.set("r", Date.now().toString(36));
-      /* If stamp could not be read online, reload still runs — report “already current” if unchanged */
-      url.searchParams.set("updateAttempt", "1");
-      window.location.replace(url.pathname + url.search + url.hash);
+        await sleep(1200);
+        const url = new URL(window.location.href);
+        url.searchParams.set("r", Date.now().toString(36));
+        /* If stamp could not be read online, reload still runs — report “already current” if unchanged */
+        url.searchParams.set("updateAttempt", "1");
+        window.location.replace(url.pathname + url.search + url.hash);
+      });
     }
 
     /** After long-press update reload: strip flag; alert if version did not change. */
@@ -7612,12 +7660,15 @@
     function initServiceWorker() {
       if (!("serviceWorker" in navigator)) return;
       const banner = $("sw-update-banner");
+      const bannerText = banner ? banner.querySelector(".sw-update-text") : null;
       const reloadBtn = $("sw-update-reload");
       let waitingWorker = null;
       let reloadOnControllerChange = false;
+      let stampUpdatePending = false;
 
-      function showUpdateBanner(worker) {
+      function showUpdateBanner(worker, msg) {
         waitingWorker = worker || waitingWorker;
+        if (bannerText && msg) bannerText.textContent = msg;
         if (banner) banner.classList.remove("hidden");
       }
 
@@ -7629,30 +7680,74 @@
 
       if (reloadBtn) {
         reloadBtn.addEventListener("click", () => {
+          if (stampUpdatePending && !waitingWorker) {
+            /* Stamp said newer shell is online — force cache refresh + reload */
+            forceLatestIfOnline();
+            return;
+          }
           reloadOnControllerChange = true;
           if (waitingWorker) waitingWorker.postMessage("SKIP_WAITING");
           setTimeout(() => window.location.reload(), 400);
         });
       }
 
+      /**
+       * Home Screen PWA only: one quiet online check on cold start (kill → reopen).
+       * Does not run on app-switch resume (no second load event).
+       * If a newer stamp exists, show the update banner — never an alert when already current.
+       */
+      async function pwaColdStartUpdateCheck(reg) {
+        if (!isStandaloneDisplay()) return;
+        if (!navigator.onLine) return;
+        await withPwaNetworkAllowed(async () => {
+          try {
+            await withTimeout(reg.update().catch(() => {}), 5000);
+          } catch (_) {}
+          if (reg.waiting) {
+            showUpdateBanner(
+              reg.waiting,
+              "New version ready. Reload when convenient (works offline either way)."
+            );
+            return;
+          }
+          const remoteStamp = await fetchRemoteAppStamp();
+          if (!remoteStamp || remoteStamp === localAppStamp()) return;
+          stampUpdatePending = true;
+          const ver = remoteStamp.split("+")[0] || APP_VERSION;
+          showUpdateBanner(
+            null,
+            "Update available — v" + ver + ". Reload to install (works offline after)."
+          );
+        });
+      }
+
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").then((reg) => {
-          if (reg.waiting) showUpdateBanner(reg.waiting);
+          if (reg.waiting) {
+            showUpdateBanner(
+              reg.waiting,
+              "New version ready. Reload when convenient (works offline either way)."
+            );
+          }
           /*
-           * Do not call reg.update() on load or visibility — iOS shows
-           * “Turn Off Airplane Mode…” whenever a fetch runs while offline /
-           * during radio transitions (navigator.onLine is unreliable).
-           * Updates: long-press Clear → forceLatestIfOnline().
+           * Never call reg.update() on visibility / pageshow / focus —
+           * that is what triggered Airplane Mode popups when switching apps.
+           * PWA cold start: one update() + stamp check below.
+           * Explicit: long-press Clear → forceLatestIfOnline().
            */
           reg.addEventListener("updatefound", () => {
             const installing = reg.installing;
             if (!installing) return;
             installing.addEventListener("statechange", () => {
               if (installing.state === "installed" && navigator.serviceWorker.controller) {
-                showUpdateBanner(reg.waiting || installing);
+                showUpdateBanner(
+                  reg.waiting || installing,
+                  "New version ready. Reload when convenient (works offline either way)."
+                );
               }
             });
           });
+          pwaColdStartUpdateCheck(reg);
         }).catch(() => {});
       });
     }
@@ -7935,12 +8030,14 @@
         "No new version available.\n\nYou already have v" + APP_VERSION + "."
       );
     }
+    /* Usage ping: Safari website only — never from Home Screen PWA (avoids resume popups). */
     trackUsageOncePerDay();
     initServiceWorker();
 
-    /** One anonymous open-count per device per UTC day (skipped offline / localhost). */
+    /** One anonymous open-count per device per UTC day (skipped offline / localhost / PWA). */
     function trackUsageOncePerDay() {
       try {
+        if (isStandaloneDisplay()) return;
         if (!navigator.onLine) return;
         const host = location.hostname;
         if (host === "localhost" || host === "127.0.0.1" || host.startsWith("192.168.") || host.startsWith("172.")) return;
