@@ -4711,6 +4711,26 @@
       return S26_BLOCK[dep + "-" + arr] || "";
     }
 
+    function updateOnBlocksPlaceholder() {
+      const onEl = logEls.on || $("onBlocks");
+      if (!onEl) return;
+      const fallback = "HH:MM";
+      if (isSimAcft()) {
+        onEl.placeholder = fallback;
+        return;
+      }
+      const offEl = logEls.off || $("offBlocks");
+      const offMin = offEl ? timeToMinutes(offEl.value) : null;
+      const dep = logEls.dep ? normalizeIata(logEls.dep.value) : "";
+      const arr = logEls.arr ? normalizeIata(logEls.arr.value) : "";
+      const s26Min = hhmmDurationMinutes(s26BlockForPair(dep, arr));
+      if (offMin === null || s26Min == null) {
+        onEl.placeholder = fallback;
+        return;
+      }
+      onEl.placeholder = minutesToHhmm(offMin + s26Min);
+    }
+
     function updateS26Display() {
       const sched = s26BlockForPair(logEls.dep.value, logEls.arr.value);
       const el = logEls.s26;
@@ -4723,6 +4743,7 @@
           el.classList.remove("show");
         }
       }
+      updateOnBlocksPlaceholder();
       syncCrewRestFromLog();
     }
 
@@ -4917,6 +4938,7 @@
       // S26 only changes with airports — updateS26Display() from those handlers.
       checkLogTimeErrors();
       syncActionButtons();
+      updateOnBlocksPlaceholder();
       syncCrewRestLandingReset();
       syncCrewRestFromLog();
     }
