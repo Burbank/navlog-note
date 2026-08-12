@@ -522,7 +522,7 @@
       padding: 5px 6px 6px;
     }
 
-    /* Inner control matches Clear: same min-height, padding, and card inset */
+    /* Inner control matches Clear height; extra side padding so clock digits aren't flush */
     #btnCrewRest {
       flex: 1 1 auto;
       display: flex;
@@ -3023,6 +3023,11 @@
       font-size: 0.72rem;
       color: var(--muted);
       letter-spacing: 0.03em;
+      line-height: 1.35;
+    }
+
+    .crewrest-route.is-hint {
+      letter-spacing: 0.04em;
     }
 
     html.theme-bright .crewrest-route {
@@ -3845,7 +3850,7 @@
     <div class="pic-name-overlay-box crewrest-overlay-box">
       <div class="crewrest-setup" id="crewRestSetup">
         <p id="crewRestTitle" class="crewrest-title">Crew rest</p>
-        <p class="crewrest-route" id="crewRestRoute"></p>
+        <p class="crewrest-route is-hint" id="crewRestRoute">LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS</p>
         <div class="toggle" role="group" aria-label="Rest pattern">
           <button type="button" id="crewRestPatRrr" class="active" data-pattern="rrr">R R R</button>
           <button type="button" id="crewRestPat2r" data-pattern="2r">R R R 2R 2R 2R</button>
@@ -4663,14 +4668,16 @@
     function updateS26Display() {
       const sched = s26BlockForPair(logEls.dep.value, logEls.arr.value);
       const el = logEls.s26;
-      if (!el) return;
-      if (sched) {
-        el.textContent = "S26 " + sched;
-        el.classList.add("show");
-      } else {
-        el.textContent = "";
-        el.classList.remove("show");
+      if (el) {
+        if (sched) {
+          el.textContent = "S26 " + sched;
+          el.classList.add("show");
+        } else {
+          el.textContent = "";
+          el.classList.remove("show");
+        }
       }
+      syncCrewRestFromLog();
     }
 
     /**
@@ -4864,6 +4871,7 @@
       // S26 only changes with airports — updateS26Display() from those handlers.
       checkLogTimeErrors();
       syncActionButtons();
+      syncCrewRestFromLog();
     }
 
     /** In-app calendar (Cursor browser / iPad / desktop — native type=date is unreliable). */
@@ -8366,7 +8374,74 @@
     const CREWREST_AFTER_OFF_MIN = 45;
     const CREWREST_BEFORE_ON_MIN = 40;
     const CREWREST_PAUSE_DEFAULT = 5;
+    const CREWREST_ROUTE_HINT = "LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS";
     let crewRestSession = null;
+
+    function isCrewRestOverlayOpen() {
+      const box = $("crewRestOverlay");
+      return !!(box && !box.hidden);
+    }
+
+    function crewRestLogFingerprint() {
+      const dep = logEls.dep ? normalizeIata(logEls.dep.value) : "";
+      const arr = logEls.arr ? normalizeIata(logEls.arr.value) : "";
+      return [
+        dep,
+        arr,
+        crewRestClockValue(logEls.off),
+        crewRestClockValue(logEls.air),
+        crewRestClockValue(logEls.on)
+      ].join("|");
+    }
+
+    function applyCrewRestRoute(route) {
+      const el = $("crewRestRoute");
+      if (!el) return;
+      const text = String(route || "").trim();
+      el.textContent = text || CREWREST_ROUTE_HINT;
+      el.classList.toggle("is-hint", !text);
+    }
+
+    function refreshCrewRestSession(forceFromLog) {
+      const suggested = suggestCrewRestFromLog();
+      const logKey = crewRestLogFingerprint();
+      const prev = crewRestSession;
+      const sameLog = prev && prev.logKey === logKey && !forceFromLog;
+      let pattern;
+      let start;
+      let end;
+      let pause;
+      if (sameLog) {
+        const form = isCrewRestOverlayOpen() ? readCrewRestForm() : prev;
+        pattern = form.pattern;
+        start = form.start;
+        end = form.end;
+        pause = form.pause;
+      } else {
+        pattern = suggested.pattern;
+        start = suggested.start;
+        end = suggested.end;
+        pause = prev && String(prev.pause ?? "").trim() !== "" ? prev.pause : suggested.pause;
+      }
+      crewRestSession = {
+        pattern,
+        start,
+        end,
+        pause,
+        route: suggested.route,
+        logKey
+      };
+      return crewRestSession;
+    }
+
+    function syncCrewRestFromLog() {
+      if (!crewRestSession && !isCrewRestOverlayOpen()) return;
+      refreshCrewRestSession(false);
+      if (isCrewRestOverlayOpen()) {
+        applyCrewRestForm(crewRestSession);
+        renderCrewRestTable();
+      }
+    }
 
     function crewRestClockValue(el) {
       if (!el) return "";
@@ -8467,12 +8542,16 @@
     function readCrewRestForm() {
       const rrr = $("crewRestPatRrr");
       const pattern = rrr && rrr.classList.contains("active") ? "rrr" : "2r";
+      const routeEl = $("crewRestRoute");
+      const routeText = routeEl ? String(routeEl.textContent || "").trim() : "";
+      const route = routeText === CREWREST_ROUTE_HINT ? "" : routeText;
       return {
         pattern,
         start: $("crewRestStart") ? $("crewRestStart").value : "",
         end: $("crewRestEnd") ? $("crewRestEnd").value : "",
         pause: $("crewRestPause") ? $("crewRestPause").value : String(CREWREST_PAUSE_DEFAULT),
-        route: $("crewRestRoute") ? $("crewRestRoute").textContent : ""
+        route: route || (crewRestSession && crewRestSession.route) || "",
+        logKey: crewRestSession && crewRestSession.logKey ? crewRestSession.logKey : crewRestLogFingerprint()
       };
     }
 
@@ -8487,12 +8566,16 @@
       if ($("crewRestStart")) $("crewRestStart").value = state.start || "";
       if ($("crewRestEnd")) $("crewRestEnd").value = state.end || "";
       if ($("crewRestPause")) $("crewRestPause").value = state.pause != null ? String(state.pause) : String(CREWREST_PAUSE_DEFAULT);
-      if ($("crewRestRoute")) $("crewRestRoute").textContent = state.route || "";
+      applyCrewRestRoute(state.route);
     }
 
     function renderCrewRestTable() {
       const state = readCrewRestForm();
-      crewRestSession = state;
+      crewRestSession = {
+        ...state,
+        route: (crewRestSession && crewRestSession.route) || state.route,
+        logKey: (crewRestSession && crewRestSession.logKey) || state.logKey
+      };
       const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern);
       const hintEl = $("crewRestHint");
       const tableHint = $("crewRestTableHint");
@@ -8521,7 +8604,7 @@
       const state = readCrewRestForm();
       const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern);
       if (!rows.length) return { text: "", html: "" };
-      const route = (state.route || "").trim();
+      const route = (suggestCrewRestFromLog().route || "").trim();
       const pause = String(state.pause || "0").replace(/\D/g, "") || "0";
       const head = ["CREW REST", title.replace(/^.*:\s*/, "").trim() || title, route].filter(Boolean).join("  ");
       const lines = [
@@ -8577,7 +8660,7 @@
     function openCrewRestOverlay() {
       const box = $("crewRestOverlay");
       if (!box) return;
-      if (!crewRestSession) crewRestSession = suggestCrewRestFromLog();
+      refreshCrewRestSession(false);
       applyCrewRestForm(crewRestSession);
       renderCrewRestTable();
       showCrewRestSetup();
@@ -8588,7 +8671,12 @@
     function closeCrewRestOverlay() {
       const box = $("crewRestOverlay");
       if (box) box.hidden = true;
-      crewRestSession = readCrewRestForm();
+      const form = readCrewRestForm();
+      crewRestSession = {
+        ...form,
+        route: suggestCrewRestFromLog().route,
+        logKey: crewRestLogFingerprint()
+      };
     }
 
     function bindCrewRest() {
@@ -8630,7 +8718,7 @@
       const clearBtn = $("crewRestClear");
       if (clearBtn) {
         clearBtn.addEventListener("click", () => {
-          crewRestSession = suggestCrewRestFromLog();
+          refreshCrewRestSession(true);
           applyCrewRestForm(crewRestSession);
           renderCrewRestTable();
           showCrewRestSetup();
