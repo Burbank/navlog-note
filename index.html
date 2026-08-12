@@ -3086,21 +3086,31 @@
     .crewrest-actions button {
       flex: 1 1 0;
       min-height: 40px;
+      padding: 10px 14px;
+      border-radius: 10px;
       font-size: 0.82rem;
     }
 
-    .crewrest-actions #crewRestClear,
-    .crewrest-actions #crewRestTableDone {
+    .crewrest-actions .crewrest-btn-outline {
       background: transparent;
       color: var(--warn);
       border: 1px solid var(--warn);
     }
 
-    html.theme-bright .crewrest-actions #crewRestClear,
-    html.theme-bright .crewrest-actions #crewRestTableDone {
+    .crewrest-actions .crewrest-btn-outline:active {
+      background: transparent;
+      color: var(--warn);
+    }
+
+    html.theme-bright .crewrest-actions .crewrest-btn-outline {
       color: #8b0000;
       border-color: #8b0000;
       background: #fff;
+    }
+
+    html.theme-bright .crewrest-actions .crewrest-btn-outline:active {
+      background: #fff;
+      color: #8b0000;
     }
 
     .crewrest-setup[hidden],
@@ -3843,7 +3853,7 @@
         <p class="crewrest-pause-hint">in minutes</p>
         <p class="crewrest-hint" id="crewRestHint"></p>
         <div class="crewrest-actions">
-          <button type="button" id="crewRestClear">Clear</button>
+          <button type="button" id="crewRestClear" class="crewrest-btn-outline">Clear</button>
           <button type="button" id="crewRestTableBtn">Time table</button>
         </div>
       </div>
@@ -3871,7 +3881,7 @@
         <p class="crewrest-hint" id="crewRestTableHint"></p>
         <div class="crewrest-actions">
           <button type="button" id="crewRestCopyNote" title="Copy rest table, then open FLIGHT">COPY / SHARE AS NOTE</button>
-          <button type="button" id="crewRestTableDone">OK</button>
+          <button type="button" id="crewRestTableDone" class="crewrest-btn-outline">OK</button>
         </div>
       </div>
     </div>
@@ -7975,6 +7985,24 @@
 
     function initServiceWorker() {
       if (!("serviceWorker" in navigator)) return;
+      try {
+        const host = location.hostname;
+        const localPreview =
+          host === "localhost" ||
+          host === "127.0.0.1" ||
+          host.startsWith("192.168.") ||
+          host.startsWith("172.");
+        if (localPreview) {
+          /* Local/LAN preview must not stay on a cache-only SW shell. */
+          navigator.serviceWorker.getRegistrations().then((regs) => {
+            regs.forEach((reg) => reg.unregister());
+          }).catch(() => {});
+          if ("caches" in window) {
+            caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+          }
+          return;
+        }
+      } catch (_) {}
       const banner = $("sw-update-banner");
       const bannerText = banner ? banner.querySelector(".sw-update-text") : null;
       const reloadBtn = $("sw-update-reload");
