@@ -8490,7 +8490,8 @@
     /**
      * Crew rest overlay — session-only (not logbook).
      * Pattern: RRR = 3 equal rests; 2r = 9 units as R R R 2R 2R 2R.
-     * Leftover minutes after equal split go to the last rest.
+     * Rests stay as equal as possible; leftover minutes round up onto the last rest
+     * (early arrival often trims that one).
      */
     const CREWREST_BLOCK_2R_MIN = 11 * 60;
     const CREWREST_AFTER_AIR_MIN = 30;
@@ -8647,6 +8648,25 @@
       return { units: 3, weights: [1, 1, 1], labels: ["Rest 1", "Rest 2", "Rest 3"], title: "3 rests: R R R" };
     }
 
+    /** Floor every rest but the last; last gets the remainder so it is longest (or tied). */
+    function allocateRestLengths(total, weights) {
+      const n = weights.length;
+      const lengths = new Array(n).fill(0);
+      const units = weights.reduce((sum, w) => sum + w, 0);
+      if (n === 0 || total <= 0 || units <= 0) return lengths;
+      let lastIdx = n - 1;
+      while (lastIdx > 0 && !weights[lastIdx]) lastIdx--;
+      let used = 0;
+      for (let i = 0; i < n; i++) {
+        if (i === lastIdx) continue;
+        const len = Math.floor((total * weights[i]) / units);
+        lengths[i] = len;
+        used += len;
+      }
+      lengths[lastIdx] = total - used;
+      return lengths;
+    }
+
     function computeCrewRestRows(startStr, endStr, pauseStr, pattern, pfMin2h) {
       const start = timeToMinutes(startStr);
       const end = timeToMinutes(endStr);
@@ -8666,35 +8686,19 @@
           title: meta.title
         };
       }
-      const base = Math.floor(restTotal / meta.units);
-      let leftover = restTotal - base * meta.units;
-      const lengths = meta.weights.map((w) => w * base);
-      lengths[lengths.length - 1] += leftover;
+      let lengths = allocateRestLengths(restTotal, meta.weights);
       let hint = "";
       if (pfMin2h && n >= 3) {
         const midIdx = Math.floor(n / 2);
         if (lengths[midIdx] < CREWREST_PF_MIN_MIN) {
           if (restTotal < CREWREST_PF_MIN_MIN) {
-            for (let i = 0; i < n; i++) lengths[i] = 0;
+            lengths = new Array(n).fill(0);
             lengths[midIdx] = restTotal;
             hint = "Mid rest is under 2 hours — legally insufficient for PF.";
           } else {
-            lengths[midIdx] = CREWREST_PF_MIN_MIN;
-            const remain = restTotal - CREWREST_PF_MIN_MIN;
             const otherWeights = meta.weights.map((w, i) => (i === midIdx ? 0 : w));
-            const otherUnits = otherWeights.reduce((sum, w) => sum + w, 0);
-            if (otherUnits <= 0) {
-              lengths[midIdx] = restTotal;
-            } else {
-              const otherBase = Math.floor(remain / otherUnits);
-              let otherLeft = remain - otherBase * otherUnits;
-              for (let i = 0; i < n; i++) {
-                if (i === midIdx) continue;
-                lengths[i] = otherWeights[i] * otherBase;
-              }
-              const lastIdx = n - 1 === midIdx ? n - 2 : n - 1;
-              lengths[lastIdx] += otherLeft;
-            }
+            lengths = allocateRestLengths(restTotal - CREWREST_PF_MIN_MIN, otherWeights);
+            lengths[midIdx] = CREWREST_PF_MIN_MIN;
           }
         }
       }
