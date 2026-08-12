@@ -3255,9 +3255,18 @@
       font-weight: 750;
     }
 
+    .crewrest-table td.crewrest-time-error {
+      color: var(--warn);
+      font-weight: 750;
+    }
+
     html.theme-bright .crewrest-table th,
     html.theme-bright .crewrest-table td.crewrest-len {
       color: #005a8d;
+    }
+
+    html.theme-bright .crewrest-table td.crewrest-time-error {
+      color: #8b0000;
     }
 
     .crewrest-table-view .crewrest-actions {
@@ -4757,24 +4766,22 @@
       return S26_BLOCK[dep + "-" + arr] || "";
     }
 
-    function updateOnBlocksPlaceholder() {
-      const onEl = logEls.on || $("onBlocks");
-      if (!onEl) return;
-      const fallback = "HH:MM";
-      if (isSimAcft()) {
-        onEl.placeholder = fallback;
-        return;
-      }
+    function estimatedOnBlocksMinutes() {
+      if (isSimAcft()) return null;
       const offEl = logEls.off || $("offBlocks");
       const offMin = offEl ? timeToMinutes(offEl.value) : null;
       const dep = logEls.dep ? normalizeIata(logEls.dep.value) : "";
       const arr = logEls.arr ? normalizeIata(logEls.arr.value) : "";
       const s26Min = hhmmDurationMinutes(s26BlockForPair(dep, arr));
-      if (offMin === null || s26Min == null) {
-        onEl.placeholder = fallback;
-        return;
-      }
-      onEl.placeholder = minutesToHhmm(offMin + s26Min);
+      if (offMin === null || s26Min == null) return null;
+      return (offMin + s26Min) % (24 * 60);
+    }
+
+    function updateOnBlocksPlaceholder() {
+      const onEl = logEls.on || $("onBlocks");
+      if (!onEl) return;
+      const est = estimatedOnBlocksMinutes();
+      onEl.placeholder = est != null ? minutesToHhmm(est) : "HH:MM";
     }
 
     function updateS26Display() {
@@ -8491,6 +8498,8 @@
     const CREWREST_BEFORE_ON_MIN = 40;
     const CREWREST_PAUSE_DEFAULT = 5;
     const CREWREST_PF_MIN_MIN = 2 * 60;
+    const CREWREST_ON_GROSS_SLACK_MIN = 2 * 60;
+    const CREWREST_BEFORE_ORIGIN_MIN = 20 * 60;
     const CREWREST_ROUTE_HINT = "LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS";
     let crewRestSession = null;
     let crewRestTableSeen = false;
@@ -8689,11 +8698,59 @@
           label: meta.labels[i],
           length: minutesToDuration(len),
           start: minutesToHhmm(st),
-          end: minutesToHhmm(en)
+          end: minutesToHhmm(en),
+          startMin: st,
+          endMin: en
         });
         t = (en + (i < n - 1 ? pause : 0)) % (24 * 60);
       }
+      flagCrewRestRowTimeErrors(rows, start);
       return { rows, hint, title: meta.title };
+    }
+
+    function crewRestRelMinutes(origin, t) {
+      const r = minutesBetweenAllowingMidnight(t, origin);
+      if (r == null) return null;
+      return r >= CREWREST_BEFORE_ORIGIN_MIN ? r - 24 * 60 : r;
+    }
+
+    function crewRestLogAirborneMinutes() {
+      const el = logEls.air || $("airborne");
+      if (!el) return null;
+      const raw = String(el.value || "").trim();
+      if (/^n\/?a$/i.test(raw)) return null;
+      return timeToMinutes(raw);
+    }
+
+    function crewRestLogOffMinutes() {
+      const el = logEls.off || $("offBlocks");
+      return el ? timeToMinutes(el.value) : null;
+    }
+
+    function crewRestEstimatedOnMinutes() {
+      const est = estimatedOnBlocksMinutes();
+      if (est != null) return est;
+      const onEl = logEls.on || $("onBlocks");
+      return onEl ? timeToMinutes(onEl.value) : null;
+    }
+
+    function flagCrewRestRowTimeErrors(rows, windowStart) {
+      const off = crewRestLogOffMinutes();
+      const air = crewRestLogAirborneMinutes();
+      const estOn = crewRestEstimatedOnMinutes();
+      const origin = off != null ? off : (air != null ? air : windowStart);
+      rows.forEach((row) => {
+        const st = row.startMin;
+        const en = row.endMin;
+        const relSt = crewRestRelMinutes(origin, st);
+        const relEn = crewRestRelMinutes(origin, en);
+        const relAir = air != null ? crewRestRelMinutes(origin, air) : null;
+        const relOff = off != null ? crewRestRelMinutes(origin, off) : null;
+        const relOn = estOn != null ? crewRestRelMinutes(origin, estOn) : null;
+        row.startError = (relAir != null && relSt != null && relSt <= relAir)
+          || (relOff != null && relSt != null && relSt <= relOff);
+        row.endError = relOn != null && relEn != null && relEn > relOn + CREWREST_ON_GROSS_SLACK_MIN;
+      });
     }
 
     function readCrewRestForm() {
@@ -8758,6 +8815,8 @@
         cells.forEach((text, i) => {
           const td = document.createElement("td");
           if (i === 1) td.className = "crewrest-len";
+          if (i === 2 && row.startError) td.classList.add("crewrest-time-error");
+          if (i === 3 && row.endError) td.classList.add("crewrest-time-error");
           td.textContent = text;
           tr.appendChild(td);
         });
