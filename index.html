@@ -2337,7 +2337,8 @@
       color: #000;
     }
 
-    .flight-log-pf input[type="checkbox"] {
+    .flight-log-pf input[type="checkbox"],
+    .crewrest-pf input[type="checkbox"] {
       /* Rounded squares (not circles) — matches prior iOS-like ticks */
       -webkit-appearance: none;
       appearance: none;
@@ -2356,7 +2357,8 @@
       vertical-align: middle;
     }
 
-    .flight-log-pf input[type="checkbox"]:checked {
+    .flight-log-pf input[type="checkbox"]:checked,
+    .crewrest-pf input[type="checkbox"]:checked {
       border-color: var(--accent);
       background-color: var(--accent);
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.2l2.8 2.8 6.2-6.2'/%3E%3C/svg%3E");
@@ -2365,18 +2367,21 @@
       background-repeat: no-repeat;
     }
 
-    .flight-log-pf input[type="checkbox"]:focus-visible {
+    .flight-log-pf input[type="checkbox"]:focus-visible,
+    .crewrest-pf input[type="checkbox"]:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
 
-    html.theme-bright .flight-log-pf input[type="checkbox"] {
+    html.theme-bright .flight-log-pf input[type="checkbox"],
+    html.theme-bright .crewrest-pf input[type="checkbox"] {
       border-width: 2px;
       border-color: #000;
       background: #fff;
     }
 
-    html.theme-bright .flight-log-pf input[type="checkbox"]:checked {
+    html.theme-bright .flight-log-pf input[type="checkbox"]:checked,
+    html.theme-bright .crewrest-pf input[type="checkbox"]:checked {
       border-color: var(--accent);
       background-color: var(--accent);
     }
@@ -3163,11 +3168,48 @@
     }
 
     .crewrest-table-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
       margin: 0 0 10px;
     }
 
     .crewrest-table-head .crewrest-title {
-      margin: 0 0 10px;
+      margin: 0;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .crewrest-pf {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 6px;
+      flex: 0 1 9.75rem;
+      margin: 0;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      font-size: 0.62rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      color: var(--muted);
+      text-align: left;
+    }
+
+    .crewrest-pf[hidden] {
+      display: none !important;
+    }
+
+    html.theme-bright .crewrest-pf {
+      color: #333;
+    }
+
+    .crewrest-pf input[type="checkbox"] {
+      width: 1.1rem;
+      height: 1.1rem;
+      margin-top: 1px;
     }
 
     .crewrest-table {
@@ -3906,6 +3948,10 @@
       <div class="crewrest-table-view" id="crewRestTableView" hidden>
         <div class="crewrest-table-head">
           <p class="crewrest-title" id="crewRestTableTitle">3 rests: R R R</p>
+          <label class="crewrest-pf" id="crewRestPfWrap" for="crewRestPfMin" title="Keep the middle RRR rest at least two hours for PF">
+            <input type="checkbox" id="crewRestPfMin" checked />
+            <span>PF at least two hours.</span>
+          </label>
         </div>
         <table class="crewrest-table">
           <colgroup>
@@ -8444,6 +8490,7 @@
     const CREWREST_AFTER_OFF_MIN = 45;
     const CREWREST_BEFORE_ON_MIN = 40;
     const CREWREST_PAUSE_DEFAULT = 5;
+    const CREWREST_PF_MIN_MIN = 2 * 60;
     const CREWREST_ROUTE_HINT = "LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS";
     let crewRestSession = null;
     let crewRestTableSeen = false;
@@ -8498,23 +8545,27 @@
       let start;
       let end;
       let pause;
+      let pfMin2h;
       if (sameLog) {
         const form = isCrewRestOverlayOpen() ? readCrewRestForm() : prev;
         pattern = form.pattern;
         start = form.start;
         end = form.end;
         pause = form.pause;
+        pfMin2h = form.pfMin2h !== false;
       } else {
         pattern = suggested.pattern;
         start = suggested.start;
         end = suggested.end;
         pause = prev && String(prev.pause ?? "").trim() !== "" ? prev.pause : suggested.pause;
+        pfMin2h = forceFromLog ? true : (prev && prev.pfMin2h != null ? !!prev.pfMin2h : true);
       }
       crewRestSession = {
         pattern,
         start,
         end,
         pause,
+        pfMin2h,
         route: suggested.route,
         logKey
       };
@@ -8575,6 +8626,7 @@
         start,
         end,
         pause: String(CREWREST_PAUSE_DEFAULT),
+        pfMin2h: true,
         route
       };
     }
@@ -8586,7 +8638,7 @@
       return { units: 3, weights: [1, 1, 1], labels: ["Rest 1", "Rest 2", "Rest 3"], title: "3 rests: R R R" };
     }
 
-    function computeCrewRestRows(startStr, endStr, pauseStr, pattern) {
+    function computeCrewRestRows(startStr, endStr, pauseStr, pattern, pfMin2h) {
       const start = timeToMinutes(startStr);
       const end = timeToMinutes(endStr);
       const pause = Math.max(0, parseInt(String(pauseStr || "0").replace(/\D/g, ""), 10) || 0);
@@ -8609,6 +8661,24 @@
       let leftover = restTotal - base * meta.units;
       const lengths = meta.weights.map((w) => w * base);
       lengths[lengths.length - 1] += leftover;
+      let hint = "";
+      if (pfMin2h && pattern !== "2r" && lengths.length >= 3) {
+        const midIdx = 1;
+        if (lengths[midIdx] < CREWREST_PF_MIN_MIN) {
+          if (restTotal < CREWREST_PF_MIN_MIN) {
+            lengths[0] = 0;
+            lengths[1] = restTotal;
+            lengths[2] = 0;
+            hint = "Mid rest is under 2 hours — legally insufficient for PF.";
+          } else {
+            lengths[midIdx] = CREWREST_PF_MIN_MIN;
+            const remain = restTotal - CREWREST_PF_MIN_MIN;
+            const side = Math.floor(remain / 2);
+            lengths[0] = side;
+            lengths[2] = remain - side;
+          }
+        }
+      }
       const rows = [];
       let t = start;
       for (let i = 0; i < n; i++) {
@@ -8623,7 +8693,7 @@
         });
         t = (en + (i < n - 1 ? pause : 0)) % (24 * 60);
       }
-      return { rows, hint: "", title: meta.title };
+      return { rows, hint, title: meta.title };
     }
 
     function readCrewRestForm() {
@@ -8637,6 +8707,7 @@
         start: $("crewRestStart") ? $("crewRestStart").value : "",
         end: $("crewRestEnd") ? $("crewRestEnd").value : "",
         pause: $("crewRestPause") ? $("crewRestPause").value : String(CREWREST_PAUSE_DEFAULT),
+        pfMin2h: $("crewRestPfMin") ? $("crewRestPfMin").checked : true,
         route: route || (crewRestSession && crewRestSession.route) || "",
         logKey: crewRestSession && crewRestSession.logKey ? crewRestSession.logKey : crewRestLogFingerprint()
       };
@@ -8653,7 +8724,14 @@
       if ($("crewRestStart")) $("crewRestStart").value = state.start || "";
       if ($("crewRestEnd")) $("crewRestEnd").value = state.end || "";
       if ($("crewRestPause")) $("crewRestPause").value = state.pause != null ? String(state.pause) : String(CREWREST_PAUSE_DEFAULT);
+      if ($("crewRestPfMin")) $("crewRestPfMin").checked = state.pfMin2h !== false;
+      syncCrewRestPfVisibility(state.pattern);
       applyCrewRestRoute(state.route);
+    }
+
+    function syncCrewRestPfVisibility(pattern) {
+      const wrap = $("crewRestPfWrap");
+      if (wrap) wrap.hidden = pattern === "2r";
     }
 
     function renderCrewRestTable() {
@@ -8663,13 +8741,14 @@
         route: (crewRestSession && crewRestSession.route) || state.route,
         logKey: (crewRestSession && crewRestSession.logKey) || state.logKey
       };
-      const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern);
+      const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern, state.pfMin2h);
       const hintEl = $("crewRestHint");
       const tableHint = $("crewRestTableHint");
       if (hintEl) hintEl.textContent = hint;
       if (tableHint) tableHint.textContent = hint;
       const titleEl = $("crewRestTableTitle");
       if (titleEl) titleEl.textContent = title;
+      syncCrewRestPfVisibility(state.pattern);
       const body = $("crewRestTableBody");
       if (!body) return rows.length > 0;
       body.innerHTML = "";
@@ -8689,14 +8768,15 @@
 
     function buildCrewRestNote() {
       const state = readCrewRestForm();
-      const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern);
+      const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern, state.pfMin2h);
       if (!rows.length) return { text: "", html: "" };
       const route = (suggestCrewRestFromLog().route || "").trim();
       const pause = String(state.pause || "0").replace(/\D/g, "") || "0";
+      const pfNote = state.pfMin2h && state.pattern !== "2r" ? "PF at least 2 hours" : "";
       const head = ["CREW REST", title.replace(/^.*:\s*/, "").trim() || title, route].filter(Boolean).join("  ");
       const lines = [
         head,
-        "Pause " + pause + " min",
+        ["Pause " + pause + " min", pfNote].filter(Boolean).join("  "),
         "",
         "Rest\tLENGTH\tSTART\tEND"
       ];
@@ -8711,7 +8791,7 @@
         "<tr><td>" + esc(row.label) + "</td><td>" + esc(row.length) + "</td><td>" + esc(row.start) + "</td><td>" + esc(row.end) + "</td></tr>"
       ).join("");
       const html =
-        "<p>" + esc(head) + "<br>Pause " + esc(pause) + " min</p>" +
+        "<p>" + esc(head) + "<br>Pause " + esc(pause) + " min" + (pfNote ? "<br>" + esc(pfNote) : "") + "</p>" +
         '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px">' +
         "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody></table>";
       return { text, html };
@@ -8798,6 +8878,8 @@
       };
       if (rrr) rrr.addEventListener("click", () => setPat("rrr"));
       if (two) two.addEventListener("click", () => setPat("2r"));
+      const pfMin = $("crewRestPfMin");
+      if (pfMin) pfMin.addEventListener("change", renderCrewRestTable);
       bindClock("crewRestStart", 4, { onChange: renderCrewRestTable });
       bindClock("crewRestEnd", 4, { onChange: renderCrewRestTable });
       const pause = $("crewRestPause");
