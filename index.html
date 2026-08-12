@@ -515,16 +515,23 @@
     .card-utc-clock {
       display: flex;
       flex-direction: column;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    /* Inner control matches Clear: same min-height, padding, and card inset */
+    #btnCrewRest {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 1px;
-      padding: 4px 6px;
-    }
-
-    button.card-utc-clock {
-      min-height: 0;
       width: 100%;
+      min-width: 0;
+      min-height: 28px;
       margin: 0;
+      padding: 4px 5px;
       background: var(--btn);
       color: var(--btn-text);
       border: none;
@@ -534,18 +541,18 @@
       font-size: inherit;
     }
 
-    button.card-utc-clock:active {
+    #btnCrewRest:active {
       background: var(--btn-press);
       transform: scale(0.98);
     }
 
-    html.theme-bright button.card-utc-clock {
+    html.theme-bright #btnCrewRest {
       background: var(--btn);
       color: var(--btn-text);
       border: none;
     }
 
-    html.theme-bright button.card-utc-clock:active {
+    html.theme-bright #btnCrewRest:active {
       background: var(--btn-press);
     }
 
@@ -596,13 +603,13 @@
       margin: 0 1px;
     }
 
-    html.theme-bright button.card-utc-clock .utc-clock {
+    html.theme-bright #btnCrewRest .utc-clock {
       color: inherit;
     }
 
-    html.theme-bright button.card-utc-clock .utc-clock-day,
-    html.theme-bright button.card-utc-clock .utc-clock-sec,
-    html.theme-bright button.card-utc-clock .utc-clock-sep {
+    html.theme-bright #btnCrewRest .utc-clock-day,
+    html.theme-bright #btnCrewRest .utc-clock-sec,
+    html.theme-bright #btnCrewRest .utc-clock-sep {
       opacity: 0.9;
     }
 
@@ -3427,12 +3434,14 @@
     <form id="flightForm" autocomplete="off" spellcheck="false" action="#">
       <div class="main-grid">
         <div class="toolbar-left-pair" aria-label="UTC clock and theme">
-          <button type="button" class="card card-utc-clock" id="btnCrewRest" aria-label="UTC clock — open crew rest calculator" title="Open crew rest calculator">
-            <p class="utc-clock" id="utcClock" title="UTC day : hour : minute : second" aria-live="off">
-              <span class="utc-clock-day" id="utcClockDay">00</span><span class="utc-clock-sep">:</span><span class="utc-clock-hm" id="utcClockHm">00:00</span><span class="utc-clock-sep">:</span><span class="utc-clock-sec" id="utcClockSec">00</span>
-            </p>
-            <span class="utc-clock-crewrest">CREW REST</span>
-          </button>
+          <div class="card card-utc-clock">
+            <button type="button" id="btnCrewRest" aria-label="UTC clock — open crew rest calculator" title="Open crew rest calculator">
+              <p class="utc-clock" id="utcClock" title="UTC day : hour : minute : second" aria-live="off">
+                <span class="utc-clock-day" id="utcClockDay">00</span><span class="utc-clock-sep">:</span><span class="utc-clock-hm" id="utcClockHm">00:00</span><span class="utc-clock-sep">:</span><span class="utc-clock-sec" id="utcClockSec">00</span>
+              </p>
+              <span class="utc-clock-crewrest">CREW REST</span>
+            </button>
+          </div>
           <div class="card card-bright" aria-label="Theme">
             <div class="toggle" role="group" aria-label="Theme">
               <button type="button" id="themeBright" data-theme="bright" title="Manual bright theme">BRIGHT</button>
