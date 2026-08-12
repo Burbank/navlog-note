@@ -514,9 +514,54 @@
 
     .card-utc-clock {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 1px;
       padding: 4px 6px;
+    }
+
+    button.card-utc-clock {
+      min-height: 0;
+      width: 100%;
+      margin: 0;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--line);
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: inherit;
+      font-size: inherit;
+    }
+
+    button.card-utc-clock:active {
+      background: var(--panel);
+      transform: scale(0.98);
+    }
+
+    html.theme-bright button.card-utc-clock {
+      background: #fff;
+      color: #000;
+      border-color: #000;
+    }
+
+    html.theme-bright button.card-utc-clock:active {
+      background: #fff;
+    }
+
+    .utc-clock-crewrest {
+      display: block;
+      margin: 0;
+      font-size: 0.52rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+
+    html.theme-bright .utc-clock-crewrest {
+      color: #005a8d;
     }
 
     .utc-clock {
@@ -2950,6 +2995,176 @@
       gap: 10px;
     }
 
+    .crewrest-overlay-box {
+      width: min(28rem, 100%);
+    }
+
+    .crewrest-overlay-box .crewrest-title {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .crewrest-route {
+      margin: 0 0 10px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+
+    html.theme-bright .crewrest-route {
+      color: #333;
+    }
+
+    .crewrest-overlay .toggle {
+      width: 100%;
+      margin: 0 0 12px;
+    }
+
+    .crewrest-overlay .toggle button {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 6px 4px;
+      min-height: 34px;
+    }
+
+    .crewrest-row {
+      display: grid;
+      grid-template-columns: 1fr 7.5rem;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .crewrest-row label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .crewrest-row input {
+      width: 100%;
+      min-height: 36px;
+      padding: 6px 8px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .crewrest-pause-hint {
+      margin: -4px 0 10px;
+      text-align: right;
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+
+    .crewrest-hint {
+      margin: 0 0 10px;
+      font-size: 0.72rem;
+      line-height: 1.3;
+      color: var(--warn);
+      min-height: 0;
+    }
+
+    .crewrest-hint:empty {
+      display: none;
+    }
+
+    .crewrest-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .crewrest-actions button {
+      flex: 1 1 0;
+      min-height: 40px;
+      font-size: 0.82rem;
+    }
+
+    .crewrest-actions #crewRestClear {
+      background: transparent;
+      color: var(--warn);
+      border: 1px solid var(--warn);
+    }
+
+    html.theme-bright .crewrest-actions #crewRestClear {
+      color: #8b0000;
+      border-color: #8b0000;
+      background: #fff;
+    }
+
+    .crewrest-setup[hidden],
+    .crewrest-table-view[hidden] {
+      display: none !important;
+    }
+
+    .crewrest-table-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+
+    .crewrest-table-head .crewrest-title {
+      margin: 0;
+    }
+
+    .crewrest-table-head #crewRestTableDone {
+      width: auto;
+      min-width: 2.6rem;
+      min-height: 36px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+
+    .crewrest-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .crewrest-table th {
+      padding: 4px 6px 8px;
+      font-size: 0.68rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-align: right;
+      color: var(--accent);
+    }
+
+    .crewrest-table th:first-child,
+    .crewrest-table td:first-child {
+      text-align: left;
+    }
+
+    .crewrest-table td {
+      padding: 6px 6px;
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: var(--text);
+      border-top: 1px solid var(--line);
+    }
+
+    .crewrest-table td.crewrest-len {
+      color: var(--accent);
+      font-weight: 750;
+    }
+
+    html.theme-bright .crewrest-table th,
+    html.theme-bright .crewrest-table td.crewrest-len {
+      color: #005a8d;
+    }
+
     .pic-name-overlay-actions button {
       flex: 1;
       width: auto;
@@ -3191,11 +3406,12 @@
     <form id="flightForm" autocomplete="off" spellcheck="false" action="#">
       <div class="main-grid">
         <div class="toolbar-left-pair" aria-label="UTC clock and theme">
-          <div class="card card-utc-clock" aria-label="UTC clock">
+          <button type="button" class="card card-utc-clock" id="btnCrewRest" aria-label="UTC clock — open crew rest calculator" title="Open crew rest calculator">
             <p class="utc-clock" id="utcClock" title="UTC day : hour : minute : second" aria-live="off">
               <span class="utc-clock-day" id="utcClockDay">00</span><span class="utc-clock-sep">:</span><span class="utc-clock-hm" id="utcClockHm">00:00</span><span class="utc-clock-sep">:</span><span class="utc-clock-sec" id="utcClockSec">00</span>
             </p>
-          </div>
+            <span class="utc-clock-crewrest">CREWREST</span>
+          </button>
           <div class="card card-bright" aria-label="Theme">
             <div class="toggle" role="group" aria-label="Theme">
               <button type="button" id="themeBright" data-theme="bright" title="Manual bright theme">BRIGHT</button>
@@ -3586,6 +3802,62 @@
     </div>
   </div>
 
+  <div
+    class="pic-name-overlay crewrest-overlay"
+    id="crewRestOverlay"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="crewRestTitle"
+  >
+    <div class="pic-name-overlay-box crewrest-overlay-box">
+      <div class="crewrest-setup" id="crewRestSetup">
+        <p id="crewRestTitle" class="crewrest-title">Crew rest</p>
+        <p class="crewrest-route" id="crewRestRoute"></p>
+        <div class="toggle" role="group" aria-label="Rest pattern">
+          <button type="button" id="crewRestPatRrr" class="active" data-pattern="rrr">R R R</button>
+          <button type="button" id="crewRestPat2r" data-pattern="2r">R R R 2R 2R 2R</button>
+        </div>
+        <div class="crewrest-row">
+          <label for="crewRestStart">Timeframe start</label>
+          <input id="crewRestStart" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" autocomplete="off" />
+        </div>
+        <div class="crewrest-row">
+          <label for="crewRestEnd">Timeframe end</label>
+          <input id="crewRestEnd" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" autocomplete="off" />
+        </div>
+        <div class="crewrest-row">
+          <label for="crewRestPause">Pause between rests</label>
+          <input id="crewRestPause" type="text" inputmode="numeric" maxlength="3" enterkeyhint="done" placeholder="5" autocomplete="off" />
+        </div>
+        <p class="crewrest-pause-hint">in minutes</p>
+        <p class="crewrest-hint" id="crewRestHint"></p>
+        <div class="crewrest-actions">
+          <button type="button" id="crewRestClear">Clear</button>
+          <button type="button" id="crewRestTableBtn">Time table</button>
+        </div>
+      </div>
+      <div class="crewrest-table-view" id="crewRestTableView" hidden>
+        <div class="crewrest-table-head">
+          <p class="crewrest-title" id="crewRestTableTitle">3 rests: R R R</p>
+          <button type="button" id="crewRestTableDone" title="Back">OK</button>
+        </div>
+        <table class="crewrest-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>LENGTH</th>
+              <th>START</th>
+              <th>END</th>
+            </tr>
+          </thead>
+          <tbody id="crewRestTableBody"></tbody>
+        </table>
+        <p class="crewrest-hint" id="crewRestTableHint"></p>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" aria-live="polite">Copied</div>
 
   <div id="updateBusy" class="update-busy" hidden role="status" aria-live="assertive" aria-busy="true">
@@ -3878,6 +4150,31 @@
       const hh = Math.floor(total / 60);
       const mm = total % 60;
       return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+    }
+
+    function minutesToHhmm(mins) {
+      if (mins == null || !Number.isFinite(mins)) return "";
+      let t = Math.round(mins) % (24 * 60);
+      if (t < 0) t += 24 * 60;
+      const hh = Math.floor(t / 60);
+      const mm = t % 60;
+      return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+    }
+
+    function addMinutesHhmm(timeStr, minutes) {
+      const start = timeToMinutes(timeStr);
+      if (start === null) return "";
+      return minutesToHhmm(start + Number(minutes));
+    }
+
+    /** S26 "8:10" / "11:55" → minutes (not clock-of-day). */
+    function hhmmDurationMinutes(str) {
+      const m = String(str || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+      if (!m) return null;
+      const h = parseInt(m[1], 10);
+      const min = parseInt(m[2], 10);
+      if (!Number.isFinite(h) || !Number.isFinite(min) || min > 59) return null;
+      return h * 60 + min;
     }
 
     function maybeDefaultSimOnBlocks() {
@@ -8000,6 +8297,247 @@
       });
     }
 
+    /**
+     * Crew rest overlay — session-only (not logbook).
+     * Pattern: RRR = 3 equal rests; 2r = 9 units as R R R 2R 2R 2R.
+     * Leftover minutes after equal split go to the last rest.
+     */
+    const CREWREST_BLOCK_2R_MIN = 11 * 60;
+    const CREWREST_AFTER_AIR_MIN = 30;
+    const CREWREST_BEFORE_ON_MIN = 40;
+    const CREWREST_PAUSE_DEFAULT = 5;
+    let crewRestSession = null;
+
+    function crewRestClockValue(el) {
+      if (!el) return "";
+      const raw = String(el.value || "").trim();
+      if (/^n\/?a$/i.test(raw)) return "";
+      return timeToMinutes(raw) !== null ? formatClockDigits(acceptClockDigits(raw, 4).digits) : "";
+    }
+
+    function suggestCrewRestFromLog() {
+      const dep = logEls.dep ? normalizeIata(logEls.dep.value) : "";
+      const arr = logEls.arr ? normalizeIata(logEls.arr.value) : "";
+      const s26 = s26BlockForPair(dep, arr);
+      const s26Min = hhmmDurationMinutes(s26);
+      const air = crewRestClockValue(logEls.air);
+      const off = crewRestClockValue(logEls.off);
+      const on = crewRestClockValue(logEls.on);
+      const cruiseStart = air || off;
+      let start = cruiseStart ? addMinutesHhmm(cruiseStart, CREWREST_AFTER_AIR_MIN) : "";
+      let end = "";
+      if (on) {
+        end = addMinutesHhmm(on, -CREWREST_BEFORE_ON_MIN);
+      } else if (cruiseStart && s26Min != null) {
+        end = addMinutesHhmm(cruiseStart, s26Min - CREWREST_BEFORE_ON_MIN);
+      }
+      let blockMin = null;
+      if (cruiseStart && on) {
+        blockMin = minutesBetweenAllowingMidnight(timeToMinutes(on), timeToMinutes(cruiseStart));
+      } else if (s26Min != null) {
+        blockMin = s26Min;
+      }
+      const pattern = blockMin != null && blockMin >= CREWREST_BLOCK_2R_MIN ? "2r" : "rrr";
+      let route = "";
+      if (dep && arr) {
+        route = dep + "–" + arr;
+        if (s26) route += " · S26 " + s26;
+        if (blockMin != null && s26Min != null && blockMin !== s26Min && cruiseStart && on) {
+          route += " · actual " + minutesToDuration(blockMin);
+        }
+      }
+      return {
+        pattern,
+        start,
+        end,
+        pause: String(CREWREST_PAUSE_DEFAULT),
+        route
+      };
+    }
+
+    function crewRestPatternMeta(pattern) {
+      if (pattern === "2r") {
+        return { units: 9, weights: [1, 1, 1, 2, 2, 2], labels: ["R", "R", "R", "2R", "2R", "2R"], title: "6 rests: R R R 2R 2R 2R" };
+      }
+      return { units: 3, weights: [1, 1, 1], labels: ["Rest 1", "Rest 2", "Rest 3"], title: "3 rests: R R R" };
+    }
+
+    function computeCrewRestRows(startStr, endStr, pauseStr, pattern) {
+      const start = timeToMinutes(startStr);
+      const end = timeToMinutes(endStr);
+      const pause = Math.max(0, parseInt(String(pauseStr || "0").replace(/\D/g, ""), 10) || 0);
+      const meta = crewRestPatternMeta(pattern);
+      const n = meta.weights.length;
+      if (start === null || end === null) {
+        return { rows: [], hint: "Enter timeframe start and end (HH:MM).", title: meta.title };
+      }
+      const windowMin = minutesBetweenAllowingMidnight(end, start);
+      const pauseTotal = pause * (n - 1);
+      const restTotal = windowMin - pauseTotal;
+      if (restTotal < meta.units) {
+        return {
+          rows: [],
+          hint: "Window too short for this pattern and pause. Widen the timeframe or reduce the pause.",
+          title: meta.title
+        };
+      }
+      const base = Math.floor(restTotal / meta.units);
+      let leftover = restTotal - base * meta.units;
+      const lengths = meta.weights.map((w) => w * base);
+      lengths[lengths.length - 1] += leftover;
+      const rows = [];
+      let t = start;
+      for (let i = 0; i < n; i++) {
+        const len = lengths[i];
+        const st = t;
+        const en = (t + len) % (24 * 60);
+        rows.push({
+          label: meta.labels[i],
+          length: minutesToDuration(len),
+          start: minutesToHhmm(st),
+          end: minutesToHhmm(en)
+        });
+        t = (en + (i < n - 1 ? pause : 0)) % (24 * 60);
+      }
+      return { rows, hint: "", title: meta.title };
+    }
+
+    function readCrewRestForm() {
+      const rrr = $("crewRestPatRrr");
+      const pattern = rrr && rrr.classList.contains("active") ? "rrr" : "2r";
+      return {
+        pattern,
+        start: $("crewRestStart") ? $("crewRestStart").value : "",
+        end: $("crewRestEnd") ? $("crewRestEnd").value : "",
+        pause: $("crewRestPause") ? $("crewRestPause").value : String(CREWREST_PAUSE_DEFAULT),
+        route: $("crewRestRoute") ? $("crewRestRoute").textContent : ""
+      };
+    }
+
+    function applyCrewRestForm(state) {
+      if (!state) return;
+      const rrr = $("crewRestPatRrr");
+      const two = $("crewRestPat2r");
+      if (rrr && two) {
+        rrr.classList.toggle("active", state.pattern !== "2r");
+        two.classList.toggle("active", state.pattern === "2r");
+      }
+      if ($("crewRestStart")) $("crewRestStart").value = state.start || "";
+      if ($("crewRestEnd")) $("crewRestEnd").value = state.end || "";
+      if ($("crewRestPause")) $("crewRestPause").value = state.pause != null ? String(state.pause) : String(CREWREST_PAUSE_DEFAULT);
+      if ($("crewRestRoute")) $("crewRestRoute").textContent = state.route || "";
+    }
+
+    function renderCrewRestTable() {
+      const state = readCrewRestForm();
+      crewRestSession = state;
+      const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern);
+      const hintEl = $("crewRestHint");
+      const tableHint = $("crewRestTableHint");
+      if (hintEl) hintEl.textContent = hint;
+      if (tableHint) tableHint.textContent = hint;
+      const titleEl = $("crewRestTableTitle");
+      if (titleEl) titleEl.textContent = title;
+      const body = $("crewRestTableBody");
+      if (!body) return rows.length > 0;
+      body.innerHTML = "";
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [row.label, row.length, row.start, row.end];
+        cells.forEach((text, i) => {
+          const td = document.createElement("td");
+          if (i === 1) td.className = "crewrest-len";
+          td.textContent = text;
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+      return rows.length > 0;
+    }
+
+    function showCrewRestSetup() {
+      const setup = $("crewRestSetup");
+      const table = $("crewRestTableView");
+      if (setup) setup.hidden = false;
+      if (table) table.hidden = true;
+    }
+
+    function showCrewRestTable() {
+      renderCrewRestTable();
+      const setup = $("crewRestSetup");
+      const table = $("crewRestTableView");
+      if (setup) setup.hidden = true;
+      if (table) table.hidden = false;
+    }
+
+    function openCrewRestOverlay() {
+      const box = $("crewRestOverlay");
+      if (!box) return;
+      if (!crewRestSession) crewRestSession = suggestCrewRestFromLog();
+      applyCrewRestForm(crewRestSession);
+      renderCrewRestTable();
+      showCrewRestSetup();
+      syncVisualViewport();
+      box.hidden = false;
+    }
+
+    function closeCrewRestOverlay() {
+      const box = $("crewRestOverlay");
+      if (box) box.hidden = true;
+      crewRestSession = readCrewRestForm();
+    }
+
+    function bindCrewRest() {
+      const btn = $("btnCrewRest");
+      const overlay = $("crewRestOverlay");
+      if (!btn || !overlay) return;
+      btn.addEventListener("click", openCrewRestOverlay);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeCrewRestOverlay();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay && !overlay.hidden) {
+          e.preventDefault();
+          closeCrewRestOverlay();
+        }
+      });
+      const rrr = $("crewRestPatRrr");
+      const two = $("crewRestPat2r");
+      const setPat = (pattern) => {
+        if (rrr) rrr.classList.toggle("active", pattern === "rrr");
+        if (two) two.classList.toggle("active", pattern === "2r");
+        renderCrewRestTable();
+      };
+      if (rrr) rrr.addEventListener("click", () => setPat("rrr"));
+      if (two) two.addEventListener("click", () => setPat("2r"));
+      bindClock("crewRestStart", 4, { onChange: renderCrewRestTable });
+      bindClock("crewRestEnd", 4, { onChange: renderCrewRestTable });
+      const pause = $("crewRestPause");
+      if (pause) {
+        pause.addEventListener("input", () => {
+          pause.value = String(pause.value || "").replace(/\D/g, "").slice(0, 3);
+          renderCrewRestTable();
+        });
+        pause.addEventListener("blur", () => {
+          if (!String(pause.value || "").trim()) pause.value = "0";
+          renderCrewRestTable();
+        });
+      }
+      const clearBtn = $("crewRestClear");
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          crewRestSession = suggestCrewRestFromLog();
+          applyCrewRestForm(crewRestSession);
+          renderCrewRestTable();
+          showCrewRestSetup();
+        });
+      }
+      const tableBtn = $("crewRestTableBtn");
+      if (tableBtn) tableBtn.addEventListener("click", showCrewRestTable);
+      const done = $("crewRestTableDone");
+      if (done) done.addEventListener("click", showCrewRestSetup);
+    }
+
     {
       const ver = $("appVersion");
       if (ver) ver.textContent = "v" + APP_VERSION;
@@ -8009,6 +8547,7 @@
     bindSystemThemeFollow();
     applyTheme(resolveTheme());
     startUtcClock();
+    bindCrewRest();
     initInstallAndStandalone();
     bindInstallOverlay();
     bindOpenSystemBrowserLinks();
