@@ -3095,14 +3095,12 @@
       color: var(--text);
     }
 
-    .crewrest-row input {
-      width: 100%;
-      min-height: 36px;
-      padding: 6px 8px;
-      text-align: center;
-      font-variant-numeric: tabular-nums;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+    .crewrest-row input.log-time-error {
+      color: var(--warn);
+    }
+
+    html.theme-bright .crewrest-row input.log-time-error {
+      color: #8b0000;
     }
 
     .crewrest-pause-hint {
@@ -8748,23 +8746,49 @@
       return onEl ? timeToMinutes(onEl.value) : null;
     }
 
-    function flagCrewRestRowTimeErrors(rows, windowStart) {
+    function crewRestTimeOrigin(fallback) {
       const off = crewRestLogOffMinutes();
       const air = crewRestLogAirborneMinutes();
+      return off != null ? off : (air != null ? air : fallback);
+    }
+
+    function crewRestStartTimeError(t, originFallback) {
+      if (t == null) return false;
+      const off = crewRestLogOffMinutes();
+      const air = crewRestLogAirborneMinutes();
+      const origin = crewRestTimeOrigin(originFallback);
+      if (origin == null) return false;
+      const relT = crewRestRelMinutes(origin, t);
+      const relAir = air != null ? crewRestRelMinutes(origin, air) : null;
+      const relOff = off != null ? crewRestRelMinutes(origin, off) : null;
+      return (relAir != null && relT != null && relT <= relAir)
+        || (relOff != null && relT != null && relT <= relOff);
+    }
+
+    function crewRestEndTimeError(t, originFallback) {
+      if (t == null) return false;
       const estOn = crewRestEstimatedOnMinutes();
-      const origin = off != null ? off : (air != null ? air : windowStart);
+      const origin = crewRestTimeOrigin(originFallback);
+      if (origin == null || estOn == null) return false;
+      const relT = crewRestRelMinutes(origin, t);
+      const relOn = crewRestRelMinutes(origin, estOn);
+      return relT != null && relOn != null && relT > relOn + CREWREST_ON_GROSS_SLACK_MIN;
+    }
+
+    function flagCrewRestRowTimeErrors(rows, windowStart) {
       rows.forEach((row) => {
-        const st = row.startMin;
-        const en = row.endMin;
-        const relSt = crewRestRelMinutes(origin, st);
-        const relEn = crewRestRelMinutes(origin, en);
-        const relAir = air != null ? crewRestRelMinutes(origin, air) : null;
-        const relOff = off != null ? crewRestRelMinutes(origin, off) : null;
-        const relOn = estOn != null ? crewRestRelMinutes(origin, estOn) : null;
-        row.startError = (relAir != null && relSt != null && relSt <= relAir)
-          || (relOff != null && relSt != null && relSt <= relOff);
-        row.endError = relOn != null && relEn != null && relEn > relOn + CREWREST_ON_GROSS_SLACK_MIN;
+        row.startError = crewRestStartTimeError(row.startMin, windowStart);
+        row.endError = crewRestEndTimeError(row.endMin, windowStart);
       });
+    }
+
+    function syncCrewRestEditTimeErrors() {
+      const startEl = $("crewRestStart");
+      const endEl = $("crewRestEnd");
+      const startMin = startEl ? timeToMinutes(startEl.value) : null;
+      const endMin = endEl ? timeToMinutes(endEl.value) : null;
+      if (startEl) startEl.classList.toggle("log-time-error", crewRestStartTimeError(startMin, startMin));
+      if (endEl) endEl.classList.toggle("log-time-error", crewRestEndTimeError(endMin, startMin));
     }
 
     function readCrewRestForm() {
@@ -8797,6 +8821,7 @@
       if ($("crewRestPause")) $("crewRestPause").value = state.pause != null ? String(state.pause) : String(CREWREST_PAUSE_DEFAULT);
       if ($("crewRestPfMin")) $("crewRestPfMin").checked = state.pfMin2h !== false;
       applyCrewRestRoute(state.route);
+      syncCrewRestEditTimeErrors();
     }
 
     function renderCrewRestTable() {
@@ -8806,6 +8831,7 @@
         route: (crewRestSession && crewRestSession.route) || state.route,
         logKey: (crewRestSession && crewRestSession.logKey) || state.logKey
       };
+      syncCrewRestEditTimeErrors();
       const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern, state.pfMin2h);
       const hintEl = $("crewRestHint");
       const tableHint = $("crewRestTableHint");
