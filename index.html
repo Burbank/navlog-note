@@ -4917,6 +4917,7 @@
       // S26 only changes with airports — updateS26Display() from those handlers.
       checkLogTimeErrors();
       syncActionButtons();
+      syncCrewRestLandingReset();
       syncCrewRestFromLog();
     }
 
@@ -8423,6 +8424,23 @@
     const CREWREST_PAUSE_DEFAULT = 5;
     const CREWREST_ROUTE_HINT = "LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS";
     let crewRestSession = null;
+    let crewRestTableSeen = false;
+    let crewRestHadLanding = false;
+
+    function crewRestLandingEntered() {
+      return !!(crewRestClockValue(logEls.on) || crewRestClockValue(logEls.td));
+    }
+
+    function resetCrewRestForNextFlight() {
+      crewRestTableSeen = false;
+      crewRestSession = null;
+    }
+
+    function syncCrewRestLandingReset() {
+      const landing = crewRestLandingEntered();
+      if (landing && !crewRestHadLanding) resetCrewRestForNextFlight();
+      crewRestHadLanding = landing;
+    }
 
     function isCrewRestOverlayOpen() {
       const box = $("crewRestOverlay");
@@ -8697,6 +8715,7 @@
     }
 
     function showCrewRestTable() {
+      crewRestTableSeen = true;
       renderCrewRestTable();
       const setup = $("crewRestSetup");
       const table = $("crewRestTableView");
@@ -8710,8 +8729,12 @@
       if (!box) return;
       refreshCrewRestSession(false);
       applyCrewRestForm(crewRestSession);
-      renderCrewRestTable();
-      showCrewRestSetup();
+      const hasTable = renderCrewRestTable();
+      if (!crewRestLandingEntered() && (crewRestTableSeen || hasTable)) {
+        showCrewRestTable();
+      } else {
+        showCrewRestSetup();
+      }
       syncVisualViewport();
       box.hidden = false;
     }
