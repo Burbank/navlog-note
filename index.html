@@ -559,6 +559,35 @@
       background: var(--btn-press);
     }
 
+    /* SIM: clock only — same muted chrome as other not-applicable actions */
+    #btnCrewRest.log-btn-muted {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      cursor: default;
+    }
+
+    #btnCrewRest.log-btn-muted:active {
+      background: transparent;
+      color: var(--muted);
+      transform: none;
+    }
+
+    html.theme-bright #btnCrewRest.log-btn-muted {
+      background: #fff;
+      color: #000;
+      border: 2px solid #000;
+    }
+
+    html.theme-bright #btnCrewRest.log-btn-muted:active {
+      background: #fff;
+      transform: none;
+    }
+
+    #btnCrewRest.log-btn-muted .utc-clock-crewrest {
+      display: none;
+    }
+
     .utc-clock-crewrest {
       display: block;
       margin: 0;
@@ -4129,6 +4158,23 @@
           tol.removeAttribute("aria-hidden");
         }
       }
+      syncCrewRestClockUi();
+    }
+
+    function syncCrewRestClockUi() {
+      const btn = $("btnCrewRest");
+      if (!btn) return;
+      const sim = isSimAcft();
+      btn.classList.toggle("log-btn-muted", sim);
+      btn.setAttribute("aria-disabled", sim ? "true" : "false");
+      if (sim) {
+        btn.setAttribute("aria-label", "UTC clock");
+        btn.title = "UTC clock";
+        if (isCrewRestOverlayOpen()) closeCrewRestOverlay();
+      } else {
+        btn.setAttribute("aria-label", "UTC clock — open crew rest calculator");
+        btn.title = "Open crew rest calculator";
+      }
     }
 
     let ignoreSimAirportTrigger = false;
@@ -6911,6 +6957,7 @@
       syncAirportAddField("logDep", "logDepAdd");
       syncAirportAddField("logArr", "logArrAdd");
       renderLogPrev();
+      syncSimUi();
     }
 
     function loadUndoSnap() {
@@ -8658,6 +8705,7 @@
     }
 
     function openCrewRestOverlay() {
+      if (isSimAcft()) return;
       const box = $("crewRestOverlay");
       if (!box) return;
       refreshCrewRestSession(false);
@@ -8683,7 +8731,10 @@
       const btn = $("btnCrewRest");
       const overlay = $("crewRestOverlay");
       if (!btn || !overlay) return;
-      btn.addEventListener("click", openCrewRestOverlay);
+      btn.addEventListener("click", () => {
+        if (isSimAcft()) return;
+        openCrewRestOverlay();
+      });
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) closeCrewRestOverlay();
       });
