@@ -3089,13 +3089,15 @@
       font-size: 0.82rem;
     }
 
-    .crewrest-actions #crewRestClear {
+    .crewrest-actions #crewRestClear,
+    .crewrest-actions #crewRestTableDone {
       background: transparent;
       color: var(--warn);
       border: 1px solid var(--warn);
     }
 
-    html.theme-bright .crewrest-actions #crewRestClear {
+    html.theme-bright .crewrest-actions #crewRestClear,
+    html.theme-bright .crewrest-actions #crewRestTableDone {
       color: #8b0000;
       border-color: #8b0000;
       background: #fff;
@@ -3107,52 +3109,49 @@
     }
 
     .crewrest-table-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
       margin: 0 0 10px;
     }
 
     .crewrest-table-head .crewrest-title {
-      margin: 0;
-    }
-
-    .crewrest-table-head #crewRestTableDone {
-      width: auto;
-      min-width: 2.6rem;
-      min-height: 36px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 0.85rem;
+      margin: 0 0 10px;
     }
 
     .crewrest-table {
       width: 100%;
+      table-layout: fixed;
       border-collapse: collapse;
       font-variant-numeric: tabular-nums;
     }
 
+    .crewrest-table col.crewrest-col-label { width: 28%; }
+    .crewrest-table col.crewrest-col-num { width: 24%; }
+
+    .crewrest-table th,
+    .crewrest-table td {
+      padding: 8px 6px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
     .crewrest-table th {
-      padding: 4px 6px 8px;
       font-size: 0.68rem;
       font-weight: 750;
       letter-spacing: 0.06em;
-      text-align: right;
       color: var(--accent);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .crewrest-table td {
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: var(--text);
+      border-top: 1px solid var(--line);
     }
 
     .crewrest-table th:first-child,
     .crewrest-table td:first-child {
       text-align: left;
-    }
-
-    .crewrest-table td {
-      padding: 6px 6px;
-      font-size: 0.88rem;
-      font-weight: 650;
-      color: var(--text);
-      border-top: 1px solid var(--line);
+      padding-left: 0;
     }
 
     .crewrest-table td.crewrest-len {
@@ -3163,6 +3162,17 @@
     html.theme-bright .crewrest-table th,
     html.theme-bright .crewrest-table td.crewrest-len {
       color: #005a8d;
+    }
+
+    .crewrest-table-view .crewrest-actions {
+      margin-top: 14px;
+    }
+
+    .crewrest-table-view .crewrest-actions #crewRestCopyNote {
+      flex: 1.4 1 0;
+      font-size: 0.72rem;
+      line-height: 1.15;
+      padding: 6px 8px;
     }
 
     .pic-name-overlay-actions button {
@@ -3840,9 +3850,14 @@
       <div class="crewrest-table-view" id="crewRestTableView" hidden>
         <div class="crewrest-table-head">
           <p class="crewrest-title" id="crewRestTableTitle">3 rests: R R R</p>
-          <button type="button" id="crewRestTableDone" title="Back">OK</button>
         </div>
         <table class="crewrest-table">
+          <colgroup>
+            <col class="crewrest-col-label" />
+            <col class="crewrest-col-num" />
+            <col class="crewrest-col-num" />
+            <col class="crewrest-col-num" />
+          </colgroup>
           <thead>
             <tr>
               <th></th>
@@ -3854,6 +3869,10 @@
           <tbody id="crewRestTableBody"></tbody>
         </table>
         <p class="crewrest-hint" id="crewRestTableHint"></p>
+        <div class="crewrest-actions">
+          <button type="button" id="crewRestCopyNote" title="Copy rest table, then open FLIGHT">COPY / SHARE AS NOTE</button>
+          <button type="button" id="crewRestTableDone">OK</button>
+        </div>
       </div>
     </div>
   </div>
@@ -8304,6 +8323,7 @@
      */
     const CREWREST_BLOCK_2R_MIN = 11 * 60;
     const CREWREST_AFTER_AIR_MIN = 30;
+    const CREWREST_AFTER_OFF_MIN = 45;
     const CREWREST_BEFORE_ON_MIN = 40;
     const CREWREST_PAUSE_DEFAULT = 5;
     let crewRestSession = null;
@@ -8323,8 +8343,10 @@
       const air = crewRestClockValue(logEls.air);
       const off = crewRestClockValue(logEls.off);
       const on = crewRestClockValue(logEls.on);
+      let start = "";
+      if (air) start = addMinutesHhmm(air, CREWREST_AFTER_AIR_MIN);
+      else if (off) start = addMinutesHhmm(off, CREWREST_AFTER_OFF_MIN);
       const cruiseStart = air || off;
-      let start = cruiseStart ? addMinutesHhmm(cruiseStart, CREWREST_AFTER_AIR_MIN) : "";
       let end = "";
       if (on) {
         end = addMinutesHhmm(on, -CREWREST_BEFORE_ON_MIN);
@@ -8455,6 +8477,48 @@
       return rows.length > 0;
     }
 
+    function buildCrewRestNote() {
+      const state = readCrewRestForm();
+      const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern);
+      if (!rows.length) return { text: "", html: "" };
+      const route = (state.route || "").trim();
+      const pause = String(state.pause || "0").replace(/\D/g, "") || "0";
+      const head = ["CREW REST", title.replace(/^.*:\s*/, "").trim() || title, route].filter(Boolean).join("  ");
+      const lines = [
+        head,
+        "Pause " + pause + " min",
+        "",
+        "Rest\tLENGTH\tSTART\tEND"
+      ];
+      rows.forEach((row) => {
+        lines.push([row.label, row.length, row.start, row.end].join("\t"));
+      });
+      if (hint) lines.push("", hint);
+      const text = lines.join("\n");
+      const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const th = ["", "LENGTH", "START", "END"].map((h) => "<th>" + esc(h) + "</th>").join("");
+      const body = rows.map((row) =>
+        "<tr><td>" + esc(row.label) + "</td><td>" + esc(row.length) + "</td><td>" + esc(row.start) + "</td><td>" + esc(row.end) + "</td></tr>"
+      ).join("");
+      const html =
+        "<p>" + esc(head) + "<br>Pause " + esc(pause) + " min</p>" +
+        '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px">' +
+        "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody></table>";
+      return { text, html };
+    }
+
+    async function copyCrewRestNote() {
+      renderCrewRestTable();
+      const { text, html } = buildCrewRestNote();
+      if (!text) {
+        showToast("Enter start and end first", 2200);
+        return;
+      }
+      await writeClipboard(text, html);
+      flashCopyBtn($("crewRestCopyNote"), "COPY / SHARE AS NOTE");
+      openFlightApp();
+    }
+
     function showCrewRestSetup() {
       const setup = $("crewRestSetup");
       const table = $("crewRestTableView");
@@ -8534,6 +8598,8 @@
       }
       const tableBtn = $("crewRestTableBtn");
       if (tableBtn) tableBtn.addEventListener("click", showCrewRestTable);
+      const copyNote = $("crewRestCopyNote");
+      if (copyNote) copyNote.addEventListener("click", () => { copyCrewRestNote(); });
       const done = $("crewRestTableDone");
       if (done) done.addEventListener("click", showCrewRestSetup);
     }
