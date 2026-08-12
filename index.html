@@ -3957,7 +3957,7 @@
       <div class="crewrest-table-view" id="crewRestTableView" hidden>
         <div class="crewrest-table-head">
           <p class="crewrest-title" id="crewRestTableTitle">3 rests: R R R</p>
-          <label class="crewrest-pf" id="crewRestPfWrap" for="crewRestPfMin" title="Keep the middle RRR rest at least two hours for PF">
+          <label class="crewrest-pf" id="crewRestPfWrap" for="crewRestPfMin" title="Keep the middle rest at least two hours for PF">
             <input type="checkbox" id="crewRestPfMin" checked />
             <span>PF at least two hours.</span>
           </label>
@@ -8671,20 +8671,30 @@
       const lengths = meta.weights.map((w) => w * base);
       lengths[lengths.length - 1] += leftover;
       let hint = "";
-      if (pfMin2h && pattern !== "2r" && lengths.length >= 3) {
-        const midIdx = 1;
+      if (pfMin2h && n >= 3) {
+        const midIdx = Math.floor(n / 2);
         if (lengths[midIdx] < CREWREST_PF_MIN_MIN) {
           if (restTotal < CREWREST_PF_MIN_MIN) {
-            lengths[0] = 0;
-            lengths[1] = restTotal;
-            lengths[2] = 0;
+            for (let i = 0; i < n; i++) lengths[i] = 0;
+            lengths[midIdx] = restTotal;
             hint = "Mid rest is under 2 hours — legally insufficient for PF.";
           } else {
             lengths[midIdx] = CREWREST_PF_MIN_MIN;
             const remain = restTotal - CREWREST_PF_MIN_MIN;
-            const side = Math.floor(remain / 2);
-            lengths[0] = side;
-            lengths[2] = remain - side;
+            const otherWeights = meta.weights.map((w, i) => (i === midIdx ? 0 : w));
+            const otherUnits = otherWeights.reduce((sum, w) => sum + w, 0);
+            if (otherUnits <= 0) {
+              lengths[midIdx] = restTotal;
+            } else {
+              const otherBase = Math.floor(remain / otherUnits);
+              let otherLeft = remain - otherBase * otherUnits;
+              for (let i = 0; i < n; i++) {
+                if (i === midIdx) continue;
+                lengths[i] = otherWeights[i] * otherBase;
+              }
+              const lastIdx = n - 1 === midIdx ? n - 2 : n - 1;
+              lengths[lastIdx] += otherLeft;
+            }
           }
         }
       }
@@ -8782,13 +8792,7 @@
       if ($("crewRestEnd")) $("crewRestEnd").value = state.end || "";
       if ($("crewRestPause")) $("crewRestPause").value = state.pause != null ? String(state.pause) : String(CREWREST_PAUSE_DEFAULT);
       if ($("crewRestPfMin")) $("crewRestPfMin").checked = state.pfMin2h !== false;
-      syncCrewRestPfVisibility(state.pattern);
       applyCrewRestRoute(state.route);
-    }
-
-    function syncCrewRestPfVisibility(pattern) {
-      const wrap = $("crewRestPfWrap");
-      if (wrap) wrap.hidden = pattern === "2r";
     }
 
     function renderCrewRestTable() {
@@ -8805,7 +8809,6 @@
       if (tableHint) tableHint.textContent = hint;
       const titleEl = $("crewRestTableTitle");
       if (titleEl) titleEl.textContent = title;
-      syncCrewRestPfVisibility(state.pattern);
       const body = $("crewRestTableBody");
       if (!body) return rows.length > 0;
       body.innerHTML = "";
@@ -8831,7 +8834,7 @@
       if (!rows.length) return { text: "", html: "" };
       const route = (suggestCrewRestFromLog().route || "").trim();
       const pause = String(state.pause || "0").replace(/\D/g, "") || "0";
-      const pfNote = state.pfMin2h && state.pattern !== "2r" ? "PF at least 2 hours" : "";
+      const pfNote = state.pfMin2h ? "PF at least 2 hours" : "";
       const head = ["CREW REST", title.replace(/^.*:\s*/, "").trim() || title, route].filter(Boolean).join("  ");
       const lines = [
         head,
