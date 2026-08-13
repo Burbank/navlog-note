@@ -8872,11 +8872,12 @@
       const route = crewRestRouteForNote();
       const pause = String(state.pause || "0").replace(/\D/g, "") || "0";
       const head = ["CREW REST", title.replace(/^.*:\s*/, "").trim() || title, route].filter(Boolean).join("  ");
+      const lengthHead = "   LENGTH";
       const lines = [
         head,
         "Pause " + pause + " min",
         "",
-        "Rest\tLENGTH\tSTART\tEND"
+        "Rest\t" + lengthHead + "\tSTART\tEND"
       ];
       rows.forEach((row) => {
         lines.push([row.label, row.length, row.start, row.end].join("\t"));
@@ -8890,7 +8891,7 @@
         "<th style=\"text-align:center;padding:6px 12px;" + extra + "\">" + esc(s) + "</th>";
       const th =
         headCell("Rest", "text-align:left;padding-left:4px;padding-right:16px") +
-        headCell("LENGTH", "") +
+        headCell(lengthHead.replace(/ /g, "\u00A0"), "") +
         headCell("START", "") +
         headCell("END", "");
       const body = rows.map((row) =>
