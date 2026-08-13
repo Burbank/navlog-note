@@ -3217,12 +3217,12 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .crewrest-table col.crewrest-col-label { width: 28%; }
-    .crewrest-table col.crewrest-col-num { width: 24%; }
+    .crewrest-table col.crewrest-col-label { width: 32%; }
+    .crewrest-table col.crewrest-col-num { width: 22.67%; }
 
     .crewrest-table th,
     .crewrest-table td {
-      padding: 8px 6px;
+      padding: 8px 8px;
       text-align: center;
       vertical-align: middle;
     }
@@ -3245,7 +3245,8 @@
     .crewrest-table th:first-child,
     .crewrest-table td:first-child {
       text-align: left;
-      padding-left: 0;
+      padding-left: 2px;
+      padding-right: 14px;
     }
 
     .crewrest-table td.crewrest-len {
@@ -3969,7 +3970,7 @@
           </colgroup>
           <thead>
             <tr>
-              <th></th>
+              <th>Rest</th>
               <th>LENGTH</th>
               <th>START</th>
               <th>END</th>
@@ -8858,17 +8859,22 @@
       return rows.length > 0;
     }
 
+    function crewRestRouteForNote() {
+      const dep = logEls.dep ? normalizeIata(logEls.dep.value) : "";
+      const arr = logEls.arr ? normalizeIata(logEls.arr.value) : "";
+      return dep && arr ? dep + "–" + arr : "";
+    }
+
     function buildCrewRestNote() {
       const state = readCrewRestForm();
       const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern, state.pfMin2h);
       if (!rows.length) return { text: "", html: "" };
-      const route = (suggestCrewRestFromLog().route || "").trim();
+      const route = crewRestRouteForNote();
       const pause = String(state.pause || "0").replace(/\D/g, "") || "0";
-      const pfNote = state.pfMin2h ? "PF at least 2 hours" : "";
       const head = ["CREW REST", title.replace(/^.*:\s*/, "").trim() || title, route].filter(Boolean).join("  ");
       const lines = [
         head,
-        ["Pause " + pause + " min", pfNote].filter(Boolean).join("  "),
+        "Pause " + pause + " min",
         "",
         "Rest\tLENGTH\tSTART\tEND"
       ];
@@ -8878,13 +8884,26 @@
       if (hint) lines.push("", hint);
       const text = lines.join("\n");
       const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const th = ["", "LENGTH", "START", "END"].map((h) => "<th>" + esc(h) + "</th>").join("");
+      const cell = (s, extra) =>
+        "<td style=\"text-align:center;padding:6px 12px;" + extra + "\">" + esc(s) + "</td>";
+      const headCell = (s, extra) =>
+        "<th style=\"text-align:center;padding:6px 12px;" + extra + "\">" + esc(s) + "</th>";
+      const th =
+        headCell("Rest", "text-align:left;padding-left:4px;padding-right:16px") +
+        headCell("LENGTH", "") +
+        headCell("START", "") +
+        headCell("END", "");
       const body = rows.map((row) =>
-        "<tr><td>" + esc(row.label) + "</td><td>" + esc(row.length) + "</td><td>" + esc(row.start) + "</td><td>" + esc(row.end) + "</td></tr>"
+        "<tr>" +
+        cell(row.label, "text-align:left;padding-left:4px;padding-right:16px") +
+        cell(row.length, "") +
+        cell(row.start, "") +
+        cell(row.end, "") +
+        "</tr>"
       ).join("");
       const html =
-        "<p>" + esc(head) + "<br>Pause " + esc(pause) + " min" + (pfNote ? "<br>" + esc(pfNote) : "") + "</p>" +
-        '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px">' +
+        "<p>" + esc(head) + "<br>Pause " + esc(pause) + " min</p>" +
+        '<table border="1" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px">' +
         "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody></table>";
       return { text, html };
     }
