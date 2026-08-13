@@ -4007,7 +4007,7 @@
           <input id="crewRestEnd" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" autocomplete="off" />
         </div>
         <div class="crewrest-row">
-          <label for="crewRestPause">Pause between rests</label>
+          <label for="crewRestPause">Changeover</label>
           <input id="crewRestPause" type="text" inputmode="numeric" maxlength="3" enterkeyhint="done" placeholder="5" autocomplete="off" />
         </div>
         <p class="crewrest-pause-hint">in minutes</p>
@@ -4043,9 +4043,9 @@
           <tbody id="crewRestTableBody"></tbody>
         </table>
         <p class="crewrest-hint" id="crewRestTableHint"></p>
-        <label class="crewrest-pf crewrest-alert-opt" for="crewRestAlert" title="Show and sound a wake-up alert 5 minutes before each rest ends while QUICKLOG stays open">
+        <label class="crewrest-pf crewrest-alert-opt" for="crewRestAlert" title="Show and sound a wake-up alert when each rest ends while QUICKLOG stays open">
           <input type="checkbox" id="crewRestAlert" checked />
-          <span>Alert 5 min before each rest ends (app must stay open).</span>
+          <span>Alert when each rest ends (app must stay open).</span>
         </label>
         <div class="crewrest-actions">
           <button type="button" id="crewRestCopyNote" title="Copy rest table, then open FLIGHT">COPY / SHARE AS NOTE</button>
@@ -8594,7 +8594,6 @@
     const CREWREST_PF_MIN_MIN = 2 * 60;
     const CREWREST_ON_GROSS_SLACK_MIN = 2 * 60;
     const CREWREST_BEFORE_ORIGIN_MIN = 20 * 60;
-    const CREWREST_ALERT_LEAD_MIN = 5;
     const CREWREST_ROUTE_HINT = "LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS";
     let crewRestSession = null;
     let crewRestTableSeen = false;
@@ -8787,7 +8786,7 @@
       if (restTotal < meta.units) {
         return {
           rows: [],
-          hint: "Window too short for this pattern and pause. Widen the timeframe or reduce the pause.",
+          hint: "Window too short for this pattern and changeover. Widen the timeframe or reduce the changeover.",
           title: meta.title
         };
       }
@@ -9135,7 +9134,7 @@
         const relEnd = origin == null ? null : crewRestRelMinutes(origin, row.endMin);
         if (relNow == null || relEnd == null) return;
         pending += 1;
-        if (relNow >= relEnd - CREWREST_ALERT_LEAD_MIN && !due) {
+        if (relNow >= relEnd && !due) {
           due = { row, index: i };
         }
       });
@@ -9160,7 +9159,7 @@
       const lengthHead = "   LENGTH";
       const lines = [
         head,
-        "Pause " + pause + " min",
+        "Changeover " + pause + " min",
         "",
         "Rest\t" + lengthHead + "\tSTART\tEND"
       ];
@@ -9188,7 +9187,7 @@
         "</tr>"
       ).join("");
       const html =
-        "<p>" + esc(head) + "<br>Pause " + esc(pause) + " min</p>" +
+        "<p>" + esc(head) + "<br>Changeover " + esc(pause) + " min</p>" +
         '<table border="1" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px">' +
         "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody></table>";
       return { text, html };
