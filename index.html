@@ -3173,46 +3173,58 @@
       font-size: 0.82rem;
     }
 
+    #crewRestClear,
+    #crewRestTableDone,
     .crewrest-actions .crewrest-btn-outline {
       background: transparent;
       color: var(--muted);
       border: 1px solid var(--line);
     }
 
+    #crewRestClear:active,
+    #crewRestTableDone:active,
     .crewrest-actions .crewrest-btn-outline:active {
       background: rgba(0, 161, 228, 0.15);
       color: var(--text);
       border-color: var(--accent);
     }
 
+    html.theme-bright #crewRestClear,
+    html.theme-bright #crewRestTableDone,
     html.theme-bright .crewrest-actions .crewrest-btn-outline {
       background: #fff;
       color: #000;
       border: 2px solid #000;
     }
 
+    html.theme-bright #crewRestClear:active,
+    html.theme-bright #crewRestTableDone:active,
     html.theme-bright .crewrest-actions .crewrest-btn-outline:active {
       background: #fff;
       color: #000;
     }
 
+    #crewRestTableBtn,
     .crewrest-actions .crewrest-btn-theme {
       background: var(--field);
       color: var(--text);
       border: 1px solid var(--line);
     }
 
+    #crewRestTableBtn:active,
     .crewrest-actions .crewrest-btn-theme:active {
       background: var(--panel);
       color: var(--text);
     }
 
+    html.theme-bright #crewRestTableBtn,
     html.theme-bright .crewrest-actions .crewrest-btn-theme {
       background: #fff;
       color: #000;
       border: 2px solid #000;
     }
 
+    html.theme-bright #crewRestTableBtn:active,
     html.theme-bright .crewrest-actions .crewrest-btn-theme:active {
       background: #fff;
       color: #000;
@@ -8284,13 +8296,14 @@
       if (!("serviceWorker" in navigator)) return;
       try {
         const host = location.hostname;
+        const officialPages = host.endsWith("github.io");
         const localPreview =
           host === "localhost" ||
           host === "127.0.0.1" ||
           host.startsWith("192.168.") ||
           host.startsWith("172.");
-        if (localPreview) {
-          /* Local/LAN preview must not stay on a cache-only SW shell. */
+        if (localPreview || !officialPages) {
+          /* Preview tunnels / LAN must not keep a cache-only SW shell. */
           navigator.serviceWorker.getRegistrations().then((regs) => {
             regs.forEach((reg) => reg.unregister());
           }).catch(() => {});
