@@ -3279,6 +3279,70 @@
       padding: 6px 8px;
     }
 
+    .crewrest-alert-opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 10px 0 0;
+      flex: none;
+      max-width: none;
+    }
+
+    .crewrest-alert-overlay {
+      z-index: 96;
+      background: rgba(0, 0, 0, 0.72);
+    }
+
+    .crewrest-alert-overlay .crewrest-alert-box {
+      width: min(26rem, 100%);
+      border: 2px solid var(--warn);
+      box-shadow: 0 0 0 4px var(--soft-warn-bg);
+      animation: crewrest-alert-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes crewrest-alert-pulse {
+      0%, 100% { box-shadow: 0 0 0 4px var(--soft-warn-bg); }
+      50% { box-shadow: 0 0 0 10px var(--soft-warn-bg); }
+    }
+
+    .crewrest-alert-kicker {
+      margin: 0 0 6px;
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--warn);
+    }
+
+    .crewrest-alert-title {
+      margin: 0 0 8px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: var(--text);
+    }
+
+    .crewrest-alert-time {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+    }
+
+    .crewrest-alert-copy {
+      margin: 0 0 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--text);
+    }
+
+    html.theme-bright .crewrest-alert-kicker,
+    html.theme-bright .crewrest-alert-time {
+      color: #8b0000;
+    }
+
     .pic-name-overlay-actions button {
       flex: 1;
       width: auto;
@@ -3979,10 +4043,34 @@
           <tbody id="crewRestTableBody"></tbody>
         </table>
         <p class="crewrest-hint" id="crewRestTableHint"></p>
+        <label class="crewrest-pf crewrest-alert-opt" for="crewRestAlert" title="Show and sound a wake-up alert 5 minutes before each rest ends while QUICKLOG stays open">
+          <input type="checkbox" id="crewRestAlert" checked />
+          <span>Alert 5 min before each rest ends (app must stay open).</span>
+        </label>
         <div class="crewrest-actions">
           <button type="button" id="crewRestCopyNote" title="Copy rest table, then open FLIGHT">COPY / SHARE AS NOTE</button>
           <button type="button" id="crewRestTableDone" class="crewrest-btn-outline" title="Edit crew rest details">Edit</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="pic-name-overlay crewrest-alert-overlay"
+    id="crewRestAlertOverlay"
+    hidden
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="crewRestAlertTitle"
+    aria-describedby="crewRestAlertCopy"
+  >
+    <div class="pic-name-overlay-box crewrest-alert-box">
+      <p class="crewrest-alert-kicker">Crew rest ending</p>
+      <p class="crewrest-alert-title" id="crewRestAlertTitle">Rest 1</p>
+      <p class="crewrest-alert-time" id="crewRestAlertTime">Ends 00:00 UTC</p>
+      <p class="crewrest-alert-copy" id="crewRestAlertCopy">Wake the resting crew.</p>
+      <div class="pic-name-overlay-actions">
+        <button type="button" id="crewRestAlertOk">OK</button>
       </div>
     </div>
   </div>
@@ -4225,6 +4313,7 @@
         btn.setAttribute("aria-label", "UTC clock");
         btn.title = "UTC clock";
         if (isCrewRestOverlayOpen()) closeCrewRestOverlay();
+        resetCrewRestAlerts();
       } else {
         btn.setAttribute("aria-label", "UTC clock — open crew rest calculator");
         btn.title = "Open crew rest calculator";
@@ -8476,13 +8565,18 @@
       day.textContent = pad(d.getUTCDate());
       hm.textContent = pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes());
       sec.textContent = pad(d.getUTCSeconds());
+      try { tickCrewRestAlert(); } catch (_) {}
     }
 
     function startUtcClock() {
       tickUtcClock();
       setInterval(tickUtcClock, 1000);
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") tickUtcClock();
+        if (document.visibilityState === "visible") {
+          tickUtcClock();
+          const plan = currentCrewRestPlan();
+          if (plan.enabled) syncCrewRestWakeLock(true);
+        }
       });
     }
 
@@ -8500,10 +8594,17 @@
     const CREWREST_PF_MIN_MIN = 2 * 60;
     const CREWREST_ON_GROSS_SLACK_MIN = 2 * 60;
     const CREWREST_BEFORE_ORIGIN_MIN = 20 * 60;
+    const CREWREST_ALERT_LEAD_MIN = 5;
     const CREWREST_ROUTE_HINT = "LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS";
     let crewRestSession = null;
     let crewRestTableSeen = false;
     let crewRestHadLanding = false;
+    let crewRestAlertAck = new Set();
+    let crewRestAlertKey = "";
+    let crewRestAlertShowingId = "";
+    let crewRestAudioCtx = null;
+    let crewRestBeepTimer = 0;
+    let crewRestWakeLock = null;
 
     function crewRestLandingEntered() {
       return !!(crewRestClockValue(logEls.on) || crewRestClockValue(logEls.td));
@@ -8512,6 +8613,7 @@
     function resetCrewRestForNextFlight() {
       crewRestTableSeen = false;
       crewRestSession = null;
+      resetCrewRestAlerts();
     }
 
     function syncCrewRestLandingReset() {
@@ -8555,6 +8657,7 @@
       let end;
       let pause;
       let pfMin2h;
+      let alertBeforeEnd;
       if (sameLog) {
         const form = isCrewRestOverlayOpen() ? readCrewRestForm() : prev;
         pattern = form.pattern;
@@ -8562,12 +8665,14 @@
         end = form.end;
         pause = form.pause;
         pfMin2h = form.pfMin2h !== false;
+        alertBeforeEnd = form.alertBeforeEnd !== false;
       } else {
         pattern = suggested.pattern;
         start = suggested.start;
         end = suggested.end;
         pause = prev && String(prev.pause ?? "").trim() !== "" ? prev.pause : suggested.pause;
         pfMin2h = forceFromLog ? true : (prev && prev.pfMin2h != null ? !!prev.pfMin2h : true);
+        alertBeforeEnd = prev && prev.alertBeforeEnd != null ? !!prev.alertBeforeEnd : true;
       }
       crewRestSession = {
         pattern,
@@ -8575,6 +8680,7 @@
         end,
         pause,
         pfMin2h,
+        alertBeforeEnd,
         route: suggested.route,
         logKey
       };
@@ -8804,6 +8910,7 @@
         end: $("crewRestEnd") ? $("crewRestEnd").value : "",
         pause: $("crewRestPause") ? $("crewRestPause").value : String(CREWREST_PAUSE_DEFAULT),
         pfMin2h: $("crewRestPfMin") ? $("crewRestPfMin").checked : true,
+        alertBeforeEnd: $("crewRestAlert") ? $("crewRestAlert").checked : true,
         route: route || (crewRestSession && crewRestSession.route) || "",
         logKey: crewRestSession && crewRestSession.logKey ? crewRestSession.logKey : crewRestLogFingerprint()
       };
@@ -8821,6 +8928,7 @@
       if ($("crewRestEnd")) $("crewRestEnd").value = state.end || "";
       if ($("crewRestPause")) $("crewRestPause").value = state.pause != null ? String(state.pause) : String(CREWREST_PAUSE_DEFAULT);
       if ($("crewRestPfMin")) $("crewRestPfMin").checked = state.pfMin2h !== false;
+      if ($("crewRestAlert")) $("crewRestAlert").checked = state.alertBeforeEnd !== false;
       applyCrewRestRoute(state.route);
       syncCrewRestEditTimeErrors();
     }
@@ -8857,6 +8965,183 @@
         body.appendChild(tr);
       });
       return rows.length > 0;
+    }
+
+    function utcNowMinutes() {
+      const d = new Date();
+      return d.getUTCHours() * 60 + d.getUTCMinutes();
+    }
+
+    function crewRestAlertId(row, index) {
+      return String(index) + "|" + (row.end || "") + "|" + (row.label || "");
+    }
+
+    function crewRestAlertLabel(row, index) {
+      const label = String(row.label || "").trim();
+      if (/rest/i.test(label)) return label;
+      return "Rest " + (index + 1) + (label ? " · " + label : "");
+    }
+
+    function currentCrewRestPlan() {
+      if (isSimAcft() || !crewRestSession || !crewRestTableSeen) {
+        return { rows: [], enabled: false, state: crewRestSession };
+      }
+      const state = isCrewRestOverlayOpen() ? readCrewRestForm() : crewRestSession;
+      if (state.alertBeforeEnd === false) {
+        return { rows: [], enabled: false, state };
+      }
+      const { rows } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern, state.pfMin2h);
+      return { rows, enabled: rows.length > 0, state };
+    }
+
+    function resetCrewRestAlerts() {
+      crewRestAlertAck = new Set();
+      crewRestAlertKey = "";
+      hideCrewRestAlert();
+      syncCrewRestWakeLock(false);
+    }
+
+    function unlockCrewRestAudio() {
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        if (!crewRestAudioCtx) crewRestAudioCtx = new Ctx();
+        if (crewRestAudioCtx.state === "suspended") crewRestAudioCtx.resume();
+      } catch (_) {}
+    }
+
+    function playCrewRestBeep() {
+      const ctx = crewRestAudioCtx;
+      if (!ctx) return;
+      try {
+        if (ctx.state === "suspended") ctx.resume();
+        const now = ctx.currentTime;
+        [0, 0.2, 0.4].forEach((offset) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.0001, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.16, now + offset + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.15);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.16);
+        });
+      } catch (_) {}
+    }
+
+    function startCrewRestBeeps() {
+      if (crewRestBeepTimer) return;
+      playCrewRestBeep();
+      crewRestBeepTimer = setInterval(playCrewRestBeep, 3500);
+    }
+
+    function stopCrewRestBeeps() {
+      if (crewRestBeepTimer) {
+        clearInterval(crewRestBeepTimer);
+        crewRestBeepTimer = 0;
+      }
+    }
+
+    async function syncCrewRestWakeLock(want) {
+      if (!want) {
+        if (crewRestWakeLock) {
+          try { await crewRestWakeLock.release(); } catch (_) {}
+          crewRestWakeLock = null;
+        }
+        return;
+      }
+      if (!("wakeLock" in navigator)) return;
+      if (crewRestWakeLock && !crewRestWakeLock.released) return;
+      try {
+        crewRestWakeLock = await navigator.wakeLock.request("screen");
+        crewRestWakeLock.addEventListener("release", () => { crewRestWakeLock = null; });
+      } catch (_) {}
+    }
+
+    function hideCrewRestAlert() {
+      const box = $("crewRestAlertOverlay");
+      if (box) box.hidden = true;
+      stopCrewRestBeeps();
+      crewRestAlertShowingId = "";
+    }
+
+    function showCrewRestAlert(row, index) {
+      const id = crewRestAlertId(row, index);
+      if (crewRestAlertShowingId === id) return;
+      crewRestAlertShowingId = id;
+      const title = $("crewRestAlertTitle");
+      const time = $("crewRestAlertTime");
+      const copy = $("crewRestAlertCopy");
+      if (title) title.textContent = crewRestAlertLabel(row, index);
+      if (time) time.textContent = "Ends " + row.end + " UTC";
+      if (copy) copy.textContent = "Wake the resting crew.";
+      const box = $("crewRestAlertOverlay");
+      if (box) {
+        syncVisualViewport();
+        box.hidden = false;
+      }
+      unlockCrewRestAudio();
+      startCrewRestBeeps();
+    }
+
+    function ackCrewRestAlert() {
+      if (crewRestAlertShowingId) crewRestAlertAck.add(crewRestAlertShowingId);
+      hideCrewRestAlert();
+      tickCrewRestAlert();
+    }
+
+    function syncCrewRestAlertAcks(rows, state) {
+      const key = [
+        state && state.logKey,
+        state && state.start,
+        state && state.end,
+        state && state.pause,
+        state && state.pattern
+      ].join("|");
+      if (key === crewRestAlertKey) return;
+      crewRestAlertAck = new Set();
+      crewRestAlertKey = key;
+      const origin = timeToMinutes(state && state.start);
+      const now = utcNowMinutes();
+      if (origin == null) return;
+      rows.forEach((row, i) => {
+        const relNow = crewRestRelMinutes(origin, now);
+        const relEnd = crewRestRelMinutes(origin, row.endMin);
+        if (relNow != null && relEnd != null && relNow > relEnd) {
+          crewRestAlertAck.add(crewRestAlertId(row, i));
+        }
+      });
+    }
+
+    function tickCrewRestAlert() {
+      const { rows, enabled, state } = currentCrewRestPlan();
+      if (!enabled) {
+        hideCrewRestAlert();
+        syncCrewRestWakeLock(false);
+        return;
+      }
+      syncCrewRestAlertAcks(rows, state);
+      const origin = timeToMinutes(state.start);
+      const now = utcNowMinutes();
+      let pending = 0;
+      let due = null;
+      rows.forEach((row, i) => {
+        const id = crewRestAlertId(row, i);
+        if (crewRestAlertAck.has(id)) return;
+        const relNow = origin == null ? null : crewRestRelMinutes(origin, now);
+        const relEnd = origin == null ? null : crewRestRelMinutes(origin, row.endMin);
+        if (relNow == null || relEnd == null) return;
+        pending += 1;
+        if (relNow >= relEnd - CREWREST_ALERT_LEAD_MIN && !due) {
+          due = { row, index: i };
+        }
+      });
+      syncCrewRestWakeLock(pending > 0);
+      if (due) showCrewRestAlert(due.row, due.index);
+      else hideCrewRestAlert();
     }
 
     function crewRestRouteForNote() {
@@ -8935,6 +9220,8 @@
       const table = $("crewRestTableView");
       if (setup) setup.hidden = true;
       if (table) table.hidden = false;
+      unlockCrewRestAudio();
+      tickCrewRestAlert();
     }
 
     function openCrewRestOverlay() {
@@ -8969,6 +9256,7 @@
       const overlay = $("crewRestOverlay");
       if (!btn || !overlay) return;
       btn.addEventListener("click", () => {
+        unlockCrewRestAudio();
         if (isSimAcft()) return;
         openCrewRestOverlay();
       });
@@ -8976,6 +9264,12 @@
         if (e.target === overlay) closeCrewRestOverlay();
       });
       document.addEventListener("keydown", (e) => {
+        const alertBox = $("crewRestAlertOverlay");
+        if (e.key === "Escape" && alertBox && !alertBox.hidden) {
+          e.preventDefault();
+          ackCrewRestAlert();
+          return;
+        }
         if (e.key === "Escape" && overlay && !overlay.hidden) {
           e.preventDefault();
           closeCrewRestOverlay();
@@ -8992,6 +9286,16 @@
       if (two) two.addEventListener("click", () => setPat("2r"));
       const pfMin = $("crewRestPfMin");
       if (pfMin) pfMin.addEventListener("change", renderCrewRestTable);
+      const alertOpt = $("crewRestAlert");
+      if (alertOpt) {
+        alertOpt.addEventListener("change", () => {
+          unlockCrewRestAudio();
+          if (crewRestSession) crewRestSession.alertBeforeEnd = alertOpt.checked;
+          tickCrewRestAlert();
+        });
+      }
+      const alertOk = $("crewRestAlertOk");
+      if (alertOk) alertOk.addEventListener("click", ackCrewRestAlert);
       bindClock("crewRestStart", 4, { onChange: renderCrewRestTable });
       bindClock("crewRestEnd", 4, { onChange: renderCrewRestTable });
       const pause = $("crewRestPause");
