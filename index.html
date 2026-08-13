@@ -3085,7 +3085,7 @@
       display: grid;
       grid-template-columns: 1fr 7.5rem;
       gap: 8px;
-      align-items: center;
+      align-items: start;
       margin-bottom: 8px;
     }
 
@@ -3093,6 +3093,41 @@
       font-size: 0.78rem;
       font-weight: 600;
       color: var(--text);
+    }
+
+    .crewrest-row > label {
+      padding-top: 10px;
+    }
+
+    .crewrest-label-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      padding-top: 10px;
+    }
+
+    .crewrest-derived {
+      margin: 0;
+      font-size: 0.58rem;
+      font-weight: 550;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      color: var(--muted);
+    }
+
+    .crewrest-derived[hidden] {
+      display: none !important;
+    }
+
+    .crewrest-field {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .crewrest-row input[type="text"] {
+      margin: 0;
     }
 
     .crewrest-row input.log-time-error {
@@ -3104,8 +3139,8 @@
     }
 
     .crewrest-pause-hint {
-      margin: -4px 0 10px;
-      text-align: right;
+      margin: 3px 2px 0;
+      text-align: left;
       font-size: 0.62rem;
       color: var(--muted);
     }
@@ -3140,24 +3175,47 @@
 
     .crewrest-actions .crewrest-btn-outline {
       background: transparent;
-      color: var(--warn);
-      border: 1px solid var(--warn);
+      color: var(--muted);
+      border: 1px solid var(--line);
     }
 
     .crewrest-actions .crewrest-btn-outline:active {
-      background: transparent;
-      color: var(--warn);
+      background: rgba(0, 161, 228, 0.15);
+      color: var(--text);
+      border-color: var(--accent);
     }
 
     html.theme-bright .crewrest-actions .crewrest-btn-outline {
-      color: #8b0000;
-      border-color: #8b0000;
       background: #fff;
+      color: #000;
+      border: 2px solid #000;
     }
 
     html.theme-bright .crewrest-actions .crewrest-btn-outline:active {
       background: #fff;
-      color: #8b0000;
+      color: #000;
+    }
+
+    .crewrest-actions .crewrest-btn-theme {
+      background: var(--field);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .crewrest-actions .crewrest-btn-theme:active {
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    html.theme-bright .crewrest-actions .crewrest-btn-theme {
+      background: #fff;
+      color: #000;
+      border: 2px solid #000;
+    }
+
+    html.theme-bright .crewrest-actions .crewrest-btn-theme:active {
+      background: #fff;
+      color: #000;
     }
 
     .crewrest-setup[hidden],
@@ -3999,22 +4057,30 @@
           <button type="button" id="crewRestPat2r" data-pattern="2r">R R R 2R 2R 2R</button>
         </div>
         <div class="crewrest-row">
-          <label for="crewRestStart">Timeframe start</label>
+          <div class="crewrest-label-stack">
+            <label for="crewRestStart">Timeframe start</label>
+            <p class="crewrest-derived" id="crewRestStartDerived" hidden>derived from logbook</p>
+          </div>
           <input id="crewRestStart" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" autocomplete="off" />
         </div>
         <div class="crewrest-row">
-          <label for="crewRestEnd">Timeframe end</label>
+          <div class="crewrest-label-stack">
+            <label for="crewRestEnd">Timeframe end</label>
+            <p class="crewrest-derived" id="crewRestEndDerived" hidden>derived from logbook</p>
+          </div>
           <input id="crewRestEnd" type="text" inputmode="numeric" maxlength="5" enterkeyhint="next" placeholder="HH:MM" autocomplete="off" />
         </div>
         <div class="crewrest-row">
-          <label for="crewRestPause">Changeover</label>
-          <input id="crewRestPause" type="text" inputmode="numeric" maxlength="3" enterkeyhint="done" placeholder="5" autocomplete="off" />
+          <label for="crewRestPause">Changeover between rests</label>
+          <div class="crewrest-field">
+            <input id="crewRestPause" type="text" inputmode="numeric" maxlength="3" enterkeyhint="done" placeholder="5" autocomplete="off" />
+            <p class="crewrest-pause-hint">in minutes</p>
+          </div>
         </div>
-        <p class="crewrest-pause-hint">in minutes</p>
         <p class="crewrest-hint" id="crewRestHint"></p>
         <div class="crewrest-actions">
           <button type="button" id="crewRestClear" class="crewrest-btn-outline" title="Restore suggested times from the logbook">Reset to default</button>
-          <button type="button" id="crewRestTableBtn">Time table</button>
+          <button type="button" id="crewRestTableBtn" class="crewrest-btn-theme">Time table</button>
         </div>
       </div>
       <div class="crewrest-table-view" id="crewRestTableView" hidden>
@@ -8915,6 +8981,26 @@
       };
     }
 
+    function crewRestTimesMatch(a, b) {
+      const am = timeToMinutes(a);
+      const bm = timeToMinutes(b);
+      return am != null && bm != null && am === bm;
+    }
+
+    function syncCrewRestDerivedHints() {
+      const suggested = suggestCrewRestFromLog();
+      const startHint = $("crewRestStartDerived");
+      const endHint = $("crewRestEndDerived");
+      const startEl = $("crewRestStart");
+      const endEl = $("crewRestEnd");
+      if (startHint) {
+        startHint.hidden = !(suggested.start && startEl && crewRestTimesMatch(startEl.value, suggested.start));
+      }
+      if (endHint) {
+        endHint.hidden = !(suggested.end && endEl && crewRestTimesMatch(endEl.value, suggested.end));
+      }
+    }
+
     function applyCrewRestForm(state) {
       if (!state) return;
       const rrr = $("crewRestPatRrr");
@@ -8930,6 +9016,7 @@
       if ($("crewRestAlert")) $("crewRestAlert").checked = state.alertBeforeEnd !== false;
       applyCrewRestRoute(state.route);
       syncCrewRestEditTimeErrors();
+      syncCrewRestDerivedHints();
     }
 
     function renderCrewRestTable() {
@@ -8940,6 +9027,7 @@
         logKey: (crewRestSession && crewRestSession.logKey) || state.logKey
       };
       syncCrewRestEditTimeErrors();
+      syncCrewRestDerivedHints();
       const { rows, hint, title } = computeCrewRestRows(state.start, state.end, state.pause, state.pattern, state.pfMin2h);
       const hintEl = $("crewRestHint");
       const tableHint = $("crewRestTableHint");
