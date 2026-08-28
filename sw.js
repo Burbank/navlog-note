@@ -2,7 +2,7 @@
  * Network is used only for explicit ?updateCheck=1 (long-press Clear /
  * PWA cold-start stamp check). Never speculative fetch on resume —
  * iOS treats that as “Turn Off Airplane Mode…”. */
-const CACHE = "navlog-note-v4.6.1";
+const CACHE = "navlog-note-v4.6.2";
 
 const ASSETS = [
   "./",
@@ -63,6 +63,23 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
+
+  /* Legal/support pages must not be rewritten to the app shell. */
+  const path = url.pathname;
+  if (
+    /\/privacy-policy\.html$/.test(path) ||
+    /\/support\.html$/.test(path) ||
+    /\/help\.html$/.test(path) ||
+    /\/site\.css$/.test(path) ||
+    /\/site\.js$/.test(path) ||
+    /\/QuickLog_appstore\.png$/.test(path) ||
+    /\/background\.jpeg$/.test(path)
+  ) {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(request).then((c) => c || caches.match("./index.html")))
+    );
+    return;
+  }
 
   /* Explicit online probe only (page sets this during allowed windows). */
   if (url.searchParams.has("updateCheck")) {
