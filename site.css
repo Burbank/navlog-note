@@ -171,6 +171,15 @@ strong {
   }
 }
 
+.contact-stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.contact-stack p:last-child {
+  margin-bottom: 0;
+}
+
 .contact h2 {
   margin-top: 0;
   margin-bottom: 15px;
