@@ -1740,6 +1740,10 @@
       opacity: 0.85;
     }
 
+    .app-rec a.ios-app-footer-link {
+      text-decoration: underline;
+    }
+
     .card-copy-compact #btnCopy,
     .card-copy-compact #btnCopyArr {
       min-height: 28px;
@@ -3678,6 +3682,62 @@
         max-width: var(--log-time-w, 8ch);
       }
     }
+
+    .ios-app-float {
+      position: fixed;
+      right: max(10px, env(safe-area-inset-right));
+      /* Sit above the single-line .app-rec footer (0.62rem + body pad + gap). */
+      bottom: calc(4.15rem + env(safe-area-inset-bottom, 0px));
+      z-index: 70;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 132px;
+      padding: 8px 7px 7px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      background: rgba(8, 12, 18, 0.48);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    html.theme-bright .ios-app-float {
+      border-color: rgba(0, 0, 0, 0.16);
+      background: rgba(255, 255, 255, 0.58);
+      color: #17324a;
+    }
+
+    .ios-app-float img {
+      width: 86px;
+      height: 86px;
+      display: block;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    .ios-app-float span {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+      text-align: center;
+      color: var(--accent, #00a1e4);
+      text-decoration: underline;
+    }
+
+    .ios-app-float:active {
+      opacity: 0.85;
+    }
+
+    body:has(#installOverlay:not([hidden])) .ios-app-float {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -3700,6 +3760,18 @@
       <button type="button" id="installOverlayDismiss">OK</button>
     </div>
   </div>
+
+  <a
+    class="ios-app-float open-system-browser"
+    href="https://flyn.co/navlog-note"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="https://flyn.co/navlog-note"
+    aria-label="Download iPad app: click here."
+  >
+    <img src="QuickLog_appstore.png" alt="" width="324" height="324">
+    <span>Download iPad app: click here.</span>
+  </a>
 
   <div class="app">
     <form id="flightForm" autocomplete="off" spellcheck="false" action="#">
@@ -4005,7 +4077,7 @@
           <a href="https://apps.apple.com/us/app/fdp-fms/id6757682134" class="open-system-browser" target="_blank" rel="noopener noreferrer">FDP FMS</a>
           for checking today’s EASA limits.
         </span>
-        <span class="app-rec-liability">Runs locally/offline, sends no data. Author assumes no liability. <a href="privacy-policy.html" class="open-system-browser" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="support.html" class="open-system-browser" target="_blank" rel="noopener noreferrer">Support</a> · <a href="https://flyn.co/navlog-note" class="open-system-browser" target="_blank" rel="noopener noreferrer">iPad app</a>. <span class="app-update-hint">Longpress CLEAR to update</span> <span class="app-version" id="appVersion"></span></span>
+        <span class="app-rec-liability">Runs locally/offline, sends no data. Author assumes no liability. <a href="privacy-policy.html" class="open-system-browser" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="support.html" class="open-system-browser" target="_blank" rel="noopener noreferrer">Support</a> · <a href="https://flyn.co/navlog-note" class="open-system-browser ios-app-footer-link" target="_blank" rel="noopener noreferrer">iPad app</a>. <span class="app-update-hint">Longpress CLEAR to update</span> <span class="app-version" id="appVersion"></span></span>
       </p>
       </div>
     </form>
