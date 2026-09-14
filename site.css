@@ -272,6 +272,27 @@ a:hover {
   font-weight: 700;
 }
 
+.landing {
+  text-align: center;
+}
+
+.landing-qr {
+  margin: 28px 0;
+}
+
+.landing-qr img {
+  height: min(49vh, 220px);
+  width: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.store-link {
+  font-size: 1.15em;
+  font-weight: 700;
+}
+
 @media (max-width: 600px) {
   body {
     padding: 20px 15px;
