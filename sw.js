@@ -2,7 +2,7 @@
  * Network is used only for explicit ?updateCheck=1 (long-press Clear /
  * PWA cold-start stamp check). Never speculative fetch on resume —
  * iOS treats that as “Turn Off Airplane Mode…”. */
-const CACHE = "navlog-note-v4.6.2";
+const CACHE = "navlog-note-v4.7.1";
 
 const ASSETS = [
   "./",

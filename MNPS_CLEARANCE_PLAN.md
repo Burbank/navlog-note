@@ -4,7 +4,7 @@ Export this file to:
 
 `/Users/DuniaMBP/Library/Mobile Documents/com~apple~CloudDocs/CURSOR_PROJECT_REPOS/Quicklog`
 
-Status: built on branch `cursor/mnps-clnc-8857` (from `origin/main`). Localhost checked. Not merged to `main`, not published, version left at 4.6+2.
+Status: published on GitHub Pages as v4.7+1 (service worker `navlog-note-v4.7.1`). Merged from `cursor/mnps-clnc-8857` to `main`.
 
 Repo: GitHub `Burbank/navlog-note`  
 Source of truth for the live PWA: `origin/main` → `index.html`  
@@ -60,7 +60,7 @@ Screenshot map:
 | MNPS RTE CHECKS | Meaning | Field | Placeholder | COPY MNPS TEXT |
 |---|---|---|---|---|
 | **N/A** | Not an Atlantic crossing | Disabled / not applicable | `N/A` | Muted. Tap → toast `MNPS not applicable`. No clipboard, no FLIGHT. |
-| **PERFORMED** | Oceanic crossing | Enabled | `CLNC number, ref OM-A 8.3.2.6(c)(2)` | Live. Copies MNPS text and opens FLIGHT. |
+| **PERFORMED** | Oceanic crossing | Enabled | `CLNC number or full text.` | Hot only when the clearance field has text. Then copies MNPS text and opens FLIGHT. |
 
 - Typed text is kept if the pilot toggles back to N/A, so it reappears on PERFORMED.
 - Persist `#mnpsClnc` in `FIELD_IDS` / `localStorage` key `flight-plan-form-v3`.
@@ -113,7 +113,7 @@ MNPS RTE CHECKS.   PERFORMED.
 MNPS CLNC: <whatever was typed>
 ```
 
-If the number / clearance is left blank, only the PERFORMED line is copied.
+If the number / clearance is left blank, COPY MNPS TEXT stays muted. A tap shows `MNPS incomplete — need clearance` and does not copy or open FLIGHT.
 
 ---
 
@@ -145,8 +145,7 @@ Ways to run locally in that folder:
 3. Treat the iCloud folder as a checkout of `Burbank/navlog-note`, not a second source of truth.
 
 First test: localhost, then Add to Home Screen on the iPad.  
-Do **not** merge to `main` / Pages.  
-Do **not** bump `APP_VERSION`, `APP_BUILD`, or the `sw.js` cache name until approved.
+Published to GitHub Pages on 2026-10-02 as v4.7+1.
 
 ---
 
