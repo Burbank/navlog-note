@@ -130,7 +130,8 @@
 
     html.theme-bright .card,
     html.theme-bright .flight-log,
-    html.theme-bright .landing-prep {
+    html.theme-bright .landing-prep,
+    html.theme-bright .arr-toast-slot {
       border-width: 2px;
     }
 
@@ -2752,6 +2753,10 @@
       position: relative;
       min-width: 0;
       min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-sizing: border-box;
     }
 
     .toast {
@@ -4335,7 +4340,7 @@
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "4.7";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "1";
+    const APP_BUILD = "2";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
