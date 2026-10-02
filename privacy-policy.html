@@ -17,7 +17,7 @@
   </nav>
 
   <h1><img src="apple-touch-icon.png" alt="" class="title-icon" width="192" height="192">Purpose and Privacy Policy</h1>
-  <p class="last-updated">Last Updated: August 28, 2026</p>
+  <p class="last-updated">Last Updated: September 14, 2026</p>
 
   <div class="section">
     <p>QUICKLOG is a free flight-log and briefing notepad for iPad, designed for pilots who need a fast departure, arrival, and logbook sheet that still works offline.</p>
@@ -90,17 +90,38 @@
   <div class="contact">
     <div class="contact-left">
       <h2>Contact Developer</h2>
-      <p>If you have any questions, please contact us at:</p>
-      <p>
-        <a href="#" class="email-link" data-user="dunia" data-domain="tutamail.com"></a>
-      </p>
+      <p>Name, email, and a short message.</p>
+      <form class="support-form" autocomplete="on">
+        <label class="hp" aria-hidden="true">
+          <span>Website</span>
+          <input type="text" name="website" tabindex="-1" autocomplete="off" />
+        </label>
+        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <input type="hidden" name="gate" value="" />
+        <label>
+          <span>Name</span>
+          <input type="text" name="name" required maxlength="80" autocomplete="name" />
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" required maxlength="120" autocomplete="email" />
+        </label>
+        <label>
+          <span>Message</span>
+          <textarea name="message" required maxlength="4000" rows="5"></textarea>
+        </label>
+        <button type="submit">Send</button>
+        <p class="support-status" hidden></p>
+      </form>
     </div>
     <div class="contact-qr">
-      <img src="QuickLog_appstore.png" alt="Scan with iPad camera to open QUICKLOG on the App Store" width="512" height="512">
+      <a href="https://flyn.co/navlog-note" target="_blank" rel="noopener noreferrer">
+        <img src="QuickLog_appstore.png" alt="Scan with iPad camera to open QUICKLOG on the App Store" width="324" height="324">
+      </a>
     </div>
     <div class="contact-right">
       <p class="contact-scan-note">Scan QR code with iPad camera to download the free iOS app.<br>QUICKLOG is not for iPhone use.</p>
-      <p><span class="link-label">iPad App Store link:</span> <a href="https://dsh.re/a7a2cc" target="_blank" rel="noopener noreferrer">https://dsh.re/a7a2cc</a></p>
+      <p><span class="link-label">iPad App Store link:</span> <a href="https://flyn.co/navlog-note" target="_blank" rel="noopener noreferrer">https://flyn.co/navlog-note</a></p>
       <p><span class="link-label">WEBSITE:</span> <a href="./">https://burbank.github.io/navlog-note/</a></p>
     </div>
   </div>

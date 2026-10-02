@@ -17,7 +17,7 @@
   </nav>
 
   <h1><img src="apple-touch-icon.png" alt="" class="title-icon" width="192" height="192">Support</h1>
-  <p class="last-updated">Last Updated: August 28, 2026</p>
+  <p class="last-updated">Last Updated: September 14, 2026</p>
 
   <div class="section">
     <p>QUICKLOG is a free iPad flight-log and briefing notepad. This page is the support address for the Home Screen web app and the native iPad app.</p>
@@ -28,17 +28,13 @@
 
   <div class="section">
     <h2>How to reach us</h2>
-    <p>For questions, bugs, or App Store review replies:</p>
-    <ul>
-      <li>Email: <a href="#" class="email-link" data-user="dunia" data-domain="tutamail.com"></a></li>
-    </ul>
-    <p>Please say whether you are using the web app or the native iPad app, and the version shown at the bottom of QUICKLOG.</p>
+    <p>For questions, bugs, or App Store review replies, use the form below. Please say whether you are using the web app or the native iPad app, and the version shown at the bottom of QUICKLOG.</p>
   </div>
 
   <div class="section">
     <h2>Open the app</h2>
     <ul>
-      <li>iPad App Store: <a href="https://dsh.re/a7a2cc" target="_blank" rel="noopener noreferrer">https://dsh.re/a7a2cc</a></li>
+      <li>iPad App Store: <a href="https://flyn.co/navlog-note" target="_blank" rel="noopener noreferrer">https://flyn.co/navlog-note</a></li>
       <li>Web app (add to Home Screen on iPad): <a href="./">https://burbank.github.io/navlog-note/</a></li>
       <li>Privacy policy: <a href="./privacy-policy.html">Purpose and Privacy Policy</a></li>
     </ul>
@@ -54,11 +50,43 @@
     </ul>
   </div>
 
-  <div class="contact contact-stack">
-    <h2>Contact Developer</h2>
-    <p>If you have any questions, please contact us at <a href="#" class="email-link" data-user="dunia" data-domain="tutamail.com"></a>.</p>
-    <p>See also the <a href="./privacy-policy.html">Purpose and Privacy Policy</a>.</p>
-    <p><span class="link-label">iPad App Store link:</span> <a href="https://dsh.re/a7a2cc" target="_blank" rel="noopener noreferrer">https://dsh.re/a7a2cc</a></p>
+  <div class="contact">
+    <div class="contact-left">
+      <h2>Contact Developer</h2>
+      <p>Name, email, and a short message.</p>
+      <form class="support-form" autocomplete="on">
+        <label class="hp" aria-hidden="true">
+          <span>Website</span>
+          <input type="text" name="website" tabindex="-1" autocomplete="off" />
+        </label>
+        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <input type="hidden" name="gate" value="" />
+        <label>
+          <span>Name</span>
+          <input type="text" name="name" required maxlength="80" autocomplete="name" />
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" required maxlength="120" autocomplete="email" />
+        </label>
+        <label>
+          <span>Message</span>
+          <textarea name="message" required maxlength="4000" rows="5"></textarea>
+        </label>
+        <button type="submit">Send</button>
+        <p class="support-status" hidden></p>
+      </form>
+    </div>
+    <div class="contact-qr">
+      <a href="https://flyn.co/navlog-note" target="_blank" rel="noopener noreferrer">
+        <img src="QuickLog_appstore.png" alt="Scan with iPad camera to open QUICKLOG on the App Store" width="324" height="324">
+      </a>
+    </div>
+    <div class="contact-right">
+      <p class="contact-scan-note">Scan QR code with iPad camera to download the free iOS app.<br>QUICKLOG is not for iPhone use.</p>
+      <p><span class="link-label">iPad App Store link:</span> <a href="https://flyn.co/navlog-note" target="_blank" rel="noopener noreferrer">https://flyn.co/navlog-note</a></p>
+      <p>See also the <a href="./privacy-policy.html">Purpose and Privacy Policy</a>.</p>
+    </div>
   </div>
 
   <div class="back-link">

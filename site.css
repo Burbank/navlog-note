@@ -35,14 +35,20 @@
 
 html {
   background-color: var(--bg-color);
-  background-image: url("background.jpeg");
-  background-size: cover;
-  background-position: center center;
-  background-attachment: scroll;
-  background-repeat: no-repeat;
   min-height: 100vh;
   width: 100%;
   position: relative;
+}
+
+/* Phones never fetch the photo. iPad landscape and desktop keep it. */
+@media (min-width: 1024px) {
+  html {
+    background-image: url("background.jpeg");
+    background-size: cover;
+    background-position: center center;
+    background-attachment: scroll;
+    background-repeat: no-repeat;
+  }
 }
 
 body {
@@ -248,6 +254,58 @@ strong {
 .link-label,
 .contact-right .link-label {
   color: var(--text-color);
+}
+
+.support-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.support-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.support-form input,
+.support-form textarea {
+  font: inherit;
+  color: var(--text-color);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.support-form button {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 700;
+  color: var(--plus-color);
+  background: transparent;
+  border: 1px solid var(--plus-color);
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.support-form button:hover {
+  opacity: 0.85;
+}
+
+.support-status {
+  margin: 0;
+}
+
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 a {
