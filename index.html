@@ -148,6 +148,7 @@
     }
 
     html.theme-bright input[type="text"],
+    html.theme-bright #mnpsClnc,
     html.theme-bright select,
     html.theme-bright .flight-log-acft,
     html.theme-bright .flight-log-apt,
@@ -160,7 +161,8 @@
     }
 
     /* Placeholders stay muted so they never look like typed values */
-    html.theme-bright input::placeholder {
+    html.theme-bright input::placeholder,
+    html.theme-bright #mnpsClnc::placeholder {
       color: var(--placeholder);
       font-weight: 400;
       opacity: 1;
@@ -306,7 +308,8 @@
         height: 100%;
         min-height: 28px;
       }
-      body.is-standalone-app .card-copy-dept.card-copy-compact button {
+      body.is-standalone-app .card-copy-dept.card-copy-compact button,
+      body.is-standalone-app .card-copy-mnps.card-copy-compact button {
         height: auto;
       }
       .log-prev,
@@ -414,6 +417,8 @@
     }
 
     .card-quicklog-title {
+      position: relative;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -745,14 +750,6 @@
       font-weight: 600;
     }
 
-    /* Taller segment, button pinned top — fat-finger gap before copy ARR */
-    .card-copy-dept.card-copy-compact {
-      align-items: flex-start;
-      justify-content: flex-start;
-      min-height: 3.35rem;
-      padding-bottom: 14px;
-    }
-
     .card-copy-segment {
       display: flex;
       align-items: stretch;
@@ -893,6 +890,7 @@
     .card-clearance,
     .card-fuel,
     .card-rvsm,
+    .card-mnps,
     .card-quicklog-title,
     .card-bright,
     .card-toolbar-actions {
@@ -1125,22 +1123,75 @@
       box-sizing: border-box;
     }
 
-    .card-rvsm .field.mnps-row {
+    .card-mnps .field.mnps-row {
       display: grid;
       grid-template-columns: 1fr;
       gap: 4px;
       align-items: stretch;
-      margin-top: 2px;
+      margin-top: 0;
+      margin-bottom: 0;
     }
 
-    .card-rvsm .field.mnps-row label {
+    .card-mnps .field.mnps-row label {
       font-size: 0.72rem;
       line-height: 1.15;
     }
 
-    .card-rvsm .field.mnps-row .toggle {
+    .card-mnps .field.mnps-row .toggle {
       width: 100%;
       max-width: 100%;
+    }
+
+    .card-mnps .field.mnps-clnc-field {
+      display: grid;
+      grid-template-columns: 5.2rem minmax(0, 1fr);
+      align-items: start;
+      gap: 5px;
+      margin-top: 4px;
+      margin-bottom: 0;
+    }
+
+    .card-mnps .field.mnps-clnc-field label {
+      padding-top: 7px;
+      font-size: 0.72rem;
+      line-height: 1.15;
+    }
+
+    #mnpsClnc {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      margin: 0;
+      min-height: 30px;
+      max-height: 5.5rem;
+      padding: 4px 8px;
+      border: 1px solid var(--field-border);
+      border-radius: 7px;
+      background: var(--field);
+      color: var(--text);
+      font-size: 16px; /* prevents iOS input zoom — keep ≥16px */
+      line-height: 1.25;
+      font-family: inherit;
+      resize: none;
+      overflow: hidden;
+    }
+
+    #mnpsClnc::placeholder {
+      color: var(--placeholder);
+      font-size: 0.68rem;
+      line-height: 1.2;
+    }
+
+    #mnpsClnc:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    #mnpsClnc:disabled {
+      opacity: 0.72;
+      cursor: default;
     }
 
 
@@ -1741,7 +1792,8 @@
     }
 
     .card-copy-compact #btnCopy,
-    .card-copy-compact #btnCopyArr {
+    .card-copy-compact #btnCopyArr,
+    .card-copy-compact #btnCopyMnps {
       min-height: 28px;
       font-size: 0.68rem;
       padding: 4px 6px;
@@ -2744,24 +2796,27 @@
     }
 
     .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 20px;
-      z-index: 20;
-      padding: 10px 16px;
-      border-radius: 999px;
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      border-radius: inherit;
       background: var(--ok);
       color: #fff;
+      font-size: 0.72rem;
       font-weight: 650;
+      line-height: 1.15;
+      text-align: center;
       opacity: 0;
       pointer-events: none;
-      transform: translateX(-50%) translateY(16px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
+      transition: opacity 0.2s ease;
     }
 
     .toast.show {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
     }
 
     /* Long-press Clear / force update: stays up so iPad PWA wait does not look frozen */
@@ -3533,6 +3588,7 @@
       .card-clearance,
       .card-fuel,
       .card-rvsm,
+      .card-mnps,
       .card-quicklog-title { padding: 8px 14px; }
       .field,
       .card-fuel .field,
@@ -3577,7 +3633,7 @@
         min-width: 0;
         justify-self: stretch;
       }
-      .card-rvsm .field.mnps-row .toggle {
+      .card-mnps .field.mnps-row .toggle {
         width: 100%;
       }
       input[type="text"], .toggle button { min-height: 44px; padding: 10px 12px; }
@@ -3745,6 +3801,7 @@
               selects next field
             </p>
           </div>
+          <div class="toast" id="toast" aria-live="polite"></div>
         </div>
         <div class="card card-toolbar-actions" aria-label="Clear and undo">
           <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: check for online update.">▶ CLEAR</button>
@@ -3845,6 +3902,13 @@
             <label for="rvsmSby">SBY:</label>
             <input id="rvsmSby" name="rvsmSby" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="0000" />
           </div>
+        </section>
+
+        <div class="card card-copy-segment card-copy-dept card-copy-compact">
+          <button type="button" id="btnCopy" class="log-btn-muted" title="Copy departure text, then open FLIGHT">COPY DEPT TEXT</button>
+        </div>
+
+        <section class="card card-mnps" aria-label="MNPS">
           <div class="field mnps-row">
             <label>MNPS RTE CHECKS: <span class="ref">8.3.2.11.3 (a)(5)</span></label>
             <div class="toggle" role="group" aria-label="MNPS RTE CHECKS">
@@ -3853,10 +3917,14 @@
             </div>
           </div>
           <input type="hidden" id="mnps" name="mnps" value="N/A" />
+          <div class="field mnps-clnc-field">
+            <label for="mnpsClnc">MNPS CLNC</label>
+            <textarea id="mnpsClnc" name="mnpsClnc" rows="1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="enter" placeholder="N/A" aria-label="MNPS clearance"></textarea>
+          </div>
         </section>
 
-        <div class="card card-copy-segment card-copy-dept card-copy-compact">
-          <button type="button" id="btnCopy" class="log-btn-muted" title="Copy departure text, then open FLIGHT">COPY DEPT TEXT</button>
+        <div class="card card-copy-segment card-copy-mnps card-copy-compact">
+          <button type="button" id="btnCopyMnps" class="log-btn-muted" title="Copy MNPS text, then open FLIGHT">COPY MNPS TEXT</button>
         </div>
         </div>
 
@@ -4222,8 +4290,6 @@
     </div>
   </div>
 
-  <div class="toast" id="toast" aria-live="polite">Copied</div>
-
   <div id="updateBusy" class="update-busy" hidden role="status" aria-live="assertive" aria-busy="true">
     <div class="update-busy-card">
       <p id="updateBusyTitle">Update requested</p>
@@ -4276,7 +4342,7 @@
     const USAGE_HIT_PREFIX = "navlog-note-usage-hit-";
     const FIELD_IDS = [
       "security", "pdc", "ctot", "atis", "rwySid", "climbTo", "transponder",
-      "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps",
+      "fuel", "tom", "calcAt", "rwy", "intersection", "rvsmL", "rvsmR", "rvsmSby", "mnps", "mnpsClnc",
       "arrAtis", "ldis", "logPf", "logPicSelf", "logAcft", "logTol", "logPic", "logRemark", "logDeptDate", "logDep", "logArr",
       "offBlocks", "airborne", "touchdown", "onBlocks"
     ];
@@ -4289,7 +4355,7 @@
     /** UI table only — mark column after REMARK (not included in copy LOG as table). */
     const LOG_PREV_UI_HEADERS = LOG_PREV_HEADERS.concat([""]);
     const DEFAULTS = {
-      security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A",
+      security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A", mnpsClnc: "",
       logAcft: "CKA", logPf: "no", logPicSelf: "no", logPic: "", logRemark: "", logDeptDate: "", logDep: "", logArr: "AMS"
     };
     const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -5557,7 +5623,7 @@
       if (btn.id === "btnUndo") btn.disabled = false; // visual mute only — keep tappable
     }
 
-    /** DEPT copy fields that must be non-empty (CTOT / PDC optional; MNPS always has a value). */
+    /** DEPT copy fields that must be non-empty (CTOT / PDC optional; MNPS CLNC is not part of DEPT). */
     function getIncompleteDeptFields(v) {
       v = v || getValues();
       const missing = [];
@@ -5639,6 +5705,10 @@
       const arrBtn = $("btnCopyArr");
       if (arrBtn && !arrBtn.classList.contains("copied")) {
         setLogBtnAction(arrBtn, arrReady);
+      }
+      const mnpsBtn = $("btnCopyMnps");
+      if (mnpsBtn && !mnpsBtn.classList.contains("copied")) {
+        setLogBtnAction(mnpsBtn, v.mnps === "PERFORMED");
       }
       setLogBtnAction($("btnUndo"), undoReady);
       syncMarkAllLogButton();
@@ -6909,7 +6979,7 @@
       [
         "security", "atis", "ctot", "pdc", "rwySid", "climbTo", "transponder",
         "calcAt", "rwy", "intersection", "tom", "fuel",
-        "rvsmL", "rvsmR", "rvsmSby"
+        "rvsmL", "rvsmR", "rvsmSby", "mnpsClnc"
       ],
       ["arrAtis", "ldis"],
       ["logPic", "logDepAdd", "logArrAdd", "offBlocks", "airborne", "touchdown", "onBlocks"]
@@ -6943,6 +7013,12 @@
       return isSimAcft() && (id === "airborne" || id === "touchdown");
     }
 
+    function shouldSkipTopicField(id) {
+      if (shouldSkipLogTopicField(id)) return true;
+      if (id === "mnpsClnc" && (!$("mnps") || $("mnps").value !== "PERFORMED")) return true;
+      return false;
+    }
+
     /** Next text field in the active topic, or dismiss keyboard at topic end. */
     function focusNextField(fromEl) {
       prepareLeaveClockField(fromEl);
@@ -6953,7 +7029,7 @@
       }
       const { chain, index } = found;
       for (let i = index + 1; i < chain.length; i++) {
-        if (shouldSkipLogTopicField(chain[i])) continue;
+        if (shouldSkipTopicField(chain[i])) continue;
         if (focusFieldById(chain[i])) return;
       }
       dismissKeyboard(fromEl);
@@ -6965,7 +7041,7 @@
       if (!found) return;
       const { chain, index } = found;
       for (let i = index - 1; i >= 0; i--) {
-        if (shouldSkipLogTopicField(chain[i])) continue;
+        if (shouldSkipTopicField(chain[i])) continue;
         if (focusFieldById(chain[i])) return;
       }
       dismissKeyboard(fromEl);
@@ -6977,8 +7053,10 @@
           const el = $(id);
           if (!el) return;
           const isLast = i === chain.length - 1;
-          el.setAttribute("enterkeyhint", isLast ? "done" : "next");
+          el.setAttribute("enterkeyhint", id === "mnpsClnc" ? "enter" : (isLast ? "done" : "next"));
           el.addEventListener("keydown", (e) => {
+            /* Clearance can be several lines; Enter inserts a newline. Tab still moves on. */
+            if (id === "mnpsClnc" && (e.key === "Enter" || e.keyCode === 13 || e.which === 13)) return;
             if (!isClockAdvanceKey(e)) return;
             e.preventDefault();
             /* prepareLeaveClockField runs inside focusNext/Prev */
@@ -7153,9 +7231,59 @@
     }
 
     function setMnps(value) {
-      $("mnps").value = value;
-      $("mnpsNA").classList.toggle("active", value === "N/A");
-      $("mnpsPerformed").classList.toggle("active", value === "PERFORMED");
+      const next = value === "PERFORMED" ? "PERFORMED" : "N/A";
+      $("mnps").value = next;
+      $("mnpsNA").classList.toggle("active", next === "N/A");
+      $("mnpsPerformed").classList.toggle("active", next === "PERFORMED");
+      syncMnpsClncField();
+    }
+
+    /** N/A locks the clearance box (text is kept). PERFORMED enables it. */
+    function syncMnpsClncField() {
+      const el = $("mnpsClnc");
+      if (!el || !$("mnps")) return;
+      const performed = $("mnps").value === "PERFORMED";
+      el.disabled = !performed;
+      el.placeholder = performed
+        ? "CLNC number, ref OM-A 8.3.2.6(c)(2)"
+        : "N/A";
+      el.tabIndex = performed ? 0 : -1;
+      if (!performed && document.activeElement === el) {
+        try { el.blur(); } catch (_) {}
+      }
+      resizeMnpsClnc();
+    }
+
+    /**
+     * One row at rest. While typing, grow to the text (about 4 lines), then scroll.
+     * After blur, a long clearance stays at two lines so column 3 stays compact.
+     */
+    function resizeMnpsClnc() {
+      const el = $("mnpsClnc");
+      if (!el) return;
+      const performed = $("mnps") && $("mnps").value === "PERFORMED";
+      const cs = getComputedStyle(el);
+      const fontSize = parseFloat(cs.fontSize) || 16;
+      const line = parseFloat(cs.lineHeight) || fontSize * 1.25;
+      const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      const border = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+      const ref = $("rvsmL");
+      const one = (ref && ref.offsetHeight) ? ref.offsetHeight : Math.ceil(line + pad + border);
+      const focused = document.activeElement === el;
+      el.style.height = "0px";
+      const scrollH = el.scrollHeight;
+      const full = scrollH + border;
+      const lines = Math.max(1, Math.round(Math.max(0, scrollH - pad) / line));
+      const four = Math.min(line * 4 + pad + border, 5.5 * fontSize);
+      const two = line * 2 + pad + border;
+      let target = one;
+      if (performed && lines > 1) {
+        target = focused
+          ? Math.min(Math.max(full, one), four)
+          : Math.min(Math.max(full, one), two);
+      }
+      el.style.height = target + "px";
+      el.style.overflowY = focused && full > target + 1 ? "auto" : "hidden";
     }
 
     function setValues(data) {
@@ -7427,10 +7555,13 @@
         "___________________________________", "",
         `Before RVSM entry   L: ${outValue(v.rvsmL)}                    R: ${outValue(v.rvsmR)}                    SBY: ${outValue(v.rvsmSby)}`, ""
       ];
-      if (v.mnps === "PERFORMED") {
-        lines.push("MNPS RTE CHECKS.   PERFORMED.", "");
-      }
       return lines.join("\n");
+    }
+
+    function buildMnpsOutput() {
+      const clnc = String(getValues().mnpsClnc || "").trim();
+      if (!clnc) return "MNPS RTE CHECKS.   PERFORMED.";
+      return "MNPS RTE CHECKS.   PERFORMED.\n\nMNPS CLNC: " + clnc;
     }
 
     let toastTimer = 0;
@@ -7701,6 +7832,17 @@
       pushUndo();
       await writeClipboard(buildArrOutput());
       flashCopyBtn($("btnCopyArr"), "COPY ARR TEXT");
+      openFlightApp();
+    }
+
+    async function copyMnps() {
+      if (!$("mnps") || $("mnps").value !== "PERFORMED") {
+        showToast("MNPS not applicable");
+        return;
+      }
+      pushUndo();
+      await writeClipboard(buildMnpsOutput());
+      flashCopyBtn($("btnCopyMnps"), "COPY MNPS TEXT");
       openFlightApp();
     }
 
@@ -8327,7 +8469,7 @@
     function bindClearOnFocus() {
       const logTimeSet = new Set(LOG_TIME_IDS);
       for (const id of FIELD_IDS) {
-        if (id === "mnps" || id === "logAcft" || id === "logPf" || id === "logPicSelf" ||
+        if (id === "mnps" || id === "mnpsClnc" || id === "logAcft" || id === "logPf" || id === "logPicSelf" ||
             id === "logPic" || id === "logDeptDate" || id === "logDep" || id === "logArr" ||
             id === "logDepAdd" || id === "logArrAdd" || logTimeSet.has(id)) continue;
         const el = $(id);
@@ -8419,9 +8561,20 @@
 
     $("mnpsNA").addEventListener("click", () => { setMnps("N/A"); saveNow(); syncActionButtons(); });
     $("mnpsPerformed").addEventListener("click", () => { setMnps("PERFORMED"); saveNow(); syncActionButtons(); });
+    {
+      const el = $("mnpsClnc");
+      if (el) {
+        el.addEventListener("input", () => { resizeMnpsClnc(); save(); });
+        el.addEventListener("focus", () => resizeMnpsClnc());
+        el.addEventListener("blur", () => { resizeMnpsClnc(); saveNow(); });
+      }
+    }
+    window.addEventListener("resize", resizeMnpsClnc);
+    window.addEventListener("orientationchange", resizeMnpsClnc);
     $("flightForm").addEventListener("submit", (e) => e.preventDefault());
     $("btnCopy").addEventListener("click", copyAll);
     $("btnCopyArr").addEventListener("click", copyArr);
+    $("btnCopyMnps").addEventListener("click", copyMnps);
     $("btnCopyLog").addEventListener("click", copyLog);
     syncActionButtons();
     $("btnCopyAllLog").addEventListener("click", copyAllLogText);
@@ -9587,6 +9740,8 @@
     bindInstallOverlay();
     bindOpenSystemBrowserLinks();
     load();
+    resizeMnpsClnc();
+    requestAnimationFrame(resizeMnpsClnc);
     try { lastSavedJson = JSON.stringify(getValues()); } catch (_) {}
     refreshUndoReady();
     checkRvsmDiff(true);
