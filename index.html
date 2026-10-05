@@ -4340,7 +4340,7 @@
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "4.7";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "3";
+    const APP_BUILD = "4";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -9009,8 +9009,10 @@
     /**
      * Crew rest overlay — session-only (not logbook).
      * Pattern: RRR = 3 equal rests; 2r = 9 units as R R R 2R 2R 2R.
-     * Rests stay as equal as possible; leftover minutes round up onto the last rest
-     * (early arrival often trims that one).
+     * Rests of the same kind stay within one minute. Leftover minutes go one at a time
+     * to the largest remainder, and a tie goes to the later rest (early arrival trims that one).
+     * With PF at least two hours on, every 2R is at least 2:00 and the short rests share the cost.
+     * If a fair 2R is already over 2:00, the split stays proportional. R R R still floors only the middle rest.
      */
     const CREWREST_BLOCK_2R_MIN = 11 * 60;
     const CREWREST_AFTER_AIR_MIN = 30;
@@ -9178,23 +9180,68 @@
       return { units: 3, weights: [1, 1, 1], labels: ["Rest 1", "Rest 2", "Rest 3"], title: "3 rests: R R R" };
     }
 
-    /** Floor every rest but the last; last gets the remainder so it is longest (or tied). */
+    /** Largest remainder: same-weight rests differ by at most one minute. Ties go to the later rest. */
     function allocateRestLengths(total, weights) {
       const n = weights.length;
       const lengths = new Array(n).fill(0);
       const units = weights.reduce((sum, w) => sum + w, 0);
       if (n === 0 || total <= 0 || units <= 0) return lengths;
-      let lastIdx = n - 1;
-      while (lastIdx > 0 && !weights[lastIdx]) lastIdx--;
+      const order = [];
       let used = 0;
       for (let i = 0; i < n; i++) {
-        if (i === lastIdx) continue;
-        const len = Math.floor((total * weights[i]) / units);
-        lengths[i] = len;
-        used += len;
+        const w = weights[i] || 0;
+        if (w <= 0) continue;
+        const base = Math.floor((total * w) / units);
+        lengths[i] = base;
+        used += base;
+        order.push({ i: i, rem: (total * w) % units });
       }
-      lengths[lastIdx] = total - used;
+      let left = total - used;
+      order.sort((a, b) => b.rem - a.rem || b.i - a.i);
+      for (let k = 0; k < order.length && left > 0; k++) {
+        lengths[order[k].i] += 1;
+        left--;
+      }
       return lengths;
+    }
+
+    /**
+     * PF floor. On R R R 2R 2R 2R every long rest is at least 2:00, paid for by the short rests.
+     * On R R R only the middle rest is floored. A fair share already at 2:00 stays proportional.
+     */
+    function allocateCrewRestLengths(total, weights, pfMin2h) {
+      const n = weights.length;
+      if (!pfMin2h || n < 3) return { lengths: allocateRestLengths(total, weights), hint: "" };
+      const longIdx = [];
+      for (let i = 0; i < n; i++) if (weights[i] >= 2) longIdx.push(i);
+      if (longIdx.length === 0) {
+        const fair = allocateRestLengths(total, weights);
+        const mid = Math.floor(n / 2);
+        if (fair[mid] >= CREWREST_PF_MIN_MIN) return { lengths: fair, hint: "" };
+        if (total < CREWREST_PF_MIN_MIN) {
+          const lengths = new Array(n).fill(0);
+          lengths[mid] = total;
+          return { lengths: lengths, hint: "Mid rest is under 2 hours — legally insufficient for PF." };
+        }
+        const lengths = allocateRestLengths(total - CREWREST_PF_MIN_MIN, weights.map((w, i) => (i === mid ? 0 : w)));
+        lengths[mid] = CREWREST_PF_MIN_MIN;
+        return { lengths: lengths, hint: "" };
+      }
+      const units = weights.reduce((sum, w) => sum + w, 0);
+      const fairLongMin = total * weights[longIdx[0]];
+      if (fairLongMin >= CREWREST_PF_MIN_MIN * units) {
+        return { lengths: allocateRestLengths(total, weights), hint: "" };
+      }
+      const need = CREWREST_PF_MIN_MIN * longIdx.length;
+      if (total < need) {
+        return {
+          lengths: allocateRestLengths(total, weights.map((w) => (w >= 2 ? w : 0))),
+          hint: "Mid rest is under 2 hours — legally insufficient for PF."
+        };
+      }
+      const lengths = allocateRestLengths(total - need, weights.map((w) => (w >= 2 ? 0 : w)));
+      for (let k = 0; k < longIdx.length; k++) lengths[longIdx[k]] = CREWREST_PF_MIN_MIN;
+      return { lengths: lengths, hint: "" };
     }
 
     function computeCrewRestRows(startStr, endStr, pauseStr, pattern, pfMin2h) {
@@ -9216,22 +9263,9 @@
           title: meta.title
         };
       }
-      let lengths = allocateRestLengths(restTotal, meta.weights);
-      let hint = "";
-      if (pfMin2h && n >= 3) {
-        const midIdx = Math.floor(n / 2);
-        if (lengths[midIdx] < CREWREST_PF_MIN_MIN) {
-          if (restTotal < CREWREST_PF_MIN_MIN) {
-            lengths = new Array(n).fill(0);
-            lengths[midIdx] = restTotal;
-            hint = "Mid rest is under 2 hours — legally insufficient for PF.";
-          } else {
-            const otherWeights = meta.weights.map((w, i) => (i === midIdx ? 0 : w));
-            lengths = allocateRestLengths(restTotal - CREWREST_PF_MIN_MIN, otherWeights);
-            lengths[midIdx] = CREWREST_PF_MIN_MIN;
-          }
-        }
-      }
+      const split = allocateCrewRestLengths(restTotal, meta.weights, pfMin2h);
+      const lengths = split.lengths;
+      const hint = split.hint;
       const rows = [];
       let t = start;
       for (let i = 0; i < n; i++) {
