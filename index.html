@@ -521,8 +521,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 1px;
+      justify-content: flex-start;
+      gap: 0;
       width: 100%;
       min-width: 0;
       min-height: 28px;
@@ -582,14 +582,20 @@
     }
 
     .utc-clock-crewrest {
-      display: block;
+      display: flex;
+      flex: 1 1 auto;
+      align-items: center;
+      justify-content: center;
       margin: 0;
-      font-size: 0.52rem;
+      max-width: 12em;
+      font-size: 0.5rem;
       font-weight: 750;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
+      text-align: center;
       color: inherit;
-      line-height: 1.1;
+      line-height: 1.05;
+      white-space: normal;
       opacity: 0.95;
     }
 
@@ -703,13 +709,21 @@
     .main-grid > .card-quicklog-title { grid-column: 2; grid-row: 1; }
     .main-grid > .card-toolbar-actions { grid-column: 3; grid-row: 1; }
 
-    .main-grid > .card-clearance { grid-column: 1; grid-row: 2; align-self: stretch; }
+    .main-grid > .card-clearance {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+    }
     .main-grid > .card-fuel {
       grid-column: 2;
       grid-row: 2;
       align-self: stretch;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
     }
     .main-grid > .col3-action-stack { grid-column: 3; grid-row: 2; align-self: stretch; }
 
@@ -850,7 +864,7 @@
     .card-clearance .field,
     .card-fuel .field,
     .card-rvsm .field {
-      margin-bottom: 4px;
+      margin-bottom: 0;
       gap: 5px;
     }
 
@@ -863,13 +877,31 @@
     .card-clearance input[type="text"],
     .card-fuel input[type="text"],
     .card-rvsm input[type="text"] {
-      min-height: 30px;
-      padding: 4px 8px;
+      min-height: 26px;
+      padding: 2px 8px;
+    }
+
+    /* Hide the ATIS cue as soon as a letter is stored. The placeholder is not a letter. */
+    .card-clearance .start-here-input:has(#atis:not(:placeholder-shown)) .start-here-chevron {
+      display: none;
+    }
+
+    .card-clearance #transponder {
+      width: 9ch;
+      min-width: 9ch;
+      max-width: 9ch;
     }
 
     /* Clearance — shared label + input column (PDC matches security width) */
     .card-clearance .field {
-      grid-template-columns: 8.75rem minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .card-clearance label,
+    .card-fuel label {
+      font-size: 0.8rem;
+      line-height: 1.1;
+      white-space: normal;
     }
 
     .card-clearance .field.compact-input input,
@@ -913,22 +945,20 @@
       color: inherit;
     }
 
-    /* Room for “000 / Tab or Enter if N/A” placeholder */
-    .card-clearance #pdc {
-      max-width: 28ch;
-    }
-
-    .card-clearance #pdc::placeholder {
-      font-size: 0.72rem;
-      letter-spacing: 0;
-    }
-
     .card-fuel .dsperfo-paste-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       column-gap: 6px;
-      margin: 0 0 4px;
+      margin: 0;
+      align-items: start;
+    }
+
+    .card-fuel .dsperfo-btn-col {
+      display: flex;
+      flex-direction: column;
       align-items: stretch;
+      min-width: 0;
+      gap: 2px;
     }
 
     .card-fuel .dsperfo-paste-row .paste-here-btn {
@@ -940,26 +970,25 @@
     }
 
     .card-fuel .dsperfo-hint {
-      margin: 0 0 6px;
-      padding: 2px 0;
-      /* Match “Best view: iPad landscape · …” */
-      font-size: 0.58rem;
+      margin: 0;
+      padding: 0;
+      font-size: 0.56rem;
       font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      text-transform: none;
       color: var(--muted);
       line-height: 1.15;
       text-align: center;
-      white-space: nowrap;
+      white-space: normal;
     }
 
     /* Longer labels in Fuel / Perf — keep input column aligned in narrow card */
     .card-fuel .field {
-      grid-template-columns: 10.5rem minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .card-fuel label {
-      font-size: 0.76rem;
+    .card-fuel .field {
+      align-items: center;
     }
 
     label {
@@ -1042,8 +1071,8 @@
       margin: 0;
       flex: 1 1 auto;
       min-width: 0;
-      font-size: 0.74rem;
-      font-weight: 650;
+      font-size: 0.8rem;
+      font-weight: 500;
       line-height: 1.15;
       text-align: left;
       color: var(--muted);
@@ -1089,10 +1118,11 @@
     }
 
     .card-mnps > .toggle button {
-      font-size: 0.66rem;
+      min-height: 36px;
+      font-size: 0.68rem;
       letter-spacing: 0.01em;
       white-space: nowrap;
-      padding: 3px 4px;
+      padding: 4px 4px;
     }
 
     .card-mnps .field.mnps-clnc-field {
@@ -1116,9 +1146,9 @@
       min-width: 0;
       box-sizing: border-box;
       margin: 0;
-      min-height: 30px;
+      min-height: 26px;
       max-height: 5.5rem;
-      padding: 4px 8px;
+      padding: 2px 8px;
       border: 1px solid var(--field-border);
       border-radius: 7px;
       background: var(--field);
@@ -1737,7 +1767,7 @@
       display: block;
       width: 100%;
       box-sizing: border-box;
-      min-height: 28px;
+      min-height: 36px;
       margin-top: 6px;
       padding: 4px 6px;
       font-size: 0.68rem;
@@ -1872,12 +1902,12 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 5px;
       align-items: center;
-      padding: 4px 0;
+      padding: 6px 0;
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--panel);
       min-width: 0;
-      min-height: 40px;
+      min-height: 48px;
       overflow: hidden;
       box-sizing: border-box;
     }
@@ -2421,7 +2451,7 @@
       background: var(--field);
       color: var(--text);
       font-size: 0.8rem;
-      font-weight: 650;
+      font-weight: 400;
       letter-spacing: 0.04em;
       text-align: center;
       box-sizing: border-box;
@@ -2470,6 +2500,7 @@
       margin: 0;
       padding: 3px 6px;
       font-size: 0.78rem;
+      font-weight: 400;
       box-sizing: border-box;
       justify-self: stretch;
       align-self: center;
@@ -2525,7 +2556,7 @@
       background: var(--field);
       color: var(--text);
       font-size: 0.74rem;
-      font-weight: 650;
+      font-weight: 400;
       letter-spacing: 0.03em;
       text-align: center;
       box-sizing: border-box;
@@ -2550,7 +2581,7 @@
       background: var(--field);
       color: var(--text);
       font-size: 0.74rem;
-      font-weight: 650;
+      font-weight: 400;
       letter-spacing: 0.03em;
       line-height: 1.15;
       text-transform: uppercase;
@@ -2666,11 +2697,11 @@
     .flight-log-s26 {
       display: none;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 0.936rem;
-      font-weight: 650;
+      font-size: 1.12rem;
+      font-weight: 700;
       letter-spacing: 0.04em;
-      color: var(--muted);
-      opacity: 0.75;
+      color: var(--accent);
+      opacity: 1;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       line-height: 1.15;
@@ -2757,6 +2788,25 @@
       border-radius: 10px;
       background: var(--panel);
       box-sizing: border-box;
+    }
+
+    .well-version {
+      margin: 0;
+      height: 100%;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35em;
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .well-version span {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
     }
 
     .toast {
@@ -3797,7 +3847,7 @@
               <p class="utc-clock" id="utcClock" title="UTC day : hour : minute : second" aria-live="off">
                 <span class="utc-clock-day" id="utcClockDay" data-utc-part="day">00</span><span class="utc-clock-sep">:</span><span class="utc-clock-hm" id="utcClockHm" data-utc-part="hm">00:00</span><span class="utc-clock-sep">:</span><span class="utc-clock-sec" id="utcClockSec" data-utc-part="sec">00</span>
               </p>
-              <span class="utc-clock-crewrest">CREW REST</span>
+              <span class="utc-clock-crewrest">CREW REST CALCULATOR</span>
             </button>
           </div>
           <div class="card card-bright" aria-label="Theme">
@@ -3833,92 +3883,78 @@
           </div>
         </div>
         <div class="card card-toolbar-actions" aria-label="Clear and undo">
-          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: check for online update.">▶ CLEAR</button>
+          <button type="button" id="btnClear" title="Tap: clear fields. Hold 4 seconds: check for online update.">CLEAR</button>
           <button type="button" id="btnUndo" class="log-btn-muted" title="Undo last clear or copy — restore previous form values">UNDO</button>
         </div>
 
         <section class="card card-clearance">
           <div class="field compact-input">
-            <label for="security">Security check:</label>
+            <label for="security">SECURITY CHECK</label>
             <input id="security" name="security" type="text" value="performed" />
           </div>
           <div class="field squawk-input">
-            <label for="atis">DEPT ATIS:</label>
+            <label for="atis">DEPT ATIS</label>
             <span class="start-here-input">
               <span class="start-here-chevron" aria-hidden="true">›</span>
               <input id="atis" name="atis" type="text" inputmode="text" maxlength="1" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" pattern="[A-Za-z]" placeholder="A" title="Departure ATIS letter" />
             </span>
           </div>
           <div class="field squawk-input time-input">
-            <label for="ctot">CTOT:
-              <span class="field-na-hint" aria-hidden="true">
-                <span class="help-ios-tab" title="Tab">
-                  <svg width="15" height="12" viewBox="0 0 20 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M1.5 7.2h9.4V4.6L16.2 8l-5.3 3.4V8.8H1.5V7.2z"/>
-                    <path d="M17.6 2.4v11.2h1.6V2.4h-1.6z"/>
-                  </svg>
-                </span>
-                or
-                <span class="help-ios-enter" title="Enter">
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M3 4h2v7.2h9.2l-2.35-2.35 1.4-1.4L18.05 12l-4.8 4.8-1.4-1.4L14.2 13H3V4z"/>
-                  </svg>
-                </span>
-                if N/A
-              </span>
-            </label>
+            <label for="ctot">CTOT</label>
             <input id="ctot" name="ctot" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" value="N/A" />
           </div>
           <div class="field compact-input">
-            <label for="pdc">PDC/ACARS ref:</label>
-            <input id="pdc" name="pdc" type="text" inputmode="numeric" maxlength="8" placeholder="000 / Tab or Enter if N/A" autocomplete="off" autocapitalize="characters" spellcheck="false" title="PDC/ACARS ref — digits and letters (up to 8); Tab or Enter if N/A" />
+            <label for="pdc">PDC/ACARS NUMBER (NOT REQ)</label>
+            <input id="pdc" name="pdc" type="text" inputmode="numeric" maxlength="8" placeholder="enter digits" autocomplete="off" autocapitalize="characters" spellcheck="false" title="PDC/ACARS number — digits and letters (up to 8). Not required." />
           </div>
           <div class="field compact-input">
-            <label for="rwySid">* Runway and SID:</label>
+            <label for="rwySid">RUNWAY AND SID</label>
             <input id="rwySid" name="rwySid" type="text" inputmode="numeric" autocapitalize="characters" placeholder="24L SID name" />
           </div>
           <div class="field compact-input climb-input">
-            <label for="climbTo">* Climb to:</label>
-            <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="0000 or FL000" />
+            <label for="climbTo">CLIMB TO</label>
+            <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0000/FL000" />
           </div>
           <div class="field squawk-input">
-            <label for="transponder">* Transponder:</label>
+            <label for="transponder">TRANSPONDER</label>
             <input id="transponder" name="transponder" type="text" inputmode="numeric" pattern="[0-7]*" maxlength="4" placeholder="0000" title="Octal squawk 0000–7777 (digits 0–7 only)" />
           </div>
         </section>
 
         <section class="card card-fuel">
           <div class="dsperfo-paste-row" aria-label="DSPERFO actions">
-            <button type="button" id="btnOpenDsperfo" class="paste-here-btn" title="Open DS Perfo (com.klm.dynamicsource://)" aria-label="Open DS Perfo app">DSPERFO</button>
+            <div class="dsperfo-btn-col">
+              <button type="button" id="btnOpenDsperfo" class="paste-here-btn" title="Open DS Perfo (com.klm.dynamicsource://)" aria-label="Open DS Perfo app">DSPERFO</button>
+              <p class="dsperfo-hint">LONGPRESS DSPERFO HEADER<br>&quot;Calculated 00:00:00z&quot;</p>
+            </div>
             <button type="button" id="btnPasteDsperfo" class="paste-here-btn" aria-label="Paste DSPERFO take-off line">PASTE HERE</button>
           </div>
-          <p class="dsperfo-hint">LONGPRESS DSPERFO HEADER &quot;Calculated 00:00:00z&quot;</p>
           <div class="field">
-            <label for="calcAt">* Calculated at:</label>
+            <label for="calcAt">CALCULATED AT</label>
             <input id="calcAt" name="calcAt" type="text" inputmode="numeric" maxlength="8" placeholder="HH:MM:SS" />
           </div>
           <div class="field">
-            <label for="rwy">* RWY:</label>
+            <label for="rwy">RWY</label>
             <input id="rwy" name="rwy" type="text" inputmode="numeric" pattern="[0-9]*" autocapitalize="characters" placeholder="24L" />
           </div>
           <div class="field">
-            <label for="intersection">* INTERSECTION:</label>
+            <label for="intersection">INTERSECTION</label>
             <input id="intersection" name="intersection" type="text" value="FULL" />
           </div>
           <div class="field">
-            <label for="tom">TOM:</label>
-            <input id="tom" name="tom" type="text" inputmode="decimal" placeholder="000.0 MT" />
+            <label for="tom">TOM MT</label>
+            <input id="tom" name="tom" type="text" inputmode="decimal" placeholder="000.0" />
           </div>
           <div class="field">
-            <label for="fuel">Fuel when starting engines:</label>
-            <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0 MT" />
+            <label for="fuel">FUEL WHEN STARTING ENGINES MT</label>
+            <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0" />
           </div>
         </section>
 
         <div class="col3-action-stack">
         <section class="card card-rvsm">
           <div class="rvsm-l-row">
-            <p class="rvsm-section-title">Before RVSM entry</p>
+            <p class="rvsm-section-title">BEFORE RVSM ENTRY</p>
             <span class="rvsm-hint" id="rvsmHint" aria-live="polite">MAX Δ 200′</span>
             <div class="field rvsm-vfield">
               <label for="rvsmL">L:</label>
@@ -3944,25 +3980,26 @@
           <input type="hidden" id="mnps" name="mnps" value="N/A" />
           <div class="field mnps-clnc-field">
             <label for="mnpsClnc">MNPS CLNC</label>
-            <textarea id="mnpsClnc" class="is-na" name="mnpsClnc" rows="1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="enter" placeholder="N/A" aria-label="MNPS clearance"></textarea>
+            <textarea id="mnpsClnc" class="is-na" name="mnpsClnc" rows="1" inputmode="numeric" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="enter" placeholder="N/A" aria-label="MNPS clearance"></textarea>
           </div>
           <button type="button" id="btnCopyMnps" class="inline-copy log-btn-muted" title="Copy MNPS text, then open FLIGHT">COPY MNPS TEXT</button>
         </section>
         </div>
 
         <div class="arr-toast-slot">
+          <p class="well-version" id="wellVersion">version <span id="wellVersionNum"></span></p>
           <div class="toast" id="toast" aria-live="polite"></div>
         </div>
 
         <section class="landing-prep" aria-label="Landing preparation">
           <div class="row-3 landing-fields" role="group" aria-label="Arrival ATIS and landing distance">
             <div class="field">
-              <label for="arrAtis">ARR ATIS:</label>
+              <label for="arrAtis">ARR ATIS</label>
               <input id="arrAtis" name="arrAtis" type="text" maxlength="1" autocapitalize="characters" placeholder="A" />
             </div>
             <div class="field ldis-input">
-              <label for="ldis">LDIS:</label>
-              <input id="ldis" name="ldis" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000 M" title="Landing distance in metres (4 digits)" />
+              <label for="ldis">LDIS M</label>
+              <input id="ldis" name="ldis" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0000" title="Landing distance in metres (4 digits)" />
             </div>
           </div>
           <div class="landing-copy">
@@ -4209,7 +4246,7 @@
     <div class="pic-name-overlay-box crewrest-overlay-box">
       <div class="crewrest-setup" id="crewRestSetup">
         <div class="crewrest-setup-head">
-          <p id="crewRestTitle" class="crewrest-title">Crew rest</p>
+          <p id="crewRestTitle" class="crewrest-title">CREW REST CALCULATOR</p>
           <p class="utc-clock utc-clock-panel" title="UTC day : hour : minute : second" aria-live="off">
             <span class="utc-clock-part">
               <span class="utc-clock-day" data-utc-part="day">00</span>
@@ -4227,7 +4264,7 @@
             </span>
           </p>
         </div>
-        <p class="crewrest-route is-hint" id="crewRestRoute">LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS</p>
+        <p class="crewrest-route is-hint" id="crewRestRoute">enter route in logbook for suggested times.</p>
         <div class="toggle" role="group" aria-label="Rest pattern">
           <button type="button" id="crewRestPatRrr" class="active" data-pattern="rrr">R R R</button>
           <button type="button" id="crewRestPat2r" data-pattern="2r">R R R 2R 2R 2R</button>
@@ -4338,9 +4375,9 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.7";
+    const APP_VERSION = "4.8";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "4";
+    const APP_BUILD = "1";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -4383,7 +4420,7 @@
     const LOG_PREV_UI_HEADERS = LOG_PREV_HEADERS.concat([""]);
     const DEFAULTS = {
       security: "performed", ctot: "N/A", intersection: "FULL", mnps: "N/A", mnpsClnc: "",
-      logAcft: "CKA", logPf: "no", logPicSelf: "no", logPic: "", logRemark: "", logDeptDate: "", logDep: "", logArr: "AMS"
+      logAcft: "CKA", logPf: "no", logPicSelf: "no", logPic: "", logRemark: "", logDeptDate: "", logDep: "", logArr: ""
     };
     const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     /** Martinair B747-400 Summer 2026 city pairs — OM-A style block times table */
@@ -4431,8 +4468,8 @@
       ["johannesburg", "JNB"], ["miami", "MIA"], ["new_york", "MIA"], ["nairobi", "NBO"]
     ];
 
-    /** Auto-select DEP from iPad system timezone (FDPFMS pattern). */
-    function detectDepAirport() {
+    /** Airport for this iPad's time zone. Empty when the zone is not a known station. */
+    function airportForCurrentTimeZone() {
       try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
         if (TZ_TO_DEP[tz] && LOG_AIRPORTS.includes(TZ_TO_DEP[tz])) return TZ_TO_DEP[tz];
@@ -4449,7 +4486,12 @@
           }
         }
       } catch (_) {}
-      return "AMS";
+      return "";
+    }
+
+    /** Auto-select DEP from iPad system timezone (FDPFMS pattern). */
+    function detectDepAirport() {
+      return airportForCurrentTimeZone() || "AMS";
     }
 
     /** Set ARR from network routing table when DEP is chosen. */
@@ -4473,13 +4515,12 @@
       setMnps(isMnpsRoute(dep, arr) ? "PERFORMED" : "N/A");
     }
 
-    /** Suggest DEP from system timezone (new leg / clear / empty). Manual wheel choice sticks. */
+    /** Suggest DEP from system timezone (new leg / clear / empty). Arrival stays blank until a departure is chosen. */
     function applyDepFromTimezone() {
-      const code = detectDepAirport();
+      const code = airportForCurrentTimeZone();
       const el = $("logDep");
-      if (!el || el.value === code) return;
+      if (!el || !code || el.value === code) return;
       el.value = code;
-      applyArrForDep(code);
       updateS26Display();
     }
 
@@ -5171,19 +5212,28 @@
       el.value = c;
     }
 
-    function fillAirportSelect(el, defaultCode) {
+    function fillAirportSelect(el, defaultCode, { allowEmpty = false } = {}) {
       let cur = normalizeIata(el.value || defaultCode);
       /* Never sticky-preserve SIM when rebuilding the wheel for a real default */
       if (cur === "SIM") cur = normalizeIata(defaultCode);
-      if (cur === "SIM" || !cur) cur = normalizeIata(defaultCode) || "AMS";
+      const wantEmpty = allowEmpty && !normalizeIata(defaultCode) && !cur;
+      if (!wantEmpty && (cur === "SIM" || !cur)) cur = normalizeIata(defaultCode) || "AMS";
       el.innerHTML = "";
+      if (allowEmpty) {
+        const blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = "";
+        el.appendChild(blank);
+      }
       LOG_AIRPORTS.forEach((code) => {
         const opt = document.createElement("option");
         opt.value = code;
         opt.textContent = code;
         el.appendChild(opt);
       });
-      if (cur.length === 3 && cur !== "SIM") {
+      if (wantEmpty) {
+        el.value = "";
+      } else if (cur.length === 3 && cur !== "SIM") {
         ensureAirportOption(el, cur);
       } else if (defaultCode && LOG_AIRPORTS.includes(defaultCode)) {
         el.value = defaultCode;
@@ -5655,14 +5705,14 @@
       v = v || getValues();
       const missing = [];
       const need = [
-        ["security", "Security check"],
+        ["security", "SECURITY CHECK"],
         ["atis", "DEPT ATIS"],
-        ["rwySid", "Runway and SID"],
-        ["climbTo", "Climb to"],
-        ["transponder", "Transponder"],
-        ["fuel", "Fuel"],
-        ["tom", "TOM"],
-        ["calcAt", "Calculated at"],
+        ["rwySid", "RUNWAY AND SID"],
+        ["climbTo", "CLIMB TO"],
+        ["transponder", "TRANSPONDER"],
+        ["fuel", "FUEL WHEN STARTING ENGINES MT"],
+        ["tom", "TOM MT"],
+        ["calcAt", "CALCULATED AT"],
         ["rwy", "RWY"],
         ["intersection", "INTERSECTION"],
         ["rvsmL", "RVSM L"],
@@ -7166,6 +7216,10 @@
         showToast("Not a Take-off line");
         return false;
       }
+      const active = document.activeElement;
+      if (active && typeof active.blur === "function") {
+        try { active.blur(); } catch (_) {}
+      }
       $("calcAt").value = parsed.calcAt;
       const rwyAccepted = acceptRunwayDesignator(parsed.rwy);
       $("rwy").value = rwyAccepted.text;
@@ -7467,12 +7521,11 @@
           setValues(data);
           if (data.logDep) ensureAirportOption($("logDep"), data.logDep);
           if (data.logArr) ensureAirportOption($("logArr"), data.logArr);
-          else $("logArr").value = "AMS";
         }
       } catch (_) {}
-      // Keep saved / manual DEP; only auto-detect when empty.
+      // Keep saved / manual DEP; only auto-detect when empty. Arrival stays blank.
       if (!$("logDep").value) applyDepFromTimezone();
-      if (!$("logArr").value) $("logArr").value = "AMS";
+      updateS26Display();
       syncAirportAddField("logDep", "logDepAdd");
       syncAirportAddField("logArr", "logArrAdd");
       syncMnpsForRoute();
@@ -8025,8 +8078,8 @@
               el.classList.remove("warn-diff", "log-time-error", "log-incomplete");
             }
             setMnps("N/A");
+            if ($("logArr")) $("logArr").value = "";
             applyDepFromTimezone();
-            applyArrForDep($("logDep").value);
             syncMnpsForRoute();
             if ($("logDepAdd")) $("logDepAdd").value = "";
             if ($("logArrAdd")) $("logArrAdd").value = "";
@@ -8520,11 +8573,10 @@
         });
       });
     }
-    {
-      const dep = detectDepAirport();
+      {
+      const dep = airportForCurrentTimeZone();
       fillAirportSelect($("logDep"), dep);
-      applyArrForDep($("logDep").value || dep);
-      fillAirportSelect($("logArr"), DEP_TO_ARR[dep] || "AMS");
+      fillAirportSelect($("logArr"), "", { allowEmpty: true });
     }
     bindClearOnFocus();
     bindOffBlocksStartsNewLog();
@@ -9022,7 +9074,7 @@
     const CREWREST_PF_MIN_MIN = 2 * 60;
     const CREWREST_ON_GROSS_SLACK_MIN = 2 * 60;
     const CREWREST_BEFORE_ORIGIN_MIN = 20 * 60;
-    const CREWREST_ROUTE_HINT = "LOGBOOK DEPARTURE TIMES AND DEST WILL PREFILL FIELDS";
+    const CREWREST_ROUTE_HINT = "enter route in logbook for suggested times.";
     let crewRestSession = null;
     let crewRestTableSeen = false;
     let crewRestHadLanding = false;
@@ -9130,9 +9182,20 @@
       return timeToMinutes(raw) !== null ? formatClockDigits(acceptClockDigits(raw, 4).digits) : "";
     }
 
-    function suggestCrewRestFromLog() {
+    /** Both logbook ends win. Otherwise only Miami and Nairobi infer Amsterdam. */
+    function routeForCrewSuggestion() {
       const dep = logEls.dep ? normalizeIata(logEls.dep.value) : "";
       const arr = logEls.arr ? normalizeIata(logEls.arr.value) : "";
+      if (dep && arr && dep !== "SIM" && arr !== "SIM") return { dep: dep, arr: arr };
+      const here = airportForCurrentTimeZone();
+      if (here === "MIA" || here === "NBO") return { dep: here, arr: "AMS" };
+      return { dep: "", arr: "" };
+    }
+
+    function suggestCrewRestFromLog() {
+      const resolved = routeForCrewSuggestion();
+      const dep = resolved.dep;
+      const arr = resolved.arr;
       const s26 = s26BlockForPair(dep, arr);
       const s26Min = hhmmDurationMinutes(s26);
       const air = crewRestClockValue(logEls.air);
@@ -9786,6 +9849,8 @@
     {
       const ver = $("appVersion");
       if (ver) ver.textContent = "v" + APP_VERSION;
+      const well = $("wellVersionNum");
+      if (well) well.textContent = APP_VERSION;
     }
     bindVisualViewport();
     bindViewportResumeStabilize();
