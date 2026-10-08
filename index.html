@@ -33,6 +33,59 @@
     } catch (e) {}
   </script>
   <style>
+    /* Atkinson Hyperlegible (SIL OFL). Text has Regular and Bold only:
+       weight 100–500 uses Regular, 600–900 uses Bold (same cut as the iPad app).
+       Digits use Atkinson Mono, which has a real weight ladder. */
+    @font-face {
+      font-family: "Atkinson Hyperlegible";
+      src: url("fonts/AtkinsonHyperlegible-Regular.ttf") format("truetype");
+      font-weight: 100 500;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Atkinson Hyperlegible";
+      src: url("fonts/AtkinsonHyperlegible-Bold.ttf") format("truetype");
+      font-weight: 600 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Atkinson Mono";
+      src: url("fonts/AtkinsonHyperlegibleMono-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Atkinson Mono";
+      src: url("fonts/AtkinsonHyperlegibleMono-Medium.ttf") format("truetype");
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Atkinson Mono";
+      src: url("fonts/AtkinsonHyperlegibleMono-SemiBold.ttf") format("truetype");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Atkinson Mono";
+      src: url("fonts/AtkinsonHyperlegibleMono-Bold.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Atkinson Mono";
+      src: url("fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf") format("truetype");
+      font-weight: 800;
+      font-style: normal;
+      font-display: swap;
+    }
+
     /* Critical: lock width before paint — avoids iPad PWA zoom-then-fit flash.
        Prefer 100% over 100vw (vw can briefly disagree with layout viewport on resume). */
     html {
@@ -261,7 +314,7 @@
       min-height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+      font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
       overscroll-behavior: none;
     }
 
@@ -399,8 +452,8 @@
     h1.quicklog-title {
       margin: 0;
       padding: 0;
-      font-size: 1.06rem;
-      font-weight: 650;
+      font-size: 17px;
+      font-weight: 600;
       letter-spacing: 0.06em;
       line-height: 1.1;
       text-align: center;
@@ -588,9 +641,9 @@
       justify-content: center;
       margin: 0;
       max-width: 12em;
-      font-size: 0.5rem;
-      font-weight: 750;
-      letter-spacing: 0.04em;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
       text-transform: uppercase;
       text-align: center;
       color: inherit;
@@ -609,7 +662,7 @@
       justify-content: center;
       gap: 0;
       margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Atkinson Mono", ui-monospace, monospace;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       color: inherit;
@@ -717,15 +770,56 @@
       flex-direction: column;
       justify-content: space-evenly;
     }
-    .main-grid > .card-fuel {
+    .main-grid > .perf-column {
       grid-column: 2;
       grid-row: 2;
       align-self: stretch;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      gap: 5px;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+    }
+    .perf-column > .card-dsperfo {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 0;
+    }
+    /* Extra height sits under the last DSPerfo field, same as the iPad spacer. */
+    .perf-column > .card-dsperfo::after {
+      content: "";
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .perf-column > .card-mass {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      padding: 4px 10px;
+      box-sizing: border-box;
+      overflow: visible;
     }
     .main-grid > .col3-action-stack { grid-column: 3; grid-row: 2; align-self: stretch; }
+    .col3-action-stack > .card-rvsm {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 4px;
+      min-height: 0;
+    }
+    .col3-action-stack > .card-mnps {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 4px 10px;
+    }
 
     .main-grid > .arr-toast-slot { grid-column: 1; grid-row: 3; align-self: stretch; }
     .main-grid > .landing-prep { grid-column: 2 / 4; grid-row: 3; }
@@ -736,6 +830,16 @@
       gap: 5px;
       min-width: 0;
       height: 100%;
+    }
+
+    button, input, select, textarea {
+      font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    #ctot, #calcAt, #crewRestStart, #crewRestEnd,
+    .utc-clock, .flight-log-sum strong, .well-version span,
+    .flight-log-entry .field input, .log-pf90 {
+      font-family: "Atkinson Mono", ui-monospace, monospace;
     }
 
     button {
@@ -797,8 +901,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      height: 28px; /* match default text input min-height */
-      font-size: 1.7em;
+      height: 28px;
+      font-size: 22px;
       font-weight: 700;
       line-height: 1;
       color: var(--accent);
@@ -877,8 +981,11 @@
     .card-clearance input[type="text"],
     .card-fuel input[type="text"],
     .card-rvsm input[type="text"] {
-      min-height: 26px;
-      padding: 2px 8px;
+      height: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      padding: 3px 8px;
+      box-sizing: border-box;
     }
 
     /* Hide the ATIS cue as soon as a letter is stored. The placeholder is not a letter. */
@@ -899,7 +1006,8 @@
 
     .card-clearance label,
     .card-fuel label {
-      font-size: 0.8rem;
+      font-size: 12.5px;
+      font-weight: 500;
       line-height: 1.1;
       white-space: normal;
     }
@@ -972,7 +1080,7 @@
     .card-fuel .dsperfo-hint {
       margin: 0;
       padding: 0;
-      font-size: 0.56rem;
+      font-size: 9px;
       font-weight: 700;
       letter-spacing: 0.02em;
       text-transform: none;
@@ -992,7 +1100,8 @@
     }
 
     label {
-      font-size: 0.8rem;
+      font-size: 12.5px;
+      font-weight: 500;
       color: var(--muted);
       line-height: 1.1;
     }
@@ -1071,7 +1180,7 @@
       margin: 0;
       flex: 1 1 auto;
       min-width: 0;
-      font-size: 0.8rem;
+      font-size: 12.5px;
       font-weight: 500;
       line-height: 1.15;
       text-align: left;
@@ -1119,7 +1228,7 @@
 
     .card-mnps > .toggle button {
       min-height: 36px;
-      font-size: 0.68rem;
+      font-size: 11px;
       letter-spacing: 0.01em;
       white-space: nowrap;
       padding: 4px 4px;
@@ -1128,15 +1237,16 @@
     .card-mnps .field.mnps-clnc-field {
       display: grid;
       grid-template-columns: 5.2rem minmax(0, 1fr);
-      align-items: start;
+      align-items: center;
       gap: 5px;
-      margin-top: 4px;
+      margin-top: 0;
       margin-bottom: 0;
     }
 
     .card-mnps .field.mnps-clnc-field label {
-      padding-top: 7px;
-      font-size: 0.72rem;
+      padding-top: 0;
+      font-size: 12.5px;
+      font-weight: 500;
       line-height: 1.15;
     }
 
@@ -1323,6 +1433,7 @@
     }
 
     .log-prev-head {
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -1539,8 +1650,7 @@
       align-items: center;
       justify-content: center;
       gap: 2px;
-      /* Match CTOT / HH:MM: Arial tabular */
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Atkinson Mono", ui-monospace, monospace;
       width: 13ch;
       min-width: 13ch;
       max-width: 13ch;
@@ -1768,10 +1878,10 @@
       width: 100%;
       box-sizing: border-box;
       min-height: 36px;
-      margin-top: 6px;
+      margin-top: 0;
       padding: 4px 6px;
-      font-size: 0.68rem;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
     }
 
     /* Browser tab (iPad): install overlay pulses until added to Home Screen */
@@ -1940,7 +2050,8 @@
       max-width: none;
       text-align: right;
       white-space: nowrap;
-      font-size: 0.78rem;
+      font-size: 12.5px;
+      font-weight: 500;
     }
 
     .landing-fields .field input {
@@ -1948,8 +2059,11 @@
       width: 7.5rem;
       min-width: 7.5rem;
       max-width: 7.5rem;
-      min-height: 26px;
-      padding: 2px 7px;
+      height: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      padding: 3px 7px;
+      box-sizing: border-box;
     }
 
     .landing-fields .field.ldis-input {
@@ -2004,7 +2118,7 @@
       position: relative;
       display: block;
       grid-area: date;
-      align-self: center;
+      align-self: end;
       min-width: 5rem;
       min-height: 2.15rem;
       margin: 0;
@@ -2092,10 +2206,23 @@
     }
 
     /* :not(head) — head also has .log-prev-row; transparent was wiping the header band */
+    .log-prev-row:not(.log-prev-head) > span {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .log-prev-row:not(.log-prev-head) > span.is-regular {
+      font-weight: 400;
+    }
+
     html.theme-bright .log-prev-row:not(.log-prev-head) > span {
       color: #000;
       background: transparent;
-      font-weight: 500;
+      font-weight: 600;
+    }
+
+    html.theme-bright .log-prev-row:not(.log-prev-head) > span.is-regular {
+      font-weight: 400;
     }
 
     html.theme-bright .log-prev-row.alt > span {
@@ -2268,31 +2395,44 @@
      */
     .flight-log-entry {
       --log-ctrl-h: 32px;
-      --log-apt-w: 4.75rem;   /* airport / add width */
-      --log-acft-w: 5.5rem;   /* aircraft selector width */
-      --log-picn-w: 20ch;     /* ≥20 letters */
-      --log-time-w: 8ch;      /* HH:MM + padding (placeholder must not clip) */
+      --log-apt-w: 76px;
+      --log-acft-w: 160px;
+      --log-picn-w: 160px;
+      --log-time-w: 112px;
       display: grid;
       grid-template-columns:
-        minmax(5rem, 5.5rem)
-        minmax(3.5rem, 3.9rem)
-        var(--log-picn-w)
+        minmax(118px, 124px)
+        62px
+        minmax(120px, var(--log-acft-w))
         var(--log-apt-w)
-        max-content
+        var(--log-time-w)
         var(--log-apt-w)
-        max-content
-        max-content;
+        var(--log-time-w)
+        minmax(92px, 1fr);
       grid-template-areas:
         "date pf   acft dep  off arr  on block"
         "rmk  pics picn addd air adda td flight";
-      column-gap: clamp(10px, 1.6vw, 22px);
+      column-gap: 8px;
       row-gap: 3px;
-      align-items: center;
+      align-items: end;
       justify-content: space-between;
       width: 100%;
       min-width: 0;
       max-width: 100%;
       box-sizing: border-box;
+    }
+
+    .flight-log-entry > .flight-log-pf,
+    .flight-log-entry > .flight-log-acft-wrap,
+    .flight-log-entry > .flight-log-picname,
+    .flight-log-entry > .flight-log-apt,
+    .flight-log-entry > input.flight-log-apt-add,
+    .flight-log-entry > .field,
+    .flight-log-entry > .flight-log-block-cell,
+    .flight-log-entry > .flight-log-sum,
+    .flight-log-entry > .flight-log-rmk-wrap,
+    .flight-log-entry > button.flight-log-date-hit {
+      align-self: end;
     }
 
     .flight-log-pf {
@@ -2450,7 +2590,7 @@
       border-radius: 7px;
       background: var(--field);
       color: var(--text);
-      font-size: 0.8rem;
+      font-size: 12.5px;
       font-weight: 400;
       letter-spacing: 0.04em;
       text-align: center;
@@ -2489,7 +2629,7 @@
       font-weight: 700;
     }
 
-    .flight-log-picname {
+    input.flight-log-picname[type="text"] {
       grid-area: picn;
       width: var(--log-picn-w);
       min-width: var(--log-picn-w);
@@ -2499,11 +2639,11 @@
       max-height: var(--log-ctrl-h);
       margin: 0;
       padding: 3px 6px;
-      font-size: 0.78rem;
+      font-size: 12px;
       font-weight: 400;
       box-sizing: border-box;
       justify-self: stretch;
-      align-self: center;
+      align-self: end;
     }
 
     /* Visible log slots full — replace PIC name cue */
@@ -2549,13 +2689,13 @@
       height: var(--log-ctrl-h);
       min-height: var(--log-ctrl-h);
       max-height: var(--log-ctrl-h);
-      align-self: center;
+      align-self: end;
       padding: 2px 2px;
       border: 1px solid var(--field-border);
       border-radius: 7px;
       background: var(--field);
       color: var(--text);
-      font-size: 0.74rem;
+      font-size: 12.5px;
       font-weight: 400;
       letter-spacing: 0.03em;
       text-align: center;
@@ -2580,7 +2720,7 @@
       border-radius: 7px;
       background: var(--field);
       color: var(--text);
-      font-size: 0.74rem;
+      font-size: 12px;
       font-weight: 400;
       letter-spacing: 0.03em;
       line-height: 1.15;
@@ -2610,8 +2750,8 @@
       max-width: none;
       text-align: right;
       white-space: nowrap;
-      font-size: 0.58rem;
-      font-weight: 650;
+      font-size: 12.5px;
+      font-weight: 500;
       letter-spacing: 0.03em;
       line-height: 1.1;
     }
@@ -2625,7 +2765,7 @@
       min-height: var(--log-ctrl-h);
       max-height: var(--log-ctrl-h);
       padding: 2px 4px;
-      font-family: Arial, Helvetica, sans-serif; /* match BLOCK / FLIGHT / UTC clock */
+      font-family: "Atkinson Mono", ui-monospace, monospace;
       letter-spacing: 0.04em;
       text-align: center;
       box-sizing: border-box;
@@ -2651,7 +2791,7 @@
       grid-template-columns: 3.6rem max-content;
       column-gap: 0.35em;
       align-items: baseline;
-      font-family: Arial, Helvetica, sans-serif; /* same as HH:MM / UTC clock */
+      font-family: "Atkinson Hyperlegible", sans-serif;
       font-size: 0.936rem; /* was 0.72rem × 1.3 */
       font-weight: 650;
       color: var(--muted);
@@ -2680,24 +2820,24 @@
 
     .flight-log-sum-lab {
       text-align: left;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 0.72rem; /* keep labels closer to original size */
-      font-weight: 650;
+      font-family: "Atkinson Hyperlegible", sans-serif;
+      font-size: 11px;
+      font-weight: 600;
     }
 
     .flight-log-sum strong {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Atkinson Mono", ui-monospace, monospace;
       color: var(--text);
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.04em;
-      font-size: 0.936rem;
+      font-size: 15px;
+      font-weight: 600;
     }
 
-    /* Same size/font as BLOCK/FLIGHT times — sits under BLOCK; stays faded */
     .flight-log-s26 {
       display: none;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 1.12rem;
+      font-family: "Atkinson Hyperlegible", sans-serif;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.04em;
       color: var(--accent);
@@ -2798,15 +2938,17 @@
       align-items: center;
       justify-content: center;
       gap: 0.35em;
-      font-size: 0.68rem;
+      font-size: 11px;
       font-weight: 400;
       letter-spacing: 0.04em;
       color: var(--muted);
     }
 
     .well-version span {
+      font-family: "Atkinson Mono", ui-monospace, monospace;
       font-variant-numeric: tabular-nums;
-      font-weight: 500;
+      font-weight: 400;
+      font-size: 11px;
     }
 
     .toast {
@@ -3578,7 +3720,7 @@
       .main-grid > .card-quicklog-title,
       .main-grid > .card-toolbar-actions,
       .main-grid > .card-clearance,
-      .main-grid > .card-fuel,
+      .main-grid > .perf-column,
       .main-grid > .col3-action-stack,
       .main-grid > .landing-prep,
       .main-grid > .arr-toast-slot,
@@ -3921,7 +4063,8 @@
           </div>
         </section>
 
-        <section class="card card-fuel">
+        <div class="perf-column">
+        <section class="card card-fuel card-dsperfo">
           <div class="dsperfo-paste-row" aria-label="DSPERFO actions">
             <div class="dsperfo-btn-col">
               <button type="button" id="btnOpenDsperfo" class="paste-here-btn" title="Open DS Perfo (com.klm.dynamicsource://)" aria-label="Open DS Perfo app">DSPERFO</button>
@@ -3941,6 +4084,8 @@
             <label for="intersection">INTERSECTION</label>
             <input id="intersection" name="intersection" type="text" value="FULL" />
           </div>
+        </section>
+        <section class="card card-fuel card-mass" id="massCard">
           <div class="field">
             <label for="tom">TOM MT</label>
             <input id="tom" name="tom" type="text" inputmode="decimal" placeholder="000.0" />
@@ -3950,6 +4095,7 @@
             <input id="fuel" name="fuel" type="text" inputmode="decimal" placeholder="000.0" />
           </div>
         </section>
+        </div>
 
         <div class="col3-action-stack">
         <section class="card card-rvsm">
@@ -3972,7 +4118,7 @@
           <button type="button" id="btnCopy" class="inline-copy log-btn-muted" title="Copy departure text, then open FLIGHT">COPY DEPT TEXT</button>
         </section>
 
-        <section class="card card-mnps" aria-label="MNPS">
+        <section class="card card-mnps" id="mnpsCard" aria-label="MNPS">
           <div class="toggle" role="group" aria-label="MNPS route checks">
             <button type="button" id="mnpsNA" class="active" data-value="N/A">MNPS RTE N/A</button>
             <button type="button" id="mnpsPerformed" data-value="PERFORMED">CHECKS PERFORMED</button>
@@ -4375,7 +4521,7 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.8";
+    const APP_VERSION = "4.9";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
     const APP_BUILD = "1";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
@@ -6478,6 +6624,7 @@
           } else {
             span.textContent = text;
           }
+          if (col === 1 || col === 2 || col === 10) span.classList.add("is-regular");
           row.appendChild(span);
         });
         const markCell = document.createElement("span");
@@ -9861,7 +10008,20 @@
     initInstallAndStandalone();
     bindInstallOverlay();
     bindOpenSystemBrowserLinks();
+    function matchMassCardToMnps() {
+      const mnps = document.getElementById("mnpsCard");
+      const mass = document.getElementById("massCard");
+      if (!mnps || !mass) return;
+      const h = Math.round(mnps.getBoundingClientRect().height);
+      if (h > 1) mass.style.height = h + "px";
+    }
     load();
+    matchMassCardToMnps();
+    window.addEventListener("resize", matchMassCardToMnps);
+    if (typeof ResizeObserver !== "undefined") {
+      const mnpsCard = document.getElementById("mnpsCard");
+      if (mnpsCard) new ResizeObserver(matchMassCardToMnps).observe(mnpsCard);
+    }
     resizeMnpsClnc();
     requestAnimationFrame(resizeMnpsClnc);
     try { lastSavedJson = JSON.stringify(getValues()); } catch (_) {}

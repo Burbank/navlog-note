@@ -2,14 +2,21 @@
  * Network is used only for explicit ?updateCheck=1 (long-press Clear /
  * PWA cold-start stamp check). Never speculative fetch on resume —
  * iOS treats that as “Turn Off Airplane Mode…”. */
-const CACHE = "navlog-note-v4.8.1";
+const CACHE = "navlog-note-v4.9.1";
 
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./favicon-32.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./fonts/AtkinsonHyperlegible-Regular.ttf",
+  "./fonts/AtkinsonHyperlegible-Bold.ttf",
+  "./fonts/AtkinsonHyperlegibleMono-Regular.ttf",
+  "./fonts/AtkinsonHyperlegibleMono-Medium.ttf",
+  "./fonts/AtkinsonHyperlegibleMono-SemiBold.ttf",
+  "./fonts/AtkinsonHyperlegibleMono-Bold.ttf",
+  "./fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf"
 ];
 
 self.addEventListener("install", (event) => {
