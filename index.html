@@ -599,35 +599,6 @@
       background: var(--btn-press);
     }
 
-    /* SIM: clock only — same muted chrome as other not-applicable actions */
-    #btnCrewRest.log-btn-muted {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--line);
-      cursor: default;
-    }
-
-    #btnCrewRest.log-btn-muted:active {
-      background: transparent;
-      color: var(--muted);
-      transform: none;
-    }
-
-    html.theme-bright #btnCrewRest.log-btn-muted {
-      background: #fff;
-      color: #000;
-      border: 2px solid #000;
-    }
-
-    html.theme-bright #btnCrewRest.log-btn-muted:active {
-      background: #fff;
-      transform: none;
-    }
-
-    #btnCrewRest.log-btn-muted .utc-clock-crewrest {
-      display: none;
-    }
-
     .utc-clock-crewrest {
       display: flex;
       flex: 1 1 auto;
@@ -2778,16 +2749,17 @@
       justify-self: center;
       align-self: center;
       gap: 3px;
-      width: max-content;
+      width: 6.5rem;
+      min-width: 6.5rem;
+      max-width: 6.5rem;
       padding-left: 6px;
-      min-width: 5.75rem;
-      overflow: visible;
+      overflow: hidden;
     }
 
     /* Fixed label column so FLIGHT time sits under BLOCK time — times/S26 +30% */
     .flight-log-sum {
       display: inline-grid;
-      grid-template-columns: 3.6rem max-content;
+      grid-template-columns: 3.6rem 4.6ch;
       column-gap: 0.35em;
       align-items: baseline;
       font-family: "Atkinson Hyperlegible", sans-serif;
@@ -2841,6 +2813,9 @@
       border-radius: 10px;
       min-height: 32px;
       height: 32px;
+      width: 6.5rem;
+      min-width: 6.5rem;
+      max-width: 6.5rem;
       background: transparent;
       font-family: "Atkinson Hyperlegible", sans-serif;
       font-size: 12px;
@@ -4768,7 +4743,7 @@
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "4.9";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "3";
+    const APP_BUILD = "4";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -5017,24 +4992,6 @@
         } else {
           tol.removeAttribute("aria-hidden");
         }
-      }
-      syncCrewRestClockUi();
-    }
-
-    function syncCrewRestClockUi() {
-      const btn = $("btnCrewRest");
-      if (!btn) return;
-      const sim = isSimAcft();
-      btn.classList.toggle("log-btn-muted", sim);
-      btn.setAttribute("aria-disabled", sim ? "true" : "false");
-      if (sim) {
-        btn.setAttribute("aria-label", "UTC clock");
-        btn.title = "UTC clock";
-        if (isCrewRestOverlayOpen()) closeCrewRestOverlay();
-        resetCrewRestAlerts();
-      } else {
-        btn.setAttribute("aria-label", "UTC clock — open crew rest calculator");
-        btn.title = "Open crew rest calculator";
       }
     }
 
@@ -5600,25 +5557,21 @@
       onEl.placeholder = est != null ? minutesToHhmm(est) : "HH:MM";
     }
 
-    function updateS26Display() {
+    /** skipCrewSync: caller will sync crew rest after a landing reset. */
+    function updateS26Display(skipCrewSync) {
       const dep = logEls.dep ? logEls.dep.value : "";
       const arr = logEls.arr ? logEls.arr.value : "";
       const sched = s26BlockForPair(dep, arr);
       const el = logEls.s26;
       if (el) {
-        if (isSimAcft()) {
-          el.textContent = "";
-          el.classList.remove("show");
-        } else {
-          const label = currentSeasonLabel();
-          el.textContent = sched ? label + " " + sched : label;
-          el.classList.add("show");
-        }
+        const label = currentSeasonLabel();
+        el.textContent = sched ? label + " " + sched : label;
+        el.classList.add("show");
       }
       const overlay = $("omcBlockOverlay");
       if (overlay && !overlay.hidden) renderOmcBlockTables();
       updateOnBlocksPlaceholder();
-      syncCrewRestFromLog();
+      if (!skipCrewSync) syncCrewRestFromLog();
     }
 
     function fillOmcBlockTable(tbodyId, table, activeKey, hereCode) {
@@ -5897,10 +5850,9 @@
       }
       if (logEls.block) logEls.block.textContent = block || "—";
       if (logEls.flight) logEls.flight.textContent = flight || "—";
-      updateS26Display();
+      updateS26Display(true);
       checkLogTimeErrors();
       syncActionButtons();
-      updateOnBlocksPlaceholder();
       syncCrewRestLandingReset();
       syncCrewRestFromLog();
     }
@@ -6193,6 +6145,10 @@
       return logEditIndex != null ? "ADD EDITS TO LOG" : "ADD TO LOG";
     }
 
+    function copyEditButtonLabel() {
+      return logEditIndex != null ? "CANCEL EDIT" : "EDIT MARKED LINE";
+    }
+
     /** True if current form would replace an existing log line (edit or same identity). */
     function wouldUpdateExistingLog(snap) {
       const list = loadLogPrev();
@@ -6283,7 +6239,14 @@
         setLogBtnAction(addBtn, addReady);
         addBtn.textContent = copyAddButtonLabel();
       }
-      setLogBtnAction($("btnEditMarkedLog"), editReady);
+      const editBtn = $("btnEditMarkedLog");
+      if (editBtn) {
+        editBtn.textContent = copyEditButtonLabel();
+        editBtn.title = logEditIndex != null
+          ? "Cancel this edit and restore YOUR LOG"
+          : "Load one marked line into YOUR LOG for editing";
+        setLogBtnAction(editBtn, logEditIndex != null || editReady);
+      }
       setLogBtnAction($("btnClearMarkedLog"), marked);
       setLogBtnAction($("btnCopyAllLog"), marked);
       setLogBtnAction($("btnCopyLogCsv"), marked);
@@ -6919,7 +6882,6 @@
         }));
       }
       updateLogPrevSortHeader();
-      syncMarkAllLogButton();
     }
 
     /** Header control: ALL when nothing marked; stacked “no/ne” when any line is marked. */
@@ -6954,6 +6916,7 @@
       }
       const anyOn = boxes.some((cb) => cb.checked);
       boxes.forEach((cb) => { cb.checked = !anyOn; });
+      syncEditSessionWithMarks();
       syncActionButtons();
     }
 
@@ -7004,7 +6967,10 @@
           cb.title = "Mark line to clear or edit";
           cb.setAttribute("aria-label", "Mark log line " + (slot + 1));
           cb.addEventListener("click", (e) => e.stopPropagation());
-          cb.addEventListener("change", () => syncActionButtons());
+          cb.addEventListener("change", () => {
+            syncEditSessionWithMarks();
+            syncActionButtons();
+          });
           markCell.appendChild(cb);
         }
         row.appendChild(markCell);
@@ -7135,6 +7101,27 @@
 
     /** Index in archived log list currently loaded for edit (null = new / top-insert). */
     let logEditIndex = null;
+
+    /** Unmarking the loaded row, or marking another row, ends the edit session. */
+    function syncEditSessionWithMarks() {
+      if (logEditIndex == null) return;
+      const marked = getMarkedLogIndices();
+      if (marked.length !== 1 || marked[0] !== logEditIndex) logEditIndex = null;
+    }
+
+    function cancelEditLogLine() {
+      if (logEditIndex == null) return;
+      logEditIndex = null;
+      const snap = loadUndoSnap();
+      if (snap) {
+        setValues(Object.assign({}, snap));
+        saveNow();
+        updateLogCalcs();
+      }
+      updateLogbookFullUi();
+      syncActionButtons();
+      showToast("Edit cancelled");
+    }
 
     function getMarkedLogIndices() {
       const list = loadLogPrev();
@@ -7305,6 +7292,10 @@
     }
 
     function editMarkedLogLine() {
+      if (logEditIndex != null) {
+        cancelEditLogLine();
+        return;
+      }
       const marked = getMarkedLogIndices();
       if (!marked.length) {
         showToast("No line marked");
@@ -7324,6 +7315,7 @@
         showToast("Line not found");
         return;
       }
+      pushUndo();
       logEditIndex = idx;
       loadLogLegIntoForm(v);
       updateLogbookFullUi();
@@ -7510,7 +7502,6 @@
             }
           }
           // Keep DEP and ARR (manual airport picks stick across a new OFF entry).
-          updateS26Display();
           logAddForceArmed = false;
           clearLogIncompleteHighlights();
           syncActionButtons();
@@ -8048,7 +8039,6 @@
       if ($("logDeptDate")) $("logDeptDate").value = formatUtcDate(utcTodayDate());
       // Keep saved / manual DEP; only auto-detect when empty. Arrival stays blank.
       if (!$("logDep").value) applyDepFromTimezone();
-      updateS26Display();
       syncAirportAddField("logDep", "logDepAdd");
       syncAirportAddField("logArr", "logArrAdd");
       syncMnpsForRoute();
@@ -8102,6 +8092,7 @@
     }
 
     function undoForm() {
+      logEditIndex = null;
       const snap = loadUndoSnap();
       if (!snap) {
         showToast("Nothing to undo");
@@ -8248,7 +8239,6 @@
       const clipText = buildLogOutput();
       const fromSim = !!(result.snap && isSimLeg(result.snap));
       clearLogTimesAfterArchive({ fromSim, snap: result.snap });
-      syncActionButtons();
       pulseCopyAddLogged();
       await writeClipboard(clipText);
       flashCopyBtn(
@@ -9998,8 +9988,6 @@
       if ($("crewRestPfMin")) $("crewRestPfMin").checked = state.pfMin2h !== false;
       if ($("crewRestAlert")) $("crewRestAlert").checked = state.alertBeforeEnd !== false;
       applyCrewRestRoute(state.route);
-      syncCrewRestEditTimeErrors();
-      syncCrewRestDerivedHints();
     }
 
     function renderCrewRestTable() {
@@ -10259,9 +10247,8 @@
       if (table) table.hidden = true;
     }
 
-    function showCrewRestTable() {
+    function revealCrewRestTable() {
       crewRestTableSeen = true;
-      renderCrewRestTable();
       const setup = $("crewRestSetup");
       const table = $("crewRestTableView");
       if (setup) setup.hidden = true;
@@ -10270,15 +10257,19 @@
       tickCrewRestAlert();
     }
 
+    function showCrewRestTable() {
+      renderCrewRestTable();
+      revealCrewRestTable();
+    }
+
     function openCrewRestOverlay() {
-      if (isSimAcft()) return;
       const box = $("crewRestOverlay");
       if (!box) return;
       refreshCrewRestSession(false);
       applyCrewRestForm(crewRestSession);
       const hasTable = renderCrewRestTable();
       if (!crewRestLandingEntered() && (crewRestTableSeen || hasTable)) {
-        showCrewRestTable();
+        revealCrewRestTable();
       } else {
         showCrewRestSetup();
       }
@@ -10303,7 +10294,6 @@
       if (!btn || !overlay) return;
       btn.addEventListener("click", () => {
         unlockCrewRestAudio();
-        if (isSimAcft()) return;
         openCrewRestOverlay();
       });
       overlay.addEventListener("click", (e) => {
@@ -10409,7 +10399,6 @@
     checkRvsmDiff(true);
     checkSquawkLen(true);
     updateLogCalcs();
-    syncActionButtons();
     if (!getMyPicName() && !hasAnsweredPicNamePrompt()) {
       showPicNameOverlay();
     }
