@@ -1,0 +1,357 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* QUICKLOGApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* QUICKLOGApp.swift */; };
+		A10000000000000000000002 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* AppModel.swift */; };
+		A10000000000000000000003 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* Theme.swift */; };
+		A10000000000000000000004 /* TimeMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* TimeMath.swift */; };
+		A10000000000000000000005 /* BlockTimes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* BlockTimes.swift */; };
+		A10000000000000000000006 /* FormState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* FormState.swift */; };
+		A10000000000000000000007 /* CrewRest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* CrewRest.swift */; };
+		A10000000000000000000008 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* Store.swift */; };
+		A10000000000000000000009 /* CopyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* CopyBuilder.swift */; };
+		A1000000000000000000000A /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* NotificationService.swift */; };
+		A1000000000000000000000B /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000B /* Components.swift */; };
+		A1000000000000000000000C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* RootView.swift */; };
+		A1000000000000000000000D /* CrewRestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* CrewRestView.swift */; };
+		A1000000000000000000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B10000000000000000000001 /* QUICKLOGApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QUICKLOGApp.swift; sourceTree = "<group>"; };
+		B10000000000000000000002 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		B10000000000000000000003 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B10000000000000000000004 /* TimeMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeMath.swift; sourceTree = "<group>"; };
+		B10000000000000000000005 /* BlockTimes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockTimes.swift; sourceTree = "<group>"; };
+		B10000000000000000000006 /* FormState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormState.swift; sourceTree = "<group>"; };
+		B10000000000000000000007 /* CrewRest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewRest.swift; sourceTree = "<group>"; };
+		B10000000000000000000008 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		B10000000000000000000009 /* CopyBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyBuilder.swift; sourceTree = "<group>"; };
+		B1000000000000000000000A /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		B1000000000000000000000B /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		B1000000000000000000000C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		B1000000000000000000000D /* CrewRestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewRestView.swift; sourceTree = "<group>"; };
+		B1000000000000000000000E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B1000000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C10000000000000000000001 /* QUICKLOG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QUICKLOG.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D10000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E10000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				E10000000000000000000002 /* QUICKLOG */,
+				E10000000000000000000009 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E10000000000000000000002 /* QUICKLOG */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000001 /* QUICKLOGApp.swift */,
+				B10000000000000000000002 /* AppModel.swift */,
+				E10000000000000000000003 /* Theme */,
+				E10000000000000000000004 /* Models */,
+				E10000000000000000000005 /* Persistence */,
+				E10000000000000000000006 /* Services */,
+				E10000000000000000000007 /* Views */,
+				B1000000000000000000000E /* Assets.xcassets */,
+				B1000000000000000000000F /* Info.plist */,
+			);
+			path = QUICKLOG;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000003 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000003 /* Theme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000004 /* TimeMath.swift */,
+				B10000000000000000000005 /* BlockTimes.swift */,
+				B10000000000000000000006 /* FormState.swift */,
+				B10000000000000000000007 /* CrewRest.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000005 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000008 /* Store.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000006 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000009 /* CopyBuilder.swift */,
+				B1000000000000000000000A /* NotificationService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000007 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000000B /* Components.swift */,
+				B1000000000000000000000C /* RootView.swift */,
+				B1000000000000000000000D /* CrewRestView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000009 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C10000000000000000000001 /* QUICKLOG.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F10000000000000000000001 /* QUICKLOG */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F10000000000000000000004 /* Build configuration list for PBXNativeTarget "QUICKLOG" */;
+			buildPhases = (
+				F10000000000000000000002 /* Sources */,
+				D10000000000000000000001 /* Frameworks */,
+				F10000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QUICKLOG;
+			productName = QUICKLOG;
+			productReference = C10000000000000000000001 /* QUICKLOG.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F10000000000000000000000 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					F10000000000000000000001 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = F10000000000000000000005 /* Build configuration list for PBXProject "QUICKLOG" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E10000000000000000000001;
+			productRefGroup = E10000000000000000000009 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F10000000000000000000001 /* QUICKLOG */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F10000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F10000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* QUICKLOGApp.swift in Sources */,
+				A10000000000000000000002 /* AppModel.swift in Sources */,
+				A10000000000000000000003 /* Theme.swift in Sources */,
+				A10000000000000000000004 /* TimeMath.swift in Sources */,
+				A10000000000000000000005 /* BlockTimes.swift in Sources */,
+				A10000000000000000000006 /* FormState.swift in Sources */,
+				A10000000000000000000007 /* CrewRest.swift in Sources */,
+				A10000000000000000000008 /* Store.swift in Sources */,
+				A10000000000000000000009 /* CopyBuilder.swift in Sources */,
+				A1000000000000000000000A /* NotificationService.swift in Sources */,
+				A1000000000000000000000B /* Components.swift in Sources */,
+				A1000000000000000000000C /* RootView.swift in Sources */,
+				A1000000000000000000000D /* CrewRestView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F20000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F20000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F20000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = QUICKLOG/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = QUICKLOG;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 4.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.burbank.quicklog;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		F20000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = QUICKLOG/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = QUICKLOG;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 4.6;
+				PRODUCT_BUNDLE_IDENTIFIER = com.burbank.quicklog;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F10000000000000000000004 /* Build configuration list for PBXNativeTarget "QUICKLOG" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F20000000000000000000003 /* Debug */,
+				F20000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F10000000000000000000005 /* Build configuration list for PBXProject "QUICKLOG" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F20000000000000000000001 /* Debug */,
+				F20000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F10000000000000000000000 /* Project object */;
+}
