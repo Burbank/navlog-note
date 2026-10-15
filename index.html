@@ -2900,22 +2900,6 @@
       line-height: 1.2;
     }
 
-    .omc-overlay-hint {
-      margin: 0;
-      flex: 0 1 auto;
-      min-width: 0;
-      font-size: 0.68rem;
-      font-weight: 500;
-      line-height: 1.2;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    html.theme-bright .omc-overlay-hint {
-      color: #000;
-      opacity: 0.7;
-    }
-
     .omc-overlay-close {
       flex: 0 0 auto;
       margin-left: auto;
@@ -4521,7 +4505,7 @@
       <strong id="logDateMonthLabel">Jul 2026</strong>
       <div class="log-date-nav">
         <button type="button" id="logDatePrev" aria-label="Previous month">‹</button>
-        <button type="button" id="logDateToday" aria-label="Jump to selected / today">●</button>
+        <button type="button" id="logDateToday" aria-label="Jump to today UTC">●</button>
         <button type="button" id="logDateNext" aria-label="Next month">›</button>
       </div>
     </div>
@@ -4734,8 +4718,6 @@
     <div class="pic-name-overlay-box omc-overlay-box">
       <div class="omc-overlay-head">
         <p id="omcBlockTitle" class="pic-name-overlay-title">OM-C 2.1.5.2 block times</p>
-        <p class="omc-overlay-hint">Uses the flight’s DEPT DATE. W26/27 from 25 OCT 2026.</p>
-        <p class="omc-overlay-hint" id="omcStationHint" hidden></p>
         <button type="button" id="omcBlockClose" class="omc-overlay-close">Close</button>
       </div>
       <div class="omc-tables">
@@ -4786,7 +4768,7 @@
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "4.9";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "2";
+    const APP_BUILD = "3";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -5470,15 +5452,22 @@
       return dd + " " + MONTHS_UTC[date.getUTCMonth()] + " " + date.getUTCFullYear();
     }
 
-    /** Parse stored "DD MMM YYYY" (UTC) → UTC midnight Date, or null. */
+    /** Today's UTC calendar date at 12:00Z — not the iPad's local clock date. */
+    function utcTodayDate() {
+      const now = new Date();
+      return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0));
+    }
+
+    /** Parse stored "DD MMM YY" / "DD MMM YYYY" (UTC) → UTC Date, or null. */
     function parseLogDeptDate(str) {
-      const m = String(str || "").trim().match(/^(\d{2}) ([A-Z]{3}) (\d{4})$/);
+      const m = String(str || "").trim().toUpperCase().match(/^(\d{1,2}) ([A-Z]{3}) (\d{2}|\d{4})$/);
       if (!m) return null;
       const mi = MONTHS_UTC.indexOf(m[2]);
       if (mi < 0) return null;
       const day = parseInt(m[1], 10);
-      const year = parseInt(m[3], 10);
-      const d = new Date(Date.UTC(year, mi, day));
+      let year = parseInt(m[3], 10);
+      if (year < 100) year += 2000;
+      const d = new Date(Date.UTC(year, mi, day, 12, 0, 0));
       if (d.getUTCFullYear() !== year || d.getUTCMonth() !== mi || d.getUTCDate() !== day) return null;
       return d;
     }
@@ -5663,16 +5652,6 @@
       const w26 = $("omcColW26");
       if (s26) s26.classList.toggle("is-active", season === "S26");
       if (w26) w26.classList.toggle("is-active", season === "W26");
-      const hint = $("omcStationHint");
-      if (hint) {
-        if (here) {
-          hint.hidden = false;
-          hint.textContent = "From " + here + " — this iPad’s clock.";
-        } else {
-          hint.hidden = true;
-          hint.textContent = "";
-        }
-      }
     }
 
     function openOmcBlockOverlay() {
@@ -6017,9 +5996,11 @@
     function openDeptDatePopover() {
       const pop = $("logDatePopover");
       const hit = $("logDateHit");
-      const dateStr = ($("logDeptDate") && $("logDeptDate").value.trim()) || "";
-      if (!pop || !hit || !dateStr) return;
-      const cur = parseLogDeptDate(dateStr) || new Date();
+      const dateEl = $("logDeptDate");
+      if (!pop || !hit) return;
+      if (dateEl && !dateEl.value.trim()) dateEl.value = formatUtcDate(utcTodayDate());
+      const dateStr = (dateEl && dateEl.value.trim()) || "";
+      const cur = parseLogDeptDate(dateStr) || utcTodayDate();
       deptCalYear = cur.getUTCFullYear();
       deptCalMonth = cur.getUTCMonth();
       pop.hidden = false;
@@ -6036,10 +6017,10 @@
       hit.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        /* Only the date box shows this nudge — PF / PIC / name / acft / DEP / ARR never gate on OFF */
-        if (!$("logDeptDate").value.trim()) {
-          showToast("type off blocks first", 2200);
-          return;
+        if ($("logDeptDate") && !$("logDeptDate").value.trim()) {
+          $("logDeptDate").value = formatUtcDate(utcTodayDate());
+          saveNow();
+          updateLogCalcs();
         }
         if (!pop.hidden) closeDeptDatePopover();
         else openDeptDatePopover();
@@ -6061,7 +6042,7 @@
       });
       $("logDateToday").addEventListener("click", (e) => {
         e.stopPropagation();
-        const cur = parseLogDeptDate($("logDeptDate").value) || new Date();
+        const cur = utcTodayDate();
         deptCalYear = cur.getUTCFullYear();
         deptCalMonth = cur.getUTCMonth();
         renderDeptDateGrid();
@@ -7289,7 +7270,10 @@
       $("logPicSelf").checked = v.logPicSelf === "yes";
       $("logPic").value = v.logPic || "";
       setLogRemark(v.logRemark || "");
-      $("logDeptDate").value = v.logDeptDate || "";
+      {
+        const parsed = parseLogDeptDate(v.logDeptDate || "");
+        $("logDeptDate").value = parsed ? formatUtcDate(parsed) : (v.logDeptDate || "");
+      }
       if (isSimLeg(v)) setSimTolValue(simTolCredits(v));
       else setSimTolValue(3);
       if (v.logDep) ensureAirportOption($("logDep"), v.logDep);
@@ -8061,6 +8045,7 @@
           if (data.logArr) ensureAirportOption($("logArr"), data.logArr);
         }
       } catch (_) {}
+      if ($("logDeptDate")) $("logDeptDate").value = formatUtcDate(utcTodayDate());
       // Keep saved / manual DEP; only auto-detect when empty. Arrival stays blank.
       if (!$("logDep").value) applyDepFromTimezone();
       updateS26Display();
@@ -8622,6 +8607,7 @@
             if ($("logDepAdd")) $("logDepAdd").value = "";
             if ($("logArrAdd")) $("logArrAdd").value = "";
             applyPicAfterClear(prevPic, prevPicSelf);
+            if ($("logDeptDate")) $("logDeptDate").value = formatUtcDate(utcTodayDate());
             saveNow();
             checkRvsmDiff(true);
             checkSquawkLen(true);
