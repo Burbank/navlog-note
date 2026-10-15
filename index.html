@@ -33,20 +33,12 @@
     } catch (e) {}
   </script>
   <style>
-    /* Atkinson Hyperlegible (SIL OFL). Text has Regular and Bold only:
-       weight 100–500 uses Regular, 600–900 uses Bold (same cut as the iPad app).
+    /* Atkinson Hyperlegible (SIL OFL). Regular for every CSS weight — no Bold cut.
        Digits use Atkinson Mono, which has a real weight ladder. */
     @font-face {
       font-family: "Atkinson Hyperlegible";
       src: url("fonts/AtkinsonHyperlegible-Regular.ttf") format("truetype");
-      font-weight: 100 500;
-      font-style: normal;
-      font-display: swap;
-    }
-    @font-face {
-      font-family: "Atkinson Hyperlegible";
-      src: url("fonts/AtkinsonHyperlegible-Bold.ttf") format("truetype");
-      font-weight: 600 900;
+      font-weight: 100 900;
       font-style: normal;
       font-display: swap;
     }
@@ -315,6 +307,8 @@
       background: var(--bg);
       color: var(--text);
       font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      font-weight: 400;
+      font-synthesis: none;
       overscroll-behavior: none;
     }
 
@@ -2410,8 +2404,8 @@
         var(--log-time-w)
         minmax(92px, 1fr);
       grid-template-areas:
-        "date pf   acft dep  off arr  on block"
-        "rmk  pics picn addd air adda td flight";
+        "date pf   acft dep  off arr  on  sums"
+        "rmk  pics picn addd air adda td  sums";
       column-gap: 8px;
       row-gap: 3px;
       align-items: end;
@@ -2428,11 +2422,15 @@
     .flight-log-entry > .flight-log-apt,
     .flight-log-entry > input.flight-log-apt-add,
     .flight-log-entry > .field,
-    .flight-log-entry > .flight-log-block-cell,
     .flight-log-entry > .flight-log-sum,
     .flight-log-entry > .flight-log-rmk-wrap,
     .flight-log-entry > button.flight-log-date-hit {
       align-self: end;
+    }
+
+    .flight-log-entry > .flight-log-block-cell {
+      justify-self: center;
+      align-self: center;
     }
 
     .flight-log-pf {
@@ -2679,8 +2677,7 @@
     .flight-log-entry .log-air { grid-area: air; }
     .flight-log-entry .log-td { grid-area: td; }
     .flight-log-entry .log-on { grid-area: on; }
-    .flight-log-entry .log-block { grid-area: block; }
-    .flight-log-entry .log-flight { grid-area: flight; }
+    .flight-log-entry .log-block { grid-area: sums; }
 
     .flight-log-apt {
       width: 100%;
@@ -2772,14 +2769,16 @@
     }
 
     .flight-log-block-cell {
-      grid-area: block;
+      grid-area: sums;
       display: flex;
       flex-direction: column;
       flex-wrap: nowrap;
       align-items: flex-start;
-      justify-content: center;
+      justify-content: flex-start;
+      justify-self: center;
       align-self: center;
-      gap: 1px;
+      gap: 3px;
+      width: max-content;
       padding-left: 6px;
       min-width: 5.75rem;
       overflow: visible;
@@ -2807,15 +2806,14 @@
       overflow: visible;
     }
 
-    .flight-log-sum.log-flight {
-      grid-area: flight;
-      padding-left: 6px;
-      justify-self: start;
-      min-width: 5.75rem;
+    .flight-log-block-cell .flight-log-sum.log-flight {
+      padding-left: 0;
+      min-width: 0;
     }
 
     .flight-log-block-cell .flight-log-sum {
       padding-left: 0;
+      align-self: flex-start;
     }
 
     .flight-log-sum-lab {
@@ -2834,22 +2832,237 @@
       font-weight: 600;
     }
 
-    .flight-log-s26 {
+    button.flight-log-s26 {
       display: none;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      min-height: 32px;
+      height: 32px;
+      background: transparent;
       font-family: "Atkinson Hyperlegible", sans-serif;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 400;
       letter-spacing: 0.04em;
+      text-transform: none;
       color: var(--accent);
       opacity: 1;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      line-height: 1.15;
-      padding-left: 0;
+      line-height: 1;
+      text-align: center;
+      cursor: pointer;
     }
 
-    .flight-log-s26.show {
+    button.flight-log-s26.show {
       display: block;
+    }
+
+    button.flight-log-s26:active {
+      background: rgba(0, 161, 228, 0.15);
+      color: var(--text);
+      border-color: var(--accent);
+      transform: none;
+      opacity: 1;
+    }
+
+    html.theme-bright button.flight-log-s26 {
+      background: #fff;
+      border: 2px solid #000;
+      color: var(--accent);
+    }
+
+    html.theme-bright button.flight-log-s26:active {
+      background: #fff;
+      color: #000;
+      border-color: #000;
+    }
+
+    .pic-name-overlay-box.omc-overlay-box {
+      width: min(58rem, calc(100vw - 24px));
+      max-height: calc(var(--vv-height, 100dvh) - 20px);
+    }
+
+    .omc-overlay-head {
+      display: flex;
+      align-items: center;
+      gap: 10px 14px;
+      margin: 0 0 8px;
+      min-height: 36px;
+    }
+
+    .omc-overlay-head .pic-name-overlay-title {
+      margin: 0;
+      flex: 0 0 auto;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .omc-overlay-hint {
+      margin: 0;
+      flex: 0 1 auto;
+      min-width: 0;
+      font-size: 0.68rem;
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    html.theme-bright .omc-overlay-hint {
+      color: #000;
+      opacity: 0.7;
+    }
+
+    .omc-overlay-close {
+      flex: 0 0 auto;
+      margin-left: auto;
+      min-height: 36px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .omc-overlay-close:active {
+      background: rgba(0, 161, 228, 0.15);
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    html.theme-bright .omc-overlay-close {
+      background: #fff;
+      color: #000;
+      border: 2px solid #000;
+    }
+
+    html.theme-bright .omc-overlay-close:active {
+      background: #fff;
+      color: #000;
+    }
+
+    .omc-tables {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 18px;
+      align-items: start;
+    }
+
+    .omc-col {
+      min-width: 0;
+      padding: 8px 10px 6px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--soft-panel);
+    }
+
+    .omc-col.is-active {
+      border-width: 3px;
+      border-color: var(--accent);
+    }
+
+    html.theme-bright .omc-col.is-active {
+      border-color: #000;
+    }
+
+    .omc-col h2 {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .omc-col-sub {
+      margin: 2px 0 8px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+    }
+
+    html.theme-bright .omc-col h2 {
+      color: #005a8d;
+    }
+
+    html.theme-bright .omc-col-sub {
+      color: #333;
+    }
+
+    .omc-table {
+      width: 100%;
+      table-layout: auto;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .omc-table th,
+    .omc-table td {
+      padding: 2px 8px 2px 4px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .omc-table th {
+      font-size: 0.62rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .omc-table td {
+      font-size: 0.78rem;
+      font-weight: 650;
+      color: var(--text);
+      border-top: 1px solid var(--line);
+    }
+
+    .omc-table td:last-child,
+    .omc-table th:last-child {
+      text-align: right;
+      font-family: "Atkinson Mono", ui-monospace, monospace;
+    }
+
+    .omc-table tr.is-here td {
+      background: rgba(0, 161, 228, 0.12);
+    }
+
+    .omc-table tr.is-here td:first-child {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .omc-table tr.is-current td {
+      color: var(--accent);
+      font-weight: 750;
+      background: var(--soft-accent);
+    }
+
+    html.theme-bright .omc-table th,
+    html.theme-bright .omc-table tr.is-here td:first-child,
+    html.theme-bright .omc-table tr.is-current td {
+      color: #005a8d;
+    }
+
+    html.theme-bright .omc-table tr.is-here td {
+      background: #e4f3fb;
+    }
+
+    html.theme-bright .omc-table tr.is-current td {
+      background: #c5e4f6;
+    }
+
+    @media (max-width: 700px) {
+      .omc-tables {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
     }
 
     input.log-time-error {
@@ -3881,7 +4094,7 @@
           max-content
           var(--log-apt-w, 4.75rem)
           max-content
-          minmax(4.5rem, auto);
+          minmax(4.5rem, 1fr);
       }
       .flight-log-entry .field input {
         width: var(--log-time-w, 8ch);
@@ -4212,7 +4425,18 @@
           <select id="logArr" name="logArr" class="flight-log-apt log-arr" title="Arrival airport" aria-label="Arrival airport" tabindex="-1"></select>
           <div class="flight-log-block-cell log-block">
             <span class="flight-log-sum"><span class="flight-log-sum-lab">BLOCK</span><strong id="blockTime">—</strong></span>
-            <span class="flight-log-s26" id="logS26" aria-live="polite"></span>
+            <button
+              type="button"
+              class="flight-log-s26"
+              id="logS26"
+              tabindex="-1"
+              title="OM-C scheduled block times — tap for S26 and W26/27 tables"
+              aria-haspopup="dialog"
+              aria-controls="omcBlockOverlay"
+              aria-expanded="false"
+              aria-live="polite"
+            ></button>
+            <span class="flight-log-sum log-flight"><span class="flight-log-sum-lab">FLIGHT</span><strong id="flightTimeCalc">—</strong></span>
           </div>
           <!-- DOM order = Tab order: OFF → AIR → TD → ON (grid-areas keep visual layout) -->
           <div class="field log-off">
@@ -4234,7 +4458,6 @@
             <label for="onBlocks">ON BLOCKS</label>
             <input id="onBlocks" name="onBlocks" type="text" inputmode="numeric" maxlength="5" enterkeyhint="done" placeholder="HH:MM" title="On blocks UTC" />
           </div>
-          <span class="flight-log-sum log-flight"><span class="flight-log-sum-lab">FLIGHT</span><strong id="flightTimeCalc">—</strong></span>
 
           <label class="flight-log-pf log-pics" for="logPicSelf" title="I was PIC this leg. Long-press to edit your default PIC name.">
             <input id="logPicSelf" name="logPicSelf" type="checkbox" />
@@ -4500,6 +4723,46 @@
     </div>
   </div>
 
+  <div
+    class="pic-name-overlay omc-overlay"
+    id="omcBlockOverlay"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="omcBlockTitle"
+  >
+    <div class="pic-name-overlay-box omc-overlay-box">
+      <div class="omc-overlay-head">
+        <p id="omcBlockTitle" class="pic-name-overlay-title">OM-C 2.1.5.2 block times</p>
+        <p class="omc-overlay-hint">Uses the flight’s DEPT DATE. W26/27 from 25 OCT 2026.</p>
+        <p class="omc-overlay-hint" id="omcStationHint" hidden></p>
+        <button type="button" id="omcBlockClose" class="omc-overlay-close">Close</button>
+      </div>
+      <div class="omc-tables">
+        <section class="omc-col" id="omcColS26">
+          <h2>S26</h2>
+          <p class="omc-col-sub">until 24 OCT 2026</p>
+          <table class="omc-table">
+            <thead>
+              <tr><th>PAIR</th><th>BLOCK</th></tr>
+            </thead>
+            <tbody id="omcS26Body"></tbody>
+          </table>
+        </section>
+        <section class="omc-col" id="omcColW26">
+          <h2>W26/27</h2>
+          <p class="omc-col-sub">from 25 OCT 2026</p>
+          <table class="omc-table">
+            <thead>
+              <tr><th>PAIR</th><th>BLOCK</th></tr>
+            </thead>
+            <tbody id="omcW26Body"></tbody>
+          </table>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <div id="updateBusy" class="update-busy" hidden role="status" aria-live="assertive" aria-busy="true">
     <div class="update-busy-card">
       <p id="updateBusyTitle">Update requested</p>
@@ -4523,7 +4786,7 @@
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "4.9";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "1";
+    const APP_BUILD = "2";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -4569,8 +4832,10 @@
       logAcft: "CKA", logPf: "no", logPicSelf: "no", logPic: "", logRemark: "", logDeptDate: "", logDep: "", logArr: ""
     };
     const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    /** Martinair B747-400 Summer 2026 city pairs — OM-A style block times table */
+    /** Martinair B747-400 OM-C 2.1.5.2 city pairs. S26 until 24 OCT 2026; W26/27 from 25 OCT 2026 (flight DEPT DATE UTC). */
     const LOG_AIRPORTS = ["ALA", "AMS", "BOG", "DWC", "GYD", "HHN", "HKG", "ICN", "JNB", "MIA", "NBO"];
+    /** First UTC day W26/27 applies (25 OCT 2026). */
+    const W26_START_MS = Date.UTC(2026, 9, 25);
     const S26_BLOCK = {
       "ALA-AMS": "8:10", "AMS-DWC": "6:40", "AMS-HHN": "1:05", "AMS-HKG": "11:55",
       "AMS-ICN": "11:45", "AMS-JNB": "10:50", "AMS-MIA": "9:30", "BOG-MIA": "3:45",
@@ -4578,10 +4843,21 @@
       "HKG-ALA": "6:10", "HKG-GYD": "8:40", "HKG-DWC": "8:00", "ICN-HKG": "3:30",
       "JNB-NBO": "3:55", "MIA-AMS": "8:35", "MIA-BOG": "3:35", "NBO-AMS": "8:50"
     };
+    const W26_BLOCK = {
+      "AMS-DWC": "6:50", "AMS-HHN": "1:10", "AMS-HKG": "12:00", "AMS-ICN": "11:40",
+      "AMS-JNB": "10:55", "AMS-MIA": "10:00", "BOG-MIA": "3:45", "DWC-HKG": "7:15",
+      "GYD-AMS": "5:35", "HHN-AMS": "1:15", "HKG-GYD": "9:10", "ICN-GYD": "9:25",
+      "ICN-HKG": "3:45", "JNB-NBO": "4:00", "MIA-AMS": "8:25", "MIA-BOG": "3:30",
+      "NBO-AMS": "9:00"
+    };
     /** Likely destination when departure is selected (network pairs). */
-    const DEP_TO_ARR = {
+    const DEP_TO_ARR_S26 = {
       MIA: "AMS", NBO: "AMS", JNB: "NBO", GYD: "AMS", HKG: "GYD",
       ICN: "HKG", AMS: "MIA", BOG: "MIA", HHN: "AMS"
+    };
+    const DEP_TO_ARR_W26 = {
+      MIA: "AMS", NBO: "AMS", JNB: "NBO", GYD: "AMS", HKG: "GYD",
+      ICN: "GYD", AMS: "MIA", BOG: "MIA", HHN: "AMS", DWC: "HKG"
     };
     /**
      * FDPFMS-style device timezone → departure airport (network airports only).
@@ -4640,10 +4916,30 @@
       return airportForCurrentTimeZone() || "AMS";
     }
 
+    /** S26 before 25 OCT 2026; W26/27 from that UTC dept date onward. Empty date uses today UTC. */
+    function currentSeason() {
+      const stored = (logEls.deptDate && logEls.deptDate.value) ||
+        ($("logDeptDate") && $("logDeptDate").value) || "";
+      const d = parseLogDeptDate(stored);
+      const now = new Date();
+      const t = d
+        ? d.getTime()
+        : Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      return t >= W26_START_MS ? "W26" : "S26";
+    }
+
+    function currentSeasonLabel() {
+      return currentSeason() === "W26" ? "W26" : "S26";
+    }
+
+    function destForDep(dep) {
+      const table = currentSeason() === "W26" ? DEP_TO_ARR_W26 : DEP_TO_ARR_S26;
+      return table[normalizeIata(dep)];
+    }
+
     /** Set ARR from network routing table when DEP is chosen. */
     function applyArrForDep(dep) {
-      const code = normalizeIata(dep);
-      const arr = DEP_TO_ARR[code];
+      const arr = destForDep(dep);
       if (arr) ensureAirportOption($("logArr"), arr);
       syncMnpsForRoute();
     }
@@ -5293,7 +5589,8 @@
 
     function s26BlockForPair(dep, arr) {
       if (!dep || !arr) return "";
-      return S26_BLOCK[dep + "-" + arr] || "";
+      const table = currentSeason() === "W26" ? W26_BLOCK : S26_BLOCK;
+      return table[dep + "-" + arr] || "";
     }
 
     function estimatedOnBlocksMinutes() {
@@ -5315,19 +5612,108 @@
     }
 
     function updateS26Display() {
-      const sched = s26BlockForPair(logEls.dep.value, logEls.arr.value);
+      const dep = logEls.dep ? logEls.dep.value : "";
+      const arr = logEls.arr ? logEls.arr.value : "";
+      const sched = s26BlockForPair(dep, arr);
       const el = logEls.s26;
       if (el) {
-        if (sched) {
-          el.textContent = "S26 " + sched;
-          el.classList.add("show");
-        } else {
+        if (isSimAcft()) {
           el.textContent = "";
           el.classList.remove("show");
+        } else {
+          const label = currentSeasonLabel();
+          el.textContent = sched ? label + " " + sched : label;
+          el.classList.add("show");
         }
       }
+      const overlay = $("omcBlockOverlay");
+      if (overlay && !overlay.hidden) renderOmcBlockTables();
       updateOnBlocksPlaceholder();
       syncCrewRestFromLog();
+    }
+
+    function fillOmcBlockTable(tbodyId, table, activeKey, hereCode) {
+      const tb = $(tbodyId);
+      if (!tb) return;
+      tb.innerHTML = "";
+      Object.keys(table).sort().forEach((pair) => {
+        const tr = document.createElement("tr");
+        const from = pair.slice(0, 3);
+        if (hereCode && from === hereCode) tr.classList.add("is-here");
+        if (pair === activeKey) tr.classList.add("is-current");
+        const tdP = document.createElement("td");
+        tdP.textContent = pair.replace("-", "–");
+        const tdT = document.createElement("td");
+        tdT.textContent = table[pair];
+        tr.appendChild(tdP);
+        tr.appendChild(tdT);
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderOmcBlockTables() {
+      const dep = logEls.dep ? normalizeIata(logEls.dep.value) : "";
+      const arr = logEls.arr ? normalizeIata(logEls.arr.value) : "";
+      const key = dep && arr ? dep + "-" + arr : "";
+      const here = detectDepAirport();
+      const season = currentSeason();
+      fillOmcBlockTable("omcS26Body", S26_BLOCK, key, here);
+      fillOmcBlockTable("omcW26Body", W26_BLOCK, key, here);
+      const s26 = $("omcColS26");
+      const w26 = $("omcColW26");
+      if (s26) s26.classList.toggle("is-active", season === "S26");
+      if (w26) w26.classList.toggle("is-active", season === "W26");
+      const hint = $("omcStationHint");
+      if (hint) {
+        if (here) {
+          hint.hidden = false;
+          hint.textContent = "From " + here + " — this iPad’s clock.";
+        } else {
+          hint.hidden = true;
+          hint.textContent = "";
+        }
+      }
+    }
+
+    function openOmcBlockOverlay() {
+      if (isSimAcft()) return;
+      const box = $("omcBlockOverlay");
+      const btn = logEls.s26 || $("logS26");
+      if (!box) return;
+      renderOmcBlockTables();
+      syncVisualViewport();
+      box.hidden = false;
+      if (btn) btn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeOmcBlockOverlay() {
+      const box = $("omcBlockOverlay");
+      const btn = logEls.s26 || $("logS26");
+      if (box) box.hidden = true;
+      if (btn) btn.setAttribute("aria-expanded", "false");
+    }
+
+    function bindOmcBlockOverlay() {
+      const btn = $("logS26");
+      const overlay = $("omcBlockOverlay");
+      const closeBtn = $("omcBlockClose");
+      if (!btn || !overlay) return;
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (overlay.hidden) openOmcBlockOverlay();
+        else closeOmcBlockOverlay();
+      });
+      if (closeBtn) closeBtn.addEventListener("click", closeOmcBlockOverlay);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeOmcBlockOverlay();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay && !overlay.hidden) {
+          e.preventDefault();
+          closeOmcBlockOverlay();
+        }
+      });
     }
 
     /**
@@ -5396,7 +5782,7 @@
           : detectDepAirport();
       const depTarget = !rawDep || rawDep === "SIM" ? "AMS" : rawDep;
       const arrTarget = (() => {
-        const a = DEP_TO_ARR[depTarget] || "AMS";
+        const a = destForDep(depTarget) || "AMS";
         return a === "SIM" ? "AMS" : a;
       })();
       const depEl = $("logDep");
@@ -5532,7 +5918,7 @@
       }
       if (logEls.block) logEls.block.textContent = block || "—";
       if (logEls.flight) logEls.flight.textContent = flight || "—";
-      // S26 only changes with airports — updateS26Display() from those handlers.
+      updateS26Display();
       checkLogTimeErrors();
       syncActionButtons();
       updateOnBlocksPlaceholder();
@@ -7192,7 +7578,12 @@
         }
       }
       if (!v) return { text: "", rejected };
-      return { text: finalize ? v + " MT" : v, rejected };
+      if (finalize) {
+        if (!v.includes(".")) v = v + ".0";
+        else if (v.endsWith(".")) v = v + "0";
+        return { text: v + " MT", rejected };
+      }
+      return { text: v, rejected };
     }
 
     /**
@@ -9259,6 +9650,8 @@
       return [
         dep,
         arr,
+        currentSeason(),
+        s26BlockForPair(dep, arr),
         crewRestClockValue(logEls.off),
         crewRestClockValue(logEls.air),
         crewRestClockValue(logEls.on)
@@ -9368,7 +9761,7 @@
       let route = "";
       if (dep && arr) {
         route = dep + "–" + arr;
-        if (s26) route += " · S26 " + s26;
+        if (s26) route += " · " + currentSeasonLabel() + " " + s26;
         if (blockMin != null && s26Min != null && blockMin !== s26Min && cruiseStart && on) {
           route += " · actual " + minutesToDuration(blockMin);
         }
@@ -10005,6 +10398,7 @@
     applyTheme(resolveTheme());
     startUtcClock();
     bindCrewRest();
+    bindOmcBlockOverlay();
     initInstallAndStandalone();
     bindInstallOverlay();
     bindOpenSystemBrowserLinks();
