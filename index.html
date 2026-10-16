@@ -3100,6 +3100,8 @@
       border-radius: 10px;
       background: var(--panel);
       box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .well-version {
@@ -3247,6 +3249,32 @@
       width: 100%;
       min-height: 36px;
       font-size: 0.85rem;
+    }
+
+    .version-notes-box {
+      width: min(32rem, 100%);
+    }
+
+    .version-notes-title {
+      font-size: 1.15rem;
+      font-weight: 750;
+    }
+
+    .version-notes-box ul {
+      margin: 0 0 12px;
+      padding-left: 1.15em;
+    }
+
+    .version-notes-box li {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      color: var(--text);
+    }
+
+    .version-notes-hold {
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
     .app-confirm-actions {
@@ -4304,7 +4332,7 @@
         </section>
         </div>
 
-        <div class="arr-toast-slot">
+        <div class="arr-toast-slot" id="versionWell">
           <p class="well-version" id="wellVersion">version <span id="wellVersionNum"></span></p>
           <div class="toast" id="toast" aria-live="polite"></div>
         </div>
@@ -4494,6 +4522,15 @@
     <div class="app-alert-box">
       <p id="appAlertMsg"></p>
       <button type="button" id="appAlertOk">OK</button>
+    </div>
+  </div>
+
+  <div class="app-alert" id="versionNotes" hidden role="dialog" aria-modal="true" aria-labelledby="versionNotesTitle">
+    <div class="app-alert-box version-notes-box">
+      <p id="versionNotesTitle" class="version-notes-title">QUICKLOG</p>
+      <ul id="versionNotesList"></ul>
+      <p id="versionNotesHold" class="version-notes-hold"></p>
+      <button type="button" id="versionNotesOk">OK</button>
     </div>
   </div>
 
@@ -4743,7 +4780,7 @@
     const LOG_PF_WINDOW_DAYS = 90;
     const APP_VERSION = "4.9";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "4";
+    const APP_BUILD = "5";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -6443,7 +6480,7 @@
     function hidePicNameOverlay() {
       const box = $("picNameOverlay");
       if (box) box.hidden = true;
-      flushVersionUpdateToast();
+      flushVersionNotes();
     }
 
     function isPicNameOverlayOpen() {
@@ -6451,13 +6488,43 @@
       return !!(box && !box.hidden);
     }
 
-    /** Green bottom toast after a real version bump; waits if PIC name overlay is open. */
-    let pendingVersionToast = "";
-    function flushVersionUpdateToast() {
-      if (!pendingVersionToast || isPicNameOverlayOpen()) return;
-      const msg = pendingVersionToast;
-      pendingVersionToast = "";
-      showToast(msg, 3500);
+    const VERSION_CHANGE_NOTES = [
+      "Block times follow the departure date.",
+      "Edit a marked line, then add the edits.",
+      "The calendar closes when you tap a day.",
+      "Departure and arrival start with ALA.",
+      "MNPS clearance opens on numbers."
+    ];
+    const VERSION_HOLD_NOTE = "Press the area with the version number for 3 seconds to clear your saved PIC name.";
+
+    /** Dismissible note after a real version bump; waits if the PIC name overlay is open. */
+    let pendingVersionNotes = false;
+    function flushVersionNotes() {
+      if (!pendingVersionNotes || isPicNameOverlayOpen()) return;
+      const box = $("versionNotes");
+      const list = $("versionNotesList");
+      const hold = $("versionNotesHold");
+      const title = $("versionNotesTitle");
+      if (!box || !list) return;
+      if (title) title.textContent = "QUICKLOG " + APP_VERSION;
+      list.replaceChildren();
+      VERSION_CHANGE_NOTES.forEach((line) => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        list.appendChild(li);
+      });
+      if (hold) hold.textContent = VERSION_HOLD_NOTE;
+      box.hidden = false;
+    }
+
+    function acknowledgeVersionNotes() {
+      try {
+        localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION);
+        localStorage.setItem(SEEN_STAMP_KEY, localAppStamp());
+      } catch (_) {}
+      pendingVersionNotes = false;
+      const box = $("versionNotes");
+      if (box) box.hidden = true;
     }
 
     function localAppStamp() {
@@ -6470,23 +6537,65 @@
       try { prevVer = String(localStorage.getItem(SEEN_VERSION_KEY) || ""); } catch (_) {}
       try { prevStamp = String(localStorage.getItem(SEEN_STAMP_KEY) || ""); } catch (_) {}
       const stamp = localAppStamp();
-      try {
-        localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION);
-        localStorage.setItem(SEEN_STAMP_KEY, stamp);
-      } catch (_) {}
-      if (!prevVer && !prevStamp) return; /* first run */
+      if (!prevVer && !prevStamp) {
+        acknowledgeVersionNotes();
+        return; /* first run — no “what changed” yet */
+      }
       if (prevStamp === stamp) return;
-      if (prevVer && prevVer !== APP_VERSION) {
-        pendingVersionToast = "Update successful — v" + APP_VERSION;
-      } else if (prevStamp && prevStamp !== stamp) {
-        pendingVersionToast = "Update applied — v" + APP_VERSION;
-      } else if (!prevStamp && prevVer === APP_VERSION && APP_BUILD !== "0") {
-        /* Same version label, new patch build (e.g. 4.4 → 4.4+1) */
-        pendingVersionToast = "Update applied — v" + APP_VERSION;
-      } else {
+      if (!(prevVer && prevVer !== APP_VERSION) &&
+          !(prevStamp && prevStamp !== stamp) &&
+          !(!prevStamp && prevVer === APP_VERSION && APP_BUILD !== "0")) {
         return;
       }
-      flushVersionUpdateToast();
+      pendingVersionNotes = true;
+      flushVersionNotes();
+    }
+
+    /** Three-second press on the version line. Clears the saved PIC name. */
+    function restoreHeldDefaults() {
+      const saved = getMyPicName();
+      const nameEl = $("logPic");
+      const selfCb = $("logPicSelf");
+      const typed = nameEl ? String(nameEl.value || "").trim() : "";
+      const matches = saved && normalizePicNameKey(typed) === normalizePicNameKey(saved);
+      if ((selfCb && selfCb.checked) || matches) {
+        if (nameEl) nameEl.value = "";
+        if (selfCb) selfCb.checked = false;
+      }
+      clearMyPicName({ resetPrompt: false });
+      picDefaultDeclinedNorm.clear();
+      saveNow();
+      syncActionButtons();
+      showToast("Defaults restored.", 3000);
+    }
+
+    function bindVersionHold() {
+      const LONG_MS = 3000;
+      ["versionWell", "appVersion"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        let timer = 0;
+        const cancel = () => {
+          if (timer) {
+            clearTimeout(timer);
+            timer = 0;
+          }
+        };
+        el.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          cancel();
+          timer = setTimeout(() => {
+            timer = 0;
+            restoreHeldDefaults();
+          }, LONG_MS);
+        });
+        el.addEventListener("pointerup", cancel);
+        el.addEventListener("pointerleave", cancel);
+        el.addEventListener("pointercancel", cancel);
+        el.addEventListener("contextmenu", (e) => e.preventDefault());
+      });
+      const ok = $("versionNotesOk");
+      if (ok) ok.addEventListener("click", acknowledgeVersionNotes);
     }
 
     function normalizePicNameKey(s) {
@@ -10403,9 +10512,10 @@
       showPicNameOverlay();
     }
     const fromUpdateAttempt = consumeUpdateAttemptFlag();
-    /* After PIC overlay decision so update toast waits if that modal is open */
+    bindVersionHold();
+    /* After PIC overlay decision so the version note waits if that modal is open */
     maybeShowVersionUpdateToast();
-    if (fromUpdateAttempt && !pendingVersionToast) {
+    if (fromUpdateAttempt && !pendingVersionNotes) {
       showAppAlert(
         "No new version available.\n\nYou already have v" + APP_VERSION + "."
       );
