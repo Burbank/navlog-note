@@ -3752,8 +3752,8 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .crewrest-table col.crewrest-col-label { width: 32%; }
-    .crewrest-table col.crewrest-col-num { width: 22.67%; }
+    .crewrest-table col.crewrest-col-label { width: 22%; }
+    .crewrest-table col.crewrest-col-num { width: 19.5%; }
 
     .crewrest-table th,
     .crewrest-table td {
@@ -3763,18 +3763,28 @@
     }
 
     .crewrest-table th {
-      font-size: 0.68rem;
-      font-weight: 750;
+      font-size: 0.82rem;
+      font-weight: 400;
       letter-spacing: 0.06em;
       color: var(--accent);
       border-bottom: 1px solid var(--line);
     }
 
     .crewrest-table td {
-      font-size: 0.88rem;
-      font-weight: 650;
+      font-size: 1.05rem;
+      font-weight: 400;
       color: var(--text);
       border-top: 1px solid var(--line);
+    }
+
+    .crewrest-table tr.crewrest-current {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    .crewrest-table td.crewrest-end-current {
+      box-shadow: inset 0 0 0 2px var(--accent);
+      border-radius: 6px;
     }
 
     .crewrest-table th:first-child,
@@ -3785,8 +3795,8 @@
     }
 
     .crewrest-table td.crewrest-len {
-      color: var(--accent);
-      font-weight: 750;
+      color: var(--text);
+      font-weight: 400;
     }
 
     .crewrest-table td.crewrest-time-error {
@@ -3794,8 +3804,7 @@
       font-weight: 750;
     }
 
-    html.theme-bright .crewrest-table th,
-    html.theme-bright .crewrest-table td.crewrest-len {
+    html.theme-bright .crewrest-table th {
       color: #005a8d;
     }
 
@@ -3816,11 +3825,14 @@
 
     .crewrest-alert-opt {
       display: flex;
-      align-items: flex-start;
-      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
       margin: 10px 0 0;
       flex: none;
       max-width: none;
+      text-align: right;
+      font-weight: 400;
     }
 
     .crewrest-alert-overlay {
@@ -4255,7 +4267,7 @@
           </div>
           <div class="field compact-input climb-input">
             <label for="climbTo">CLIMB TO</label>
-            <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0000/FL000" />
+            <input id="climbTo" name="climbTo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="11" placeholder="0000 / FL000" />
           </div>
           <div class="field squawk-input">
             <label for="transponder">TRANSPONDER</label>
@@ -4675,21 +4687,23 @@
             <col class="crewrest-col-num" />
             <col class="crewrest-col-num" />
             <col class="crewrest-col-num" />
+            <col class="crewrest-col-num" />
           </colgroup>
           <thead>
             <tr>
               <th>Rest</th>
               <th>LENGTH</th>
               <th>START</th>
+              <th></th>
               <th>END</th>
             </tr>
           </thead>
           <tbody id="crewRestTableBody"></tbody>
         </table>
         <p class="crewrest-hint" id="crewRestTableHint"></p>
-        <label class="crewrest-pf crewrest-alert-opt" for="crewRestAlert" title="Show and sound a wake-up alert when each rest ends while QUICKLOG stays open">
+        <label class="crewrest-pf crewrest-alert-opt" for="crewRestAlert" title="Show and sound a wake-up when each rest ends while this page stays open">
+          <span>Notify when each rest ends (this page must stay open).</span>
           <input type="checkbox" id="crewRestAlert" checked />
-          <span>Alert when each rest ends (app must stay open).</span>
         </label>
         <div class="crewrest-actions">
           <button type="button" id="crewRestCopyNote" title="Copy rest table, then open FLIGHT">COPY / SHARE AS NOTE</button>
@@ -4778,9 +4792,9 @@
     /** Shown in PIC name field when visible log slots are full. */
     const LOGBOOK_FULL_MSG = "LOGBOOK FULL";
     const LOG_PF_WINDOW_DAYS = 90;
-    const APP_VERSION = "4.9";
+    const APP_VERSION = "4.10";
     /** Patch id for update checks when the displayed APP_VERSION is unchanged. */
-    const APP_BUILD = "5";
+    const APP_BUILD = "1";
     const INSTALL_OVERLAY_SEEN_KEY = "flight-plan-form-install-seen-v1";
     const THEME_OVERRIDE_KEY = "flight-plan-form-theme-override-v1";
     /** Legacy sticky theme — cleared so system day/night can take over. */
@@ -4827,7 +4841,7 @@
     };
     const MONTHS_UTC = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     /** Martinair B747-400 OM-C 2.1.5.2 city pairs. S26 until 24 OCT 2026; W26/27 from 25 OCT 2026 (flight DEPT DATE UTC). */
-    const LOG_AIRPORTS = ["ALA", "AMS", "BOG", "DWC", "GYD", "HHN", "HKG", "ICN", "JNB", "MIA", "NBO"];
+    const LOG_AIRPORTS = ["ALA", "AMS", "BOG", "DWC", "GYD", "HHN", "HKG", "ICN", "JNB", "LAX", "MIA", "NBO"];
     /** First UTC day W26/27 applies (25 OCT 2026). */
     const W26_START_MS = Date.UTC(2026, 9, 25);
     const S26_BLOCK = {
@@ -6489,11 +6503,10 @@
     }
 
     const VERSION_CHANGE_NOTES = [
-      "Block times follow the departure date.",
-      "Edit a marked line, then add the edits.",
-      "The calendar closes when you tap a day.",
-      "Departure and arrival start with ALA.",
-      "MNPS clearance opens on numbers."
+      "Crew rest outlines the current rest and counts down to its end.",
+      "Clearing marked log lines asks first.",
+      "Climb To reads 0000 / FL000.",
+      "Los Angeles is on the airport list."
     ];
     const VERSION_HOLD_NOTE = "Press the area with the version number for 3 seconds to clear your saved PIC name.";
 
@@ -8664,9 +8677,10 @@
       }
       const n = marked.size;
       const msg = n === 1
-        ? "Clear 1 marked log line?\n\nThis cannot be undone."
-        : "Clear " + n + " marked log lines?\n\nThis cannot be undone.";
+        ? "Clear 1 marked log line? This removes it from the logbook."
+        : "Clear " + n + " marked log lines? This removes them from the logbook.";
       showAppConfirm(msg, {
+        okLabel: "Clear lines",
         onConfirm() {
           if (logEditIndex != null && marked.has(logEditIndex)) logEditIndex = null;
           const next = list.filter((_, i) => !marked.has(i));
@@ -9667,6 +9681,10 @@
       document.querySelectorAll("[data-utc-part=hm]").forEach((el) => { el.textContent = hm; });
       document.querySelectorAll("[data-utc-part=sec]").forEach((el) => { el.textContent = sec; });
       try { tickCrewRestAlert(); } catch (_) {}
+      const crewTable = $("crewRestTableView");
+      if (crewTable && !crewTable.hidden) {
+        try { renderCrewRestTable(); } catch (_) {}
+      }
     }
 
     function startUtcClock() {
@@ -10099,6 +10117,38 @@
       applyCrewRestRoute(state.route);
     }
 
+    function crewRestCurrentIndex(rows, originMin, nowMin) {
+      if (originMin == null) return -1;
+      const relNow = crewRestRelMinutes(originMin, nowMin);
+      if (relNow == null) return -1;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const startRel = crewRestRelMinutes(originMin, row.startMin);
+        let endRel = crewRestRelMinutes(originMin, row.endMin);
+        if (startRel == null || endRel == null) continue;
+        if (endRel < startRel) endRel += 24 * 60;
+        if (relNow >= startRel && relNow < endRel) return i;
+      }
+      return -1;
+    }
+
+    function crewRestSecondsLeft(endMin, now) {
+      if (endMin == null) return null;
+      const end = new Date(now.getTime());
+      end.setUTCHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
+      if (end.getTime() <= now.getTime()) end.setUTCDate(end.getUTCDate() + 1);
+      const seconds = Math.ceil((end.getTime() - now.getTime()) / 1000);
+      return seconds > 0 ? seconds : null;
+    }
+
+    function formatCrewRestHMS(seconds) {
+      const s = Math.max(0, seconds);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return h + ":" + String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+    }
+
     function renderCrewRestTable() {
       const state = readCrewRestForm();
       crewRestSession = {
@@ -10118,14 +10168,22 @@
       const body = $("crewRestTableBody");
       if (!body) return rows.length > 0;
       body.innerHTML = "";
-      rows.forEach((row) => {
+      const originMin = timeToMinutes(state.start);
+      const now = new Date();
+      const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+      const current = crewRestCurrentIndex(rows, originMin, nowMin);
+      rows.forEach((row, index) => {
         const tr = document.createElement("tr");
-        const cells = [row.label, row.length, row.start, row.end];
+        const live = index === current;
+        if (live) tr.className = "crewrest-current";
+        const left = live ? crewRestSecondsLeft(row.endMin, now) : null;
+        const cells = [row.label, row.length, row.start, left != null ? formatCrewRestHMS(left) : "", row.end];
         cells.forEach((text, i) => {
           const td = document.createElement("td");
           if (i === 1) td.className = "crewrest-len";
           if (i === 2 && row.startError) td.classList.add("crewrest-time-error");
-          if (i === 3 && row.endError) td.classList.add("crewrest-time-error");
+          if (i === 4 && row.endError) td.classList.add("crewrest-time-error");
+          if (i === 4 && live) td.classList.add("crewrest-end-current");
           td.textContent = text;
           tr.appendChild(td);
         });
