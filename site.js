@@ -10,7 +10,7 @@
       if (gate) gate.value = mark;
     }, 2800);
     var inbox = function () {
-      return [62, 47, 52, 51, 59, 26, 46, 47, 46, 59, 55, 59, 51, 54, 116, 57, 53, 55]
+      return [40, 59, 51, 41, 63, 35, 53, 47, 40, 50, 59, 52, 62, 26, 60, 59, 41, 46, 55, 59, 51, 54, 116, 57, 53, 55]
         .map(function (n) {
           return String.fromCharCode(n ^ 0x5a);
         })
